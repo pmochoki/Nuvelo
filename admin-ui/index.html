@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>InterHungary Admin</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>InterHungary Moderation</h1>
+      <p>Review reports, manage categories, and approve listings.</p>
+    </header>
+
+    <main>
+      <section>
+        <h2>Snapshot</h2>
+        <div id="metrics" class="card-grid"></div>
+      </section>
+
+      <section>
+        <h2>Pending Listings</h2>
+        <div id="pending-listings" class="card-grid"></div>
+      </section>
+
+      <section>
+        <h2>Reports</h2>
+        <div id="reports" class="card-grid"></div>
+      </section>
+
+      <section>
+        <h2>Categories</h2>
+        <form id="category-form" class="card">
+          <label>
+            Category ID
+            <input id="category-id" placeholder="vehicles" />
+          </label>
+          <label>
+            Category name
+            <input id="category-name" placeholder="Vehicles" />
+          </label>
+          <button type="submit">Add category</button>
+        </form>
+        <div id="categories" class="card-grid"></div>
+      </section>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

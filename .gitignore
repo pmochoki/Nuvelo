@@ -1,0 +1,29 @@
+.DS_Store
+.env
+.env.*
+
+# Node
+node_modules/
+npm-debug.log*
+package-lock.json
+
+# Flutter/Dart
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+build/
+
+# Android
+android/.gradle/
+android/app/build/
+android/local.properties
+
+# iOS
+ios/Pods/
+ios/Runner.xcworkspace/
+ios/Flutter/
+
+# Logs
+*.log
