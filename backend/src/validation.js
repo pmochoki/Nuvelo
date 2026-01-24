@@ -1,4 +1,7 @@
 const bannedWords = ["scam", "fake", "fraud"];
+const MIN_TITLE_LENGTH = 5;
+const MIN_DESCRIPTION_LENGTH = 20;
+const MAX_IMAGE_COUNT = 8;
 
 const hasBannedWords = (text) => {
   if (!text) {
@@ -43,17 +46,25 @@ const validateCategoryFields = (categoryId, fields = {}) => {
 
 const validateListing = (listing) => {
   const errors = [];
-  if (!listing.title || listing.title.length < 5) {
-    errors.push("Title must be at least 5 characters.");
+  if (!listing.title || listing.title.length < MIN_TITLE_LENGTH) {
+    errors.push(`Title must be at least ${MIN_TITLE_LENGTH} characters.`);
   }
-  if (!listing.description || listing.description.length < 20) {
-    errors.push("Description must be at least 20 characters.");
+  if (!listing.description || listing.description.length < MIN_DESCRIPTION_LENGTH) {
+    errors.push(
+      `Description must be at least ${MIN_DESCRIPTION_LENGTH} characters.`
+    );
   }
   if (!listing.categoryId) {
     errors.push("Category is required.");
   }
-  if (Array.isArray(listing.images) && listing.images.length > 8) {
-    errors.push("Maximum 8 images allowed.");
+  if (!Array.isArray(listing.images) || listing.images.length === 0) {
+    errors.push("At least one image is required.");
+  } else if (listing.images.length > MAX_IMAGE_COUNT) {
+    errors.push(`Maximum ${MAX_IMAGE_COUNT} images allowed.`);
+  } else if (
+    listing.images.some((image) => typeof image !== "string" || image === "")
+  ) {
+    errors.push("Images must be non-empty strings.");
   }
   if (hasBannedWords(listing.title) || hasBannedWords(listing.description)) {
     errors.push("Listing contains banned words.");
@@ -64,4 +75,15 @@ const validateListing = (listing) => {
   return errors;
 };
 
-module.exports = { validateListing, hasBannedWords };
+const validateMessage = (text) => {
+  const errors = [];
+  if (!text || text.trim().length === 0) {
+    errors.push("Message text is required.");
+  }
+  if (hasBannedWords(text)) {
+    errors.push("Message contains banned words.");
+  }
+  return errors;
+};
+
+module.exports = { validateListing, validateMessage, hasBannedWords };

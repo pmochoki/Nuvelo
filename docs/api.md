@@ -10,10 +10,15 @@ Base URL: `http://localhost:4000`
 
 ## Auth
 - `POST /auth/login`
+  - Body: `name`, `role`, `email` or `phone`, `otp`
+
+## Users
+- `GET /users/:id`
+- `PUT /users/:id/verification`
 
 ## Listings
-- `GET /listings?query=&categoryId=&location=&minPrice=&maxPrice=&status=&userId=`
-- `GET /listings/:id`
+- `GET /listings?query=&categoryId=&location=&minPrice=&maxPrice=&status=&userId=&viewerId=`
+- `GET /listings/:id?viewerId=`
 - `POST /listings`
 - `PUT /listings/:id`
 - `DELETE /listings/:id`

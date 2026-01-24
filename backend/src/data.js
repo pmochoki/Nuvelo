@@ -9,8 +9,28 @@ const categories = [
 ];
 
 const users = [
-  { id: "u1", name: "Anna Nagy", role: "landlord", banned: false },
-  { id: "u2", name: "David Smith", role: "seller", banned: false }
+  {
+    id: "u1",
+    name: "Anna Nagy",
+    role: "landlord",
+    email: "anna.nagy@example.com",
+    phone: "+36 30 555 0101",
+    emailVerified: true,
+    phoneVerified: true,
+    banned: false,
+    createdAt: "2023-05-10T08:30:00.000Z"
+  },
+  {
+    id: "u2",
+    name: "David Smith",
+    role: "seller",
+    email: "david.smith@example.com",
+    phone: "+36 30 555 0102",
+    emailVerified: false,
+    phoneVerified: true,
+    banned: false,
+    createdAt: "2024-01-22T12:15:00.000Z"
+  }
 ];
 
 const listings = [
@@ -22,7 +42,7 @@ const listings = [
     price: 450,
     currency: "EUR",
     location: "Budapest",
-    images: [],
+    images: ["https://images.example.com/listings/l1-1.jpg"],
     condition: "good",
     categoryFields: {
       type: "studio",
@@ -44,7 +64,7 @@ const listings = [
     price: null,
     currency: "HUF",
     location: "Debrecen",
-    images: [],
+    images: ["https://images.example.com/listings/l2-1.jpg"],
     condition: "new",
     categoryFields: {
       role: "Barista",
@@ -64,7 +84,7 @@ const listings = [
     price: 4100000,
     currency: "HUF",
     location: "Szeged",
-    images: [],
+    images: ["https://images.example.com/listings/l3-1.jpg"],
     condition: "used",
     categoryFields: {
       make: "Toyota",
@@ -86,7 +106,7 @@ const listings = [
     price: 165000,
     currency: "HUF",
     location: "Budapest",
-    images: [],
+    images: ["https://images.example.com/listings/l4-1.jpg"],
     condition: "good",
     categoryFields: {
       brand: "Apple",

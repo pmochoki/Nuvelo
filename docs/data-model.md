@@ -4,7 +4,21 @@
 - id
 - name
 - role (customer/seller/agent/landlord)
+- email
+- phone
+- emailVerified
+- phoneVerified
 - banned
+- createdAt
+
+## Category
+- id
+- name
+
+## Location
+- id
+- name
+- region
 
 ## Listing
 - id

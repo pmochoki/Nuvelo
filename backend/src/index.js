@@ -25,6 +25,10 @@ const generateId = (prefix) =>
 const findUser = (userId) => users.find((user) => user.id === userId);
 const findListing = (listingId) =>
   listings.find((listing) => listing.id === listingId);
+const enrichListing = (listing) => ({
+  ...listing,
+  sellerName: findUser(listing.userId)?.name || "Seller"
+});
 const allowedRoles = ["customer", "seller", "agent", "landlord"];
 const isValidRole = (role) => allowedRoles.includes(role);
 const allowedReportTypes = ["listing", "user", "message"];
@@ -91,31 +95,56 @@ app.get("/categories", (req, res) => {
 });
 
 app.post("/auth/login", (req, res) => {
-  const { name, role } = req.body || {};
+  const { name, role, email, phone, otp } = req.body || {};
   if (!name || !role) {
     return res.status(400).json({ error: "name and role are required." });
   }
   if (!isValidRole(role)) {
     return res.status(400).json({ error: "Invalid role." });
   }
-  let user = users.find(
-    (candidate) =>
-      candidate.name.toLowerCase() === name.toLowerCase() &&
-      candidate.role === role
-  );
+  const normalizedEmail = email ? email.toLowerCase() : null;
+  let user = null;
+  if (normalizedEmail) {
+    user = users.find(
+      (candidate) => candidate.email?.toLowerCase() === normalizedEmail
+    );
+  }
+  if (!user && phone) {
+    user = users.find((candidate) => candidate.phone === phone);
+  }
+  if (!user) {
+    user = users.find(
+      (candidate) =>
+        candidate.name.toLowerCase() === name.toLowerCase() &&
+        candidate.role === role
+    );
+  }
   if (!user) {
     user = {
       id: generateId("user"),
       name,
       role,
-      email: null,
-      phone: null,
-      emailVerified: false,
-      phoneVerified: false,
+      email: normalizedEmail,
+      phone: phone || null,
+      emailVerified: Boolean(otp && normalizedEmail),
+      phoneVerified: Boolean(otp && phone),
       banned: false,
       createdAt: new Date().toISOString()
     };
     users.push(user);
+  } else {
+    if (normalizedEmail) {
+      user.email = normalizedEmail;
+      if (otp) {
+        user.emailVerified = true;
+      }
+    }
+    if (phone) {
+      user.phone = phone;
+      if (otp) {
+        user.phoneVerified = true;
+      }
+    }
   }
   res.json(toUserProfile(user));
 });
@@ -195,7 +224,7 @@ app.get("/listings", (req, res) => {
     }
     return true;
   });
-  res.json(filtered);
+  res.json(filtered.map(enrichListing));
 });
 
 app.get("/listings/:id", (req, res) => {
@@ -210,7 +239,7 @@ app.get("/listings/:id", (req, res) => {
   ) {
     return res.status(403).json({ error: "Listing is not available." });
   }
-  res.json(listing);
+  res.json(enrichListing(listing));
 });
 
 app.post("/listings", (req, res) => {
@@ -246,7 +275,7 @@ app.post("/listings", (req, res) => {
     createdAt: new Date().toISOString()
   };
   listings.push(newListing);
-  res.status(201).json(newListing);
+  res.status(201).json(enrichListing(newListing));
 });
 
 app.put("/listings/:id", (req, res) => {
@@ -260,7 +289,7 @@ app.put("/listings/:id", (req, res) => {
     return res.status(400).json({ errors });
   }
   Object.assign(listing, next);
-  res.json(listing);
+  res.json(enrichListing(listing));
 });
 
 app.delete("/listings/:id", (req, res) => {
@@ -299,7 +328,7 @@ app.get("/conversations", (req, res) => {
   const result = conversations.filter(
     (conv) => conv.buyerId === userId || conv.sellerId === userId
   );
-  res.json(result);
+  res.json(result.map(enrichListing));
 });
 
 app.get("/conversations/:id/messages", (req, res) => {
