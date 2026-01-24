@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 const {
   categories,
   users,
@@ -11,18 +12,42 @@ const {
   savedSearches,
   blocks
 } = require("./data");
-const { validateListing } = require("./validation");
+const { validateListing, validateMessage } = require("./validation");
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, "../../admin-ui")));
 
 const generateId = (prefix) =>
   `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
 
 const findUser = (userId) => users.find((user) => user.id === userId);
+const findListing = (listingId) =>
+  listings.find((listing) => listing.id === listingId);
 const allowedRoles = ["customer", "seller", "agent", "landlord"];
 const isValidRole = (role) => allowedRoles.includes(role);
+const allowedReportTypes = ["listing", "user", "message"];
+
+const toUserProfile = (user) => {
+  const userListings = listings.filter((listing) => listing.userId === user.id);
+  const approvedListings = userListings.filter(
+    (listing) => listing.status === "approved"
+  );
+  return {
+    id: user.id,
+    name: user.name,
+    role: user.role,
+    email: user.email,
+    phone: user.phone,
+    emailVerified: user.emailVerified,
+    phoneVerified: user.phoneVerified,
+    banned: user.banned,
+    memberSince: user.createdAt,
+    listingCount: userListings.length,
+    approvedListings: approvedListings.length
+  };
+};
 
 const rateLimits = {
   listings: { windowMs: 60 * 60 * 1000, max: 5 },
@@ -79,10 +104,43 @@ app.post("/auth/login", (req, res) => {
       candidate.role === role
   );
   if (!user) {
-    user = { id: generateId("user"), name, role, banned: false };
+    user = {
+      id: generateId("user"),
+      name,
+      role,
+      email: null,
+      phone: null,
+      emailVerified: false,
+      phoneVerified: false,
+      banned: false,
+      createdAt: new Date().toISOString()
+    };
     users.push(user);
   }
-  res.json(user);
+  res.json(toUserProfile(user));
+});
+
+app.get("/users/:id", (req, res) => {
+  const user = findUser(req.params.id);
+  if (!user) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  res.json(toUserProfile(user));
+});
+
+app.put("/users/:id/verification", (req, res) => {
+  const { emailVerified, phoneVerified } = req.body || {};
+  const user = findUser(req.params.id);
+  if (!user) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  if (typeof emailVerified === "boolean") {
+    user.emailVerified = emailVerified;
+  }
+  if (typeof phoneVerified === "boolean") {
+    user.phoneVerified = phoneVerified;
+  }
+  res.json(toUserProfile(user));
 });
 
 app.get("/listings", (req, res) => {
@@ -93,7 +151,8 @@ app.get("/listings", (req, res) => {
     minPrice,
     maxPrice,
     status,
-    userId
+    userId,
+    viewerId
   } = req.query;
   const filtered = listings.filter((listing) => {
     if (userId) {
@@ -101,6 +160,13 @@ app.get("/listings", (req, res) => {
         return false;
       }
     } else if (listing.status !== "approved") {
+      return false;
+    }
+    if (
+      viewerId &&
+      (isBlocked(viewerId, listing.userId) ||
+        isBlocked(listing.userId, viewerId))
+    ) {
       return false;
     }
     if (status && listing.status !== status) {
@@ -136,6 +202,13 @@ app.get("/listings/:id", (req, res) => {
   const listing = listings.find((item) => item.id === req.params.id);
   if (!listing) {
     return res.status(404).json({ error: "Listing not found" });
+  }
+  const { viewerId } = req.query;
+  if (
+    viewerId &&
+    (isBlocked(viewerId, listing.userId) || isBlocked(listing.userId, viewerId))
+  ) {
+    return res.status(403).json({ error: "Listing is not available." });
   }
   res.json(listing);
 });
@@ -239,6 +312,10 @@ app.post("/conversations/:id/messages", (req, res) => {
   if (!senderId || !text) {
     return res.status(400).json({ error: "senderId and text are required." });
   }
+  const messageErrors = validateMessage(text);
+  if (messageErrors.length > 0) {
+    return res.status(400).json({ errors: messageErrors });
+  }
   const limit = isRateLimited(senderId, "messages");
   if (limit.limited) {
     return res.status(429).json({
@@ -300,6 +377,21 @@ app.post("/reports", (req, res) => {
   const { type, targetId, reason, reporterId } = req.body || {};
   if (!type || !targetId || !reason || !reporterId) {
     return res.status(400).json({ error: "Missing report fields." });
+  }
+  if (!allowedReportTypes.includes(type)) {
+    return res.status(400).json({ error: "Invalid report type." });
+  }
+  if (type === "listing" && !findListing(targetId)) {
+    return res.status(404).json({ error: "Listing not found." });
+  }
+  if (type === "user" && !findUser(targetId)) {
+    return res.status(404).json({ error: "User not found." });
+  }
+  if (
+    type === "message" &&
+    !messages.some((message) => message.id === targetId)
+  ) {
+    return res.status(404).json({ error: "Message not found." });
   }
   const report = {
     id: generateId("report"),
@@ -493,15 +585,24 @@ app.put("/admin/categories/:id", (req, res) => {
 });
 
 app.get("/admin/metrics", (req, res) => {
+  const since = Date.now() - 24 * 60 * 60 * 1000;
   const openReports = reports.filter((report) => report.status === "open").length;
   const pendingListings = listings.filter(
     (listing) => listing.status === "pending"
   ).length;
   const bannedUsers = users.filter((user) => user.banned).length;
+  const newListingsLast24h = listings.filter(
+    (listing) => new Date(listing.createdAt).getTime() >= since
+  ).length;
+  const newReportsLast24h = reports.filter(
+    (report) => new Date(report.createdAt).getTime() >= since
+  ).length;
   res.json({
     openReports,
     pendingListings,
     bannedUsers,
+    newListingsLast24h,
+    newReportsLast24h,
     totalListings: listings.length,
     totalUsers: users.length
   });

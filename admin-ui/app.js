@@ -1,4 +1,7 @@
-const API_BASE = "http://localhost:4000";
+const API_BASE =
+  window.location.origin === "null"
+    ? "http://localhost:4000"
+    : window.location.origin;
 
 const pendingContainer = document.getElementById("pending-listings");
 const reportsContainer = document.getElementById("reports");
@@ -118,7 +121,10 @@ const loadMetrics = async () => {
     { label: "Open reports", value: metrics.openReports },
     { label: "Pending listings", value: metrics.pendingListings },
     { label: "Banned users", value: metrics.bannedUsers },
-    { label: "Total listings", value: metrics.totalListings }
+    { label: "New listings (24h)", value: metrics.newListingsLast24h },
+    { label: "New reports (24h)", value: metrics.newReportsLast24h },
+    { label: "Total listings", value: metrics.totalListings },
+    { label: "Total users", value: metrics.totalUsers }
   ];
   metricsContainer.innerHTML = "";
   items.forEach((metric) => metricsContainer.appendChild(renderMetric(metric)));
