@@ -12,6 +12,9 @@ workflows:
         BUNDLE_ID: com.example.interhungaryMarketplace
         XCODE_WORKSPACE: "ios/Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
+    ios_signing:
+      distribution_type: app_store
+      bundle_identifier: com.example.interhungaryMarketplace
     scripts:
       - name: Get Flutter packages
         script: |
