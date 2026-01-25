@@ -30,3 +30,20 @@ workflows:
         api_key: $APP_STORE_CONNECT_PRIVATE_KEY
         key_id: $APP_STORE_CONNECT_KEY_ID
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+  android-release:
+    name: Android Release
+    instance_type: mac_mini_m2
+    max_build_duration: 120
+    environment:
+      flutter: stable
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          cd mobile
+          flutter pub get
+      - name: Build App Bundle
+        script: |
+          cd mobile
+          flutter build appbundle --release
+    artifacts:
+      - mobile/build/app/outputs/bundle/release/app-release.aab
