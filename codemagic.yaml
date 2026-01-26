@@ -23,7 +23,7 @@ workflows:
       - name: Set up code signing
         script: |
           cd mobile/ios
-          xcode-project use-profiles
+          xcode-project use-profiles --archive-method app-store
       - name: Build IPA
         script: |
           cd mobile
