@@ -23,7 +23,7 @@ workflows:
       - name: Build IPA
         script: |
           cd mobile
-          flutter build ipa --release
+          flutter build ipa --release --build-name=0.1.1 --build-number=2
     artifacts:
       - mobile/build/ios/ipa/*.ipa
       - mobile/build/ios/archive/*.xcarchive
