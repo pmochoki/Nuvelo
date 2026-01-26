@@ -20,6 +20,10 @@ workflows:
         script: |
           cd mobile
           flutter pub get
+      - name: Set up code signing
+        script: |
+          cd mobile/ios
+          xcode-project use-profiles
       - name: Build IPA
         script: |
           cd mobile
