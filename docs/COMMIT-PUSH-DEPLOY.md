@@ -2,8 +2,8 @@
 
 ## What’s already done
 
-- **Committed** in your local repo: Jiji-style UI, 5-tab nav, orange theme, iOS docs, setup script.  
-- **Not done from here:** push (needs your GitHub login) and any deploy steps.
+- **Committed** in your local repo: Jiji-style UI (green theme), 5-tab nav (Home, Saved, Sell, Messages, Profile), Home tab with list/grid toggle, “All Hungary” location, quick action cards (Apply for job, How to sell, How to buy), iOS docs, setup script.  
+- **You need to do:** push (needs your GitHub login in Terminal) and any deploy steps.
 
 ---
 
