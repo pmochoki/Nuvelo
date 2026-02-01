@@ -32,21 +32,28 @@ Type your password when asked (nothing will show), then press Enter.
 
 ---
 
-## 4. Run the InterHungary app again
+## 4. Install CocoaPods (fixes "CocoaPods not installed" error)
 
-In Terminal:
+Flutter needs CocoaPods to build for **macOS** and **iOS**. In Terminal:
 
 ```bash
-cd "/Users/mokoro/Library/Mobile Documents/com~apple~CloudDocs/InterHungary /InterHungary-src"
-bash scripts/ios-setup-and-run.sh
+brew install cocoapods
 ```
 
-Or, if Flutter is already installed and you only want to run the app:
+If you see "A brew install cocoapods process has already locked", wait a few minutes (another install may be running) and try again, or close any other Terminal window that might be running `brew install`.
+
+---
+
+## 5. Run the InterHungary app again
+
+In Terminal:
 
 ```bash
 cd "/Users/mokoro/Library/Mobile Documents/com~apple~CloudDocs/InterHungary /InterHungary-src/mobile"
 flutter run
 ```
+
+When Flutter asks which device, choose **1** (macOS) or **2** (Chrome). For **iOS simulator**, open Xcode → Window → Devices and Simulators and start an iPhone simulator first, then run `flutter run` and pick the iOS device.
 
 Pick **iOS** (or macOS) when Flutter asks which device to use.
 
