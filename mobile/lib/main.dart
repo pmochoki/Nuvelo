@@ -1,7 +1,16 @@
 import "package:flutter/material.dart";
+import "package:google_fonts/google_fonts.dart";
 
 import "api.dart";
 import "models.dart";
+
+// Jiji-style brand colors (orange, like Jiji.ng)
+const Color _jijiOrange = Color(0xFFFF6B00);
+const Color _jijiOrangeDark = Color(0xFFE85D00);
+const Color _jijiBg = Color(0xFFF5F5F5);
+const Color _jijiCard = Color(0xFFFFFFFF);
+const Color _jijiText = Color(0xFF1A1A1A);
+const Color _jijiTextGray = Color(0xFF757575);
 
 void main() {
   runApp(const InterHungaryApp());
@@ -12,85 +21,102 @@ class InterHungaryApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryGreen = Color(0xFF16A34A);
     return MaterialApp(
       title: "InterHungary",
       theme: ThemeData(
         useMaterial3: true,
-        fontFamily: "Inter",
         colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryGreen,
+          seedColor: _jijiOrange,
           brightness: Brightness.light,
+          primary: _jijiOrange,
+          secondary: _jijiOrangeDark,
         ),
-        scaffoldBackgroundColor: Colors.white,
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: Colors.black,
+        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
+        scaffoldBackgroundColor: _jijiBg,
+        appBarTheme: AppBarTheme(
           elevation: 0,
-          centerTitle: false,
+          centerTitle: true,
+          titleTextStyle: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: _jijiText,
+          ),
+          backgroundColor: _jijiCard,
+          foregroundColor: _jijiText,
+          iconTheme: const IconThemeData(color: _jijiText),
         ),
         cardTheme: CardThemeData(
-          color: Colors.white,
-          elevation: 1,
+          color: _jijiCard,
+          elevation: 2,
           shadowColor: Colors.black.withOpacity(0.08),
-          surfaceTintColor: Colors.white,
+          surfaceTintColor: Colors.transparent,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFFF8FAFC),
+          fillColor: const Color(0xFFEEEEEE),
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide.none,
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: primaryGreen, width: 1.5),
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: _jijiOrange, width: 2),
           ),
+          labelStyle: GoogleFonts.poppins(color: _jijiTextGray),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            backgroundColor: primaryGreen,
+            backgroundColor: _jijiOrange,
             foregroundColor: Colors.white,
-            textStyle: const TextStyle(fontWeight: FontWeight.w600),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+            textStyle: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+            elevation: 0,
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            foregroundColor: primaryGreen,
-            side: const BorderSide(color: primaryGreen),
+            foregroundColor: _jijiOrange,
+            side: const BorderSide(color: _jijiOrange, width: 1.5),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(8),
             ),
+            textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
           ),
         ),
         chipTheme: ChipThemeData(
-          backgroundColor: const Color(0xFFF1F5F9),
-          selectedColor: primaryGreen,
-          labelStyle: const TextStyle(color: Colors.black),
-          secondaryLabelStyle: const TextStyle(color: Colors.white),
+          backgroundColor: const Color(0xFFEEEEEE),
+          selectedColor: _jijiOrange,
+          labelStyle: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
+          secondaryLabelStyle: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
-            side: const BorderSide(color: Color(0xFFE2E8F0)),
+            borderRadius: BorderRadius.circular(8),
           ),
         ),
-        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-          selectedItemColor: primaryGreen,
-          unselectedItemColor: Color(0xFF64748B),
+        bottomNavigationBarTheme: BottomNavigationBarThemeData(
+          selectedItemColor: _jijiOrange,
+          unselectedItemColor: _jijiTextGray,
+          type: BottomNavigationBarType.fixed,
+          elevation: 8,
+          backgroundColor: Colors.white,
         ),
-        snackBarTheme: const SnackBarThemeData(
-          backgroundColor: Colors.black,
-          contentTextStyle: TextStyle(color: Colors.white),
+        snackBarTheme: SnackBarThemeData(
+          backgroundColor: const Color(0xFF1F2937),
+          contentTextStyle: GoogleFonts.poppins(color: Colors.white),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       routes: {
@@ -584,9 +610,10 @@ class _MainShellState extends State<MainShell> {
     ).whenComplete(controller.dispose);
   }
 
+  // Jiji-style: 5 tabs - Home, Search, Sell, Chat, Profile
   List<Widget> get _pages {
     final role = widget.role;
-    final pages = <Widget>[
+    return [
       HomeLoader(
         api: widget.api,
         role: role,
@@ -597,6 +624,23 @@ class _MainShellState extends State<MainShell> {
         onBlockUser: _blockUser,
         onReportListing: _reportListing,
         onStartChat: _startChat,
+      ),
+      HomeLoader(
+        api: widget.api,
+        role: role,
+        viewerId: widget.user.id,
+        favoriteIds: _favoriteIds,
+        onToggleFavorite: _toggleFavorite,
+        onSaveSearch: _saveSearch,
+        onBlockUser: _blockUser,
+        onReportListing: _reportListing,
+        onStartChat: _startChat,
+        isSearchTab: true,
+      ),
+      PostListingScreen(
+        role: role,
+        user: widget.user,
+        api: widget.api,
       ),
       InboxScreen(
         api: widget.api,
@@ -612,34 +656,15 @@ class _MainShellState extends State<MainShell> {
         savedSearches: _savedSearches,
       )
     ];
-    if (role != UserRole.customer) {
-      pages.insert(
-        1,
-        PostListingScreen(
-          role: role,
-          user: widget.user,
-          api: widget.api,
-        )
-      );
-    }
-    return pages;
   }
 
-  List<BottomNavigationBarItem> get _items {
-    final role = widget.role;
-    final items = <BottomNavigationBarItem>[
-      const BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-      const BottomNavigationBarItem(icon: Icon(Icons.chat), label: "Chat"),
-      const BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile")
-    ];
-    if (role != UserRole.customer) {
-      items.insert(
-        1,
-        const BottomNavigationBarItem(icon: Icon(Icons.add_box), label: "Post")
-      );
-    }
-    return items;
-  }
+  List<BottomNavigationBarItem> get _items => const [
+    BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: "Home"),
+    BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
+    BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), activeIcon: Icon(Icons.add_circle), label: "Sell"),
+    BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: "Chat"),
+    BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: "Profile"),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -714,52 +739,122 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     final roles = UserRole.values;
     return Scaffold(
+      backgroundColor: _jijiBg,
+      appBar: AppBar(
+        backgroundColor: _jijiCard,
+        elevation: 0,
+        title: Text(
+          "InterHungary",
+          style: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w800,
+            color: _jijiOrange,
+          ),
+        ),
+        centerTitle: true,
+      ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
           children: [
-            Text("Sign in",
-                style: Theme.of(context).textTheme.headlineMedium),
-            const SizedBox(height: 8),
-            const Text(
-              "Choose how you want to use the app. Admin access is managed separately."
+            Text(
+              "Sign in to buy and sell",
+              style: GoogleFonts.poppins(
+                fontSize: 16,
+                color: _jijiTextGray,
+                fontWeight: FontWeight.w500,
+              ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: "Your name"),
+              decoration: const InputDecoration(
+                labelText: "Your name",
+                prefixIcon: Icon(Icons.person_outline, color: _jijiTextGray),
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             TextField(
               controller: _contactController,
               decoration: const InputDecoration(
                 labelText: "Email or phone",
+                prefixIcon: Icon(Icons.phone_android, color: _jijiTextGray),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
             TextField(
               controller: _otpController,
-              decoration: const InputDecoration(labelText: "OTP code"),
+              decoration: const InputDecoration(
+                labelText: "OTP code",
+                prefixIcon: Icon(Icons.lock_outline, color: _jijiTextGray),
+              ),
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             if (_isSubmitting)
               const Center(child: CircularProgressIndicator()),
             if (!_isSubmitting)
+              Text(
+                "Continue as",
+                style: GoogleFonts.poppins(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: _jijiTextGray,
+                ),
+              ),
+            if (!_isSubmitting) const SizedBox(height: 10),
+            if (!_isSubmitting)
               ...roles.map(
-                (role) => Card(
-                  child: ListTile(
-                    title: Text(roleLabel(role)),
-                    subtitle: Text(_roleDescription(role)),
-                    trailing: const Icon(Icons.chevron_right),
-                    onTap: () => _submit(role),
+                (role) => Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Material(
+                    color: _jijiCard,
+                    borderRadius: BorderRadius.circular(8),
+                    elevation: 1,
+                    child: ListTile(
+                      leading: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _jijiOrange.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(_roleIcon(role), color: _jijiOrange, size: 22),
+                      ),
+                      title: Text(
+                        roleLabel(role),
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
+                          color: _jijiText,
+                        ),
+                      ),
+                      subtitle: Text(
+                        _roleDescription(role),
+                        style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                      ),
+                      trailing: const Icon(Icons.chevron_right, color: _jijiTextGray),
+                      onTap: () => _submit(role),
+                    ),
                   ),
                 ),
-              )
+              ),
           ],
         ),
       ),
     );
+  }
+
+  IconData _roleIcon(UserRole role) {
+    switch (role) {
+      case UserRole.customer:
+        return Icons.shopping_bag_outlined;
+      case UserRole.seller:
+        return Icons.storefront_outlined;
+      case UserRole.agent:
+        return Icons.badge_outlined;
+      case UserRole.landlord:
+        return Icons.home_work_outlined;
+    }
   }
 }
 
@@ -773,6 +868,7 @@ class HomeLoader extends StatefulWidget {
   final Future<void> Function(String userId) onBlockUser;
   final Future<void> Function(Listing listing) onReportListing;
   final Future<void> Function(Listing listing) onStartChat;
+  final bool isSearchTab;
 
   const HomeLoader({
     super.key,
@@ -784,7 +880,8 @@ class HomeLoader extends StatefulWidget {
     required this.onSaveSearch,
     required this.onBlockUser,
     required this.onReportListing,
-    required this.onStartChat
+    required this.onStartChat,
+    this.isSearchTab = false,
   });
 
   @override
@@ -858,7 +955,8 @@ class _HomeLoaderState extends State<HomeLoader> {
                 onSaveSearch: widget.onSaveSearch,
                 onBlockUser: widget.onBlockUser,
                 onReportListing: widget.onReportListing,
-                onStartChat: widget.onStartChat
+                onStartChat: widget.onStartChat,
+                isSearchTab: widget.isSearchTab,
               ),
             )
           ],
@@ -891,6 +989,7 @@ class RoleHomeScreen extends StatelessWidget {
   final Future<void> Function(String userId) onBlockUser;
   final Future<void> Function(Listing listing) onReportListing;
   final Future<void> Function(Listing listing) onStartChat;
+  final bool isSearchTab;
 
   const RoleHomeScreen({
     super.key,
@@ -902,7 +1001,8 @@ class RoleHomeScreen extends StatelessWidget {
     required this.onSaveSearch,
     required this.onBlockUser,
     required this.onReportListing,
-    required this.onStartChat
+    required this.onStartChat,
+    this.isSearchTab = false,
   });
 
   @override
@@ -949,7 +1049,8 @@ class RoleHomeScreen extends StatelessWidget {
       onSaveSearch: onSaveSearch,
       onBlockUser: onBlockUser,
       onReportListing: onReportListing,
-      onStartChat: onStartChat
+      onStartChat: onStartChat,
+      isSearchTab: isSearchTab,
     );
   }
 }
@@ -963,6 +1064,7 @@ class CustomerBrowseScreen extends StatefulWidget {
   final Future<void> Function(String userId) onBlockUser;
   final Future<void> Function(Listing listing) onReportListing;
   final Future<void> Function(Listing listing) onStartChat;
+  final bool isSearchTab;
 
   const CustomerBrowseScreen({
     super.key,
@@ -973,7 +1075,8 @@ class CustomerBrowseScreen extends StatefulWidget {
     required this.onSaveSearch,
     required this.onBlockUser,
     required this.onReportListing,
-    required this.onStartChat
+    required this.onStartChat,
+    this.isSearchTab = false,
   });
 
   @override
@@ -1014,142 +1117,225 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
     await widget.onSaveSearch(search);
   }
 
+  IconData _categoryIcon(String categoryId) {
+    switch (categoryId) {
+      case "vehicles": return Icons.directions_car;
+      case "electronics": return Icons.phone_android;
+      case "clothes": return Icons.checkroom;
+      case "rentals": case "real-estate": return Icons.home;
+      case "jobs": return Icons.work;
+      case "services": return Icons.build;
+      default: return Icons.category;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered;
     return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text("Discover", style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 4),
-          const Text(
-            "Trusted listings from verified sellers. Browse with confidence.",
+      child: CustomScrollView(
+        slivers: [
+          // Jiji-style: search bar at top (white)
+          SliverToBoxAdapter(
+            child: Container(
+              color: _jijiCard,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: "Search for cars, phones, and more...",
+                  hintStyle: GoogleFonts.poppins(color: _jijiTextGray, fontSize: 14),
+                  prefixIcon: const Icon(Icons.search, color: _jijiTextGray, size: 22),
+                  filled: true,
+                  fillColor: const Color(0xFFEEEEEE),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                onChanged: (value) => setState(() => _query = value),
+              ),
+            ),
           ),
-          const SizedBox(height: 16),
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          // Jiji-style: category grid (horizontal scroll)
+          SliverToBoxAdapter(
+            child: Container(
+              color: _jijiCard,
+              padding: const EdgeInsets.only(bottom: 16),
+              height: 100,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 12),
                 children: [
-                  TextField(
-                    decoration: const InputDecoration(
-                      labelText: "Search",
-                      prefixIcon: Icon(Icons.search),
-                    ),
-                    onChanged: (value) => setState(() => _query = value),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    decoration: const InputDecoration(labelText: "Location"),
-                    onChanged: (value) => setState(() => _location = value),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    "Popular categories",
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      ChoiceChip(
-                        label: const Text("All"),
-                        selected: _categoryId == null,
-                        onSelected: (_) => setState(() => _categoryId = null),
-                      ),
-                      ...widget.categories.map(
-                        (category) => ChoiceChip(
-                          label: Text(category.name),
-                          selected: _categoryId == category.id,
-                          onSelected: (_) =>
-                              setState(() => _categoryId = category.id),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OutlinedButton.icon(
-                      onPressed: _saveSearch,
-                      icon: const Icon(Icons.bookmark_add),
-                      label: const Text("Save search"),
-                    ),
+                  _buildCategoryChip(null, "All", Icons.apps),
+                  ...widget.categories.map(
+                    (c) => _buildCategoryChip(c.id, c.name, _categoryIcon(c.id)),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 20),
-          Row(
-            children: [
-              const Icon(Icons.verified, color: Color(0xFF16A34A)),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  "Verified sellers, secure chat, and clear pricing.",
-                  style: Theme.of(context).textTheme.bodyMedium,
+          // "All ads" section
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Text(
+                "All ads",
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: _jijiText,
                 ),
               ),
-            ],
+            ),
           ),
-          const SizedBox(height: 20),
-          Text("Listings", style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
           if (filtered.isEmpty)
-            const Text("No listings match your filters."),
-          ...filtered.map(
-            (listing) => Card(
-              child: ListTile(
-                isThreeLine: true,
-                title: Text(listing.title),
-                subtitle: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("${listing.location} • ${listing.priceLabel}"),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: const [
-                        Icon(Icons.verified,
-                            size: 16, color: Color(0xFF16A34A)),
-                        SizedBox(width: 6),
-                        Text("Verified seller"),
-                        SizedBox(width: 12),
-                        Icon(Icons.lock_outline,
-                            size: 16, color: Color(0xFF16A34A)),
-                        SizedBox(width: 6),
-                        Text("Secure chat"),
-                      ],
-                    ),
-                  ],
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: Text("No listings match your filters.")),
+              ),
+            ),
+          if (filtered.isNotEmpty)
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final listing = filtered[index];
+                  return _jijiListingCard(context, listing);
+                },
+                childCount: filtered.length,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCategoryChip(String? id, String label, IconData icon) {
+    final selected = _categoryId == id;
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => setState(() => _categoryId = id),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 72,
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: selected ? _jijiOrange : const Color(0xFFEEEEEE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(icon, color: selected ? Colors.white : _jijiTextGray, size: 24),
                 ),
-                trailing: IconButton(
+                const SizedBox(height: 6),
+                Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: selected ? _jijiOrange : _jijiTextGray,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _jijiListingCard(BuildContext context, Listing listing) {
+    return Container(
+      color: _jijiCard,
+      margin: const EdgeInsets.only(bottom: 1),
+      child: Material(
+        color: _jijiCard,
+        child: InkWell(
+          onTap: () => openListingDetails(
+            context: context,
+            listing: listing,
+            isFavorite: widget.favoriteIds.contains(listing.id),
+            onToggleFavorite: () => widget.onToggleFavorite(listing.id),
+            onReport: () => widget.onReportListing(listing),
+            onBlock: () => widget.onBlockUser(listing.sellerId),
+            onStartChat: () => widget.onStartChat(listing),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEEEEE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.image, color: _jijiTextGray, size: 36),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        listing.title,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: _jijiText,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        listing.priceLabel,
+                        style: GoogleFonts.poppins(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: _jijiOrange,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        listing.location,
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: _jijiTextGray,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
                   icon: Icon(
                     widget.favoriteIds.contains(listing.id)
                         ? Icons.favorite
                         : Icons.favorite_border,
                     color: widget.favoriteIds.contains(listing.id)
-                        ? Colors.redAccent
-                        : null,
+                        ? Colors.red
+                        : _jijiTextGray,
+                    size: 22,
                   ),
                   onPressed: () => widget.onToggleFavorite(listing.id),
                 ),
-                onTap: () => openListingDetails(
-                  context: context,
-                  listing: listing,
-                  isFavorite: widget.favoriteIds.contains(listing.id),
-                  onToggleFavorite: () => widget.onToggleFavorite(listing.id),
-                  onReport: () => widget.onReportListing(listing),
-                  onBlock: () => widget.onBlockUser(listing.sellerId),
-                  onStartChat: () => widget.onStartChat(listing),
-                ),
-              ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1226,70 +1412,118 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
     final data = args?.listing ?? sampleListings.first;
     final isFavorite = _isFavorite ?? args?.isFavorite ?? false;
     return Scaffold(
-      appBar: AppBar(title: const Text("Listing")),
+      appBar: AppBar(
+        title: const Text("Listing"),
+        backgroundColor: _jijiCard,
+        foregroundColor: _jijiText,
+      ),
       body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(20),
+        child: ListView(
           children: [
-            Text(data.title, style: Theme.of(context).textTheme.headlineSmall),
+            Text(
+              data.title,
+              style: GoogleFonts.poppins(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: const Color(0xFF1F2937),
+              ),
+            ),
             const SizedBox(height: 8),
-            Text("${data.location} • ${data.priceLabel}"),
-            const SizedBox(height: 12),
-            Text(data.description),
-            const SizedBox(height: 12),
-            Text("Seller: ${data.sellerName}"),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: const [
-                Chip(
-                  avatar: Icon(Icons.verified,
-                      size: 18, color: Color(0xFF16A34A)),
-                  label: Text("Verified seller"),
-                ),
-                Chip(
-                  avatar: Icon(Icons.lock_outline,
-                      size: 18, color: Color(0xFF16A34A)),
-                  label: Text("Secure chat"),
-                ),
-                Chip(
-                  avatar: Icon(Icons.access_time,
-                      size: 18, color: Color(0xFF16A34A)),
-                  label: Text("Fast responder"),
-                ),
-              ],
+            Text(
+              "${data.location} • ${data.priceLabel}",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: _jijiTextGray,
+                fontSize: 15,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              data.description,
+              style: GoogleFonts.poppins(
+                fontSize: 15,
+                height: 1.5,
+                color: const Color(0xFF475569),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              "Seller: ${data.sellerName}",
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w700,
+                fontSize: 15,
+                color: const Color(0xFF1F2937),
+              ),
             ),
             const SizedBox(height: 12),
             Wrap(
               spacing: 8,
               runSpacing: 8,
               children: [
-                Chip(label: Text("Condition: ${data.condition}")),
-                ...data.categoryFields.entries.map(
-                  (entry) => Chip(label: Text("${entry.key}: ${entry.value}")),
+                Chip(
+                  avatar: const Icon(Icons.verified_rounded, size: 18, color: _jijiOrange),
+                  label: Text("Verified seller", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.lock_outline_rounded, size: 18, color: _jijiOrange),
+                  label: Text("Secure chat", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
+                ),
+                Chip(
+                  avatar: const Icon(Icons.access_time_rounded, size: 18, color: _jijiOrange),
+                  label: Text("Fast responder", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 14),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                Chip(
+                  label: Text("Condition: ${data.condition}", style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
+                ),
+                ...data.categoryFields.entries.map(
+                  (entry) => Chip(
+                    label: Text("${entry.key}: ${entry.value}", style: GoogleFonts.poppins(fontSize: 12)),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
             Card(
+              elevation: 6,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(16),
                 child: Row(
-                  children: const [
-                    Icon(Icons.shield_outlined, color: Color(0xFF16A34A)),
-                    SizedBox(width: 8),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: _jijiOrange.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.shield_rounded, color: _jijiOrange, size: 28),
+                    ),
+                    const SizedBox(width: 14),
                     Expanded(
                       child: Text(
                         "Use secure chat and meet in public for safe transactions.",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: const Color(0xFF475569),
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 20),
             Row(
               children: [
                 IconButton(
@@ -1298,8 +1532,9 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
                     setState(() => _isFavorite = !isFavorite);
                   },
                   icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.redAccent : null,
+                    isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: isFavorite ? Colors.redAccent : const Color(0xFF94A3B8),
+                    size: 28,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1314,14 +1549,20 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
                 ),
               ],
             ),
-            const Spacer(),
+            const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
-              child: FilledButton(
+              height: 50,
+              child: FilledButton.icon(
                 onPressed: args?.onStartChat,
-                child: const Text("Chat with seller")
+                icon: const Icon(Icons.chat_bubble_outline, size: 22),
+                label: const Text("Chat with seller"),
+                style: FilledButton.styleFrom(
+                  backgroundColor: _jijiOrange,
+                  foregroundColor: Colors.white,
+                ),
               ),
-            )
+            ),
           ],
         ),
       ),

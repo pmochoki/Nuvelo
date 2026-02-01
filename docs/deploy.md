@@ -4,9 +4,10 @@
 - Initialize git and push to GitHub under the `pmochoki` account.
 
 ## Render (backend)
-1. Create a new Render service from the GitHub repo.
+- **Dashboard (this project):** [Render service](https://dashboard.render.com/web/srv-d5q8jh7gi27c73f6jp3g)
+1. Create a new Render service from the GitHub repo (or use the link above).
 2. Render detects `render.yaml` and deploys the backend automatically.
-3. Copy the public service URL and use it as the API base in the mobile app.
+3. Copy the public service URL from the dashboard (e.g. `https://interhungary-backend.onrender.com`) and set it in the mobile app: **`mobile/lib/api.dart`** → `renderBaseUrl`. The app currently uses `https://interhungary-backend.onrender.com` when `useLocalApi` is `false`.
 
 ## Testing builds
 - iOS: TestFlight via Apple Developer account.
