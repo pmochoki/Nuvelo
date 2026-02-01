@@ -4,13 +4,14 @@ import "package:google_fonts/google_fonts.dart";
 import "api.dart";
 import "models.dart";
 
-// Jiji-style brand colors (orange, like Jiji.ng)
-const Color _jijiOrange = Color(0xFFFF6B00);
-const Color _jijiOrangeDark = Color(0xFFE85D00);
+// Jiji-style brand colors (green, like reference)
+const Color _jijiGreen = Color(0xFF2E7D32);
+const Color _jijiGreenDark = Color(0xFF1B5E20);
 const Color _jijiBg = Color(0xFFF5F5F5);
 const Color _jijiCard = Color(0xFFFFFFFF);
 const Color _jijiText = Color(0xFF1A1A1A);
 const Color _jijiTextGray = Color(0xFF757575);
+const Color _jijiSectionBg = Color(0xFFE8EEF0);
 
 void main() {
   runApp(const InterHungaryApp());
@@ -26,10 +27,10 @@ class InterHungaryApp extends StatelessWidget {
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: _jijiOrange,
+          seedColor: _jijiGreen,
           brightness: Brightness.light,
-          primary: _jijiOrange,
-          secondary: _jijiOrangeDark,
+          primary: _jijiGreen,
+          secondary: _jijiGreenDark,
         ),
         textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
         scaffoldBackgroundColor: _jijiBg,
@@ -67,13 +68,13 @@ class InterHungaryApp extends StatelessWidget {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: _jijiOrange, width: 2),
+            borderSide: const BorderSide(color: _jijiGreen, width: 2),
           ),
           labelStyle: GoogleFonts.poppins(color: _jijiTextGray),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            backgroundColor: _jijiOrange,
+            backgroundColor: _jijiGreen,
             foregroundColor: Colors.white,
             textStyle: GoogleFonts.poppins(
               fontWeight: FontWeight.w600,
@@ -88,8 +89,8 @@ class InterHungaryApp extends StatelessWidget {
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            foregroundColor: _jijiOrange,
-            side: const BorderSide(color: _jijiOrange, width: 1.5),
+            foregroundColor: _jijiGreen,
+            side: const BorderSide(color: _jijiGreen, width: 1.5),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(8),
             ),
@@ -98,7 +99,7 @@ class InterHungaryApp extends StatelessWidget {
         ),
         chipTheme: ChipThemeData(
           backgroundColor: const Color(0xFFEEEEEE),
-          selectedColor: _jijiOrange,
+          selectedColor: _jijiGreen,
           labelStyle: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
           secondaryLabelStyle: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
           shape: RoundedRectangleBorder(
@@ -106,7 +107,7 @@ class InterHungaryApp extends StatelessWidget {
           ),
         ),
         bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor: _jijiOrange,
+          selectedItemColor: _jijiGreen,
           unselectedItemColor: _jijiTextGray,
           type: BottomNavigationBarType.fixed,
           elevation: 8,
@@ -228,15 +229,15 @@ class _AppRootState extends State<AppRoot> {
 
   Future<void> _signIn(
     String name,
-    UserRole role,
     String? contact,
     String? otp
   ) async {
     final trimmedContact = contact?.trim();
     final isEmail = trimmedContact != null && trimmedContact.contains("@");
+    // Jiji-style: single account; backend gets default "customer" role (user can buy & sell)
     final profile = await _api.login(
       name: name,
-      role: roleId(role),
+      role: "customer",
       email: isEmail ? trimmedContact : null,
       phone: !isEmail ? trimmedContact : null,
       otp: otp?.trim().isEmpty == true ? null : otp?.trim(),
@@ -610,7 +611,7 @@ class _MainShellState extends State<MainShell> {
     ).whenComplete(controller.dispose);
   }
 
-  // Jiji-style: 5 tabs - Home, Search, Sell, Chat, Profile
+  // Jiji-style: 5 tabs - Home, Saved, Sell, Messages, Profile
   List<Widget> get _pages {
     final role = widget.role;
     return [
@@ -625,17 +626,15 @@ class _MainShellState extends State<MainShell> {
         onReportListing: _reportListing,
         onStartChat: _startChat,
       ),
-      HomeLoader(
-        api: widget.api,
-        role: role,
-        viewerId: widget.user.id,
+      FavoritesScreen(
         favoriteIds: _favoriteIds,
+        savedSearches: _savedSearches,
+        api: widget.api,
+        viewerId: widget.user.id,
         onToggleFavorite: _toggleFavorite,
-        onSaveSearch: _saveSearch,
-        onBlockUser: _blockUser,
         onReportListing: _reportListing,
+        onBlockUser: _blockUser,
         onStartChat: _startChat,
-        isSearchTab: true,
       ),
       PostListingScreen(
         role: role,
@@ -660,9 +659,9 @@ class _MainShellState extends State<MainShell> {
 
   List<BottomNavigationBarItem> get _items => const [
     BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: "Home"),
-    BottomNavigationBarItem(icon: Icon(Icons.search), label: "Search"),
+    BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), activeIcon: Icon(Icons.bookmark), label: "Saved"),
     BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), activeIcon: Icon(Icons.add_circle), label: "Sell"),
-    BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: "Chat"),
+    BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: "Messages"),
     BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: "Profile"),
   ];
 
@@ -682,7 +681,6 @@ class _MainShellState extends State<MainShell> {
 class SignInScreen extends StatefulWidget {
   final Future<void> Function(
     String name,
-    UserRole role,
     String? contact,
     String? otp
   ) onSignIn;
@@ -699,7 +697,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final TextEditingController _otpController = TextEditingController();
   bool _isSubmitting = false;
 
-  Future<void> _submit(UserRole role) async {
+  Future<void> _submit() async {
     final name = _nameController.text.trim();
     final contact = _contactController.text.trim();
     final otp = _otpController.text.trim();
@@ -717,7 +715,7 @@ class _SignInScreenState extends State<SignInScreen> {
     }
     setState(() => _isSubmitting = true);
     try {
-      await widget.onSignIn(name, role, contact, otp);
+      await widget.onSignIn(name, contact, otp);
     } catch (error) {
       showNotice(context, "Sign in failed. Please try again.");
     } finally {
@@ -737,7 +735,6 @@ class _SignInScreenState extends State<SignInScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final roles = UserRole.values;
     return Scaffold(
       backgroundColor: _jijiBg,
       appBar: AppBar(
@@ -748,7 +745,7 @@ class _SignInScreenState extends State<SignInScreen> {
           style: GoogleFonts.poppins(
             fontSize: 22,
             fontWeight: FontWeight.w800,
-            color: _jijiOrange,
+            color: _jijiGreen,
           ),
         ),
         centerTitle: true,
@@ -777,9 +774,10 @@ class _SignInScreenState extends State<SignInScreen> {
             TextField(
               controller: _contactController,
               decoration: const InputDecoration(
-                labelText: "Email or phone",
+                labelText: "Phone or email",
                 prefixIcon: Icon(Icons.phone_android, color: _jijiTextGray),
               ),
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 14),
             TextField(
@@ -790,50 +788,24 @@ class _SignInScreenState extends State<SignInScreen> {
               ),
               keyboardType: TextInputType.number,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             if (_isSubmitting)
               const Center(child: CircularProgressIndicator()),
             if (!_isSubmitting)
-              Text(
-                "Continue as",
-                style: GoogleFonts.poppins(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: _jijiTextGray,
-                ),
-              ),
-            if (!_isSubmitting) const SizedBox(height: 10),
-            if (!_isSubmitting)
-              ...roles.map(
-                (role) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Material(
-                    color: _jijiCard,
-                    borderRadius: BorderRadius.circular(8),
-                    elevation: 1,
-                    child: ListTile(
-                      leading: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: _jijiOrange.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(_roleIcon(role), color: _jijiOrange, size: 22),
-                      ),
-                      title: Text(
-                        roleLabel(role),
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                          color: _jijiText,
-                        ),
-                      ),
-                      subtitle: Text(
-                        _roleDescription(role),
-                        style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
-                      ),
-                      trailing: const Icon(Icons.chevron_right, color: _jijiTextGray),
-                      onTap: () => _submit(role),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: FilledButton(
+                  onPressed: _submit,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _jijiGreen,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(
+                    "Continue",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
                 ),
@@ -842,19 +814,6 @@ class _SignInScreenState extends State<SignInScreen> {
         ),
       ),
     );
-  }
-
-  IconData _roleIcon(UserRole role) {
-    switch (role) {
-      case UserRole.customer:
-        return Icons.shopping_bag_outlined;
-      case UserRole.seller:
-        return Icons.storefront_outlined;
-      case UserRole.agent:
-        return Icons.badge_outlined;
-      case UserRole.landlord:
-        return Icons.home_work_outlined;
-    }
   }
 }
 
@@ -963,19 +922,6 @@ class _HomeLoaderState extends State<HomeLoader> {
         );
       },
     );
-  }
-}
-
-String _roleDescription(UserRole role) {
-  switch (role) {
-    case UserRole.agent:
-      return "Agenting houses or apartments for clients.";
-    case UserRole.landlord:
-      return "Manage and list your own properties.";
-    case UserRole.customer:
-      return "Browse and buy, rent, or apply.";
-    case UserRole.seller:
-      return "Sell items and track your sales rate.";
   }
 }
 
@@ -1133,39 +1079,150 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
   Widget build(BuildContext context) {
     final filtered = _filtered;
     return SafeArea(
+      top: false,
       child: CustomScrollView(
         slivers: [
-          // Jiji-style: search bar at top (white)
+          // Green header: "What are you looking for?" + location + search
           SliverToBoxAdapter(
             child: Container(
-              color: _jijiCard,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-              child: TextField(
-                decoration: InputDecoration(
-                  hintText: "Search for cars, phones, and more...",
-                  hintStyle: GoogleFonts.poppins(color: _jijiTextGray, fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, color: _jijiTextGray, size: 22),
-                  filled: true,
-                  fillColor: const Color(0xFFEEEEEE),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                    borderSide: BorderSide.none,
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+              color: _jijiGreen,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "What are you looking for?",
+                    style: GoogleFonts.poppins(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                ),
-                onChanged: (value) => setState(() => _query = value),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      // Location dropdown (white oval)
+                      Expanded(
+                        flex: 1,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Row(
+                            children: [
+                              Text(
+                                _location.isEmpty ? "All Hungary" : _location,
+                                style: GoogleFonts.poppins(
+                                  fontSize: 14,
+                                  color: _jijiText,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(width: 4),
+                              const Icon(Icons.keyboard_arrow_down, color: _jijiTextGray, size: 20),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      // Search (white oval)
+                      Expanded(
+                        flex: 2,
+                        child: TextField(
+                          decoration: InputDecoration(
+                            hintText: "I am looking for...",
+                            hintStyle: GoogleFonts.poppins(color: _jijiTextGray, fontSize: 14),
+                            prefixIcon: const Icon(Icons.search, color: _jijiTextGray, size: 22),
+                            filled: true,
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          ),
+                          onChanged: (value) => setState(() => _query = value),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
-          // Jiji-style: category grid (horizontal scroll)
+          // Action buttons: Apply for job, How to sell, How to buy
           SliverToBoxAdapter(
             child: Container(
               color: _jijiCard,
-              padding: const EdgeInsets.only(bottom: 16),
-              height: 100,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _actionButton(
+                      icon: Icons.work_outline,
+                      label: "Apply for job",
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _actionButton(
+                      icon: Icons.payments_outlined,
+                      label: "How to sell",
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _actionButton(
+                      icon: Icons.shopping_basket_outlined,
+                      label: "How to buy",
+                      accentBg: const Color(0xFFF3E5F5), // light purple like reference
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // "Recommended for you" horizontal list
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: Text(
+                "Recommended for you",
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: _jijiText,
+                ),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 110,
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 padding: const EdgeInsets.symmetric(horizontal: 12),
+                children: widget.categories.take(6).map((c) => _recommendedCard(c)).toList(),
+              ),
+            ),
+          ),
+          // Category grid (4 columns)
+          SliverToBoxAdapter(
+            child: Container(
+              color: _jijiCard,
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+              child: GridView.count(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                crossAxisCount: 4,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.85,
                 children: [
                   _buildCategoryChip(null, "All", Icons.apps),
                   ...widget.categories.map(
@@ -1175,17 +1232,48 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
               ),
             ),
           ),
-          // "All ads" section
+          // "Trending" / listings section
           SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Text(
-                "All ads",
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: _jijiText,
-                ),
+            child: Container(
+              color: _jijiSectionBg,
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    "Trending",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _jijiText,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: Icon(
+                          Icons.grid_view,
+                          color: _trendingGridView ? _jijiGreen : _jijiTextGray,
+                          size: 22,
+                        ),
+                        onPressed: () => setState(() => _trendingGridView = true),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      ),
+                      const SizedBox(width: 4),
+                      IconButton(
+                        icon: Icon(
+                          Icons.view_list,
+                          color: _trendingGridView ? _jijiTextGray : _jijiGreen,
+                          size: 22,
+                        ),
+                        onPressed: () => setState(() => _trendingGridView = false),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -1196,7 +1284,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                 child: Center(child: Text("No listings match your filters.")),
               ),
             ),
-          if (filtered.isNotEmpty)
+          if (filtered.isNotEmpty && !_trendingGridView)
             SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
@@ -1206,7 +1294,105 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                 childCount: filtered.length,
               ),
             ),
+          if (filtered.isNotEmpty && _trendingGridView)
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+              sliver: SliverGrid(
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                  childAspectRatio: 0.72,
+                ),
+                delegate: SliverChildBuilderDelegate(
+                  (context, index) {
+                    final listing = filtered[index];
+                    return _jijiListingCardGrid(context, listing);
+                  },
+                  childCount: filtered.length,
+                ),
+              ),
+            ),
         ],
+      ),
+    );
+  }
+
+  Widget _actionButton({required IconData icon, required String label, Color? accentBg}) {
+    final bg = accentBg ?? _jijiCard;
+    return Material(
+      color: bg,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 1,
+      child: InkWell(
+        onTap: () {},
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, color: _jijiGreen, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: GoogleFonts.poppins(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: _jijiText,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _recommendedCard(Category c) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 12),
+      child: Material(
+        color: _jijiCard,
+        borderRadius: BorderRadius.circular(8),
+        elevation: 1,
+        child: InkWell(
+          onTap: () => setState(() => _categoryId = c.id),
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 90,
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEEEEEE),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(_categoryIcon(c.id), color: _jijiGreen, size: 24),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  c.name,
+                  style: GoogleFonts.poppins(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w500,
+                    color: _jijiText,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1221,7 +1407,6 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
           onTap: () => setState(() => _categoryId = id),
           borderRadius: BorderRadius.circular(8),
           child: Container(
-            width: 72,
             padding: const EdgeInsets.symmetric(vertical: 8),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -1230,7 +1415,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                   width: 48,
                   height: 48,
                   decoration: BoxDecoration(
-                    color: selected ? _jijiOrange : const Color(0xFFEEEEEE),
+                    color: selected ? _jijiGreen : const Color(0xFFEEEEEE),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: selected ? Colors.white : _jijiTextGray, size: 24),
@@ -1241,7 +1426,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                   style: GoogleFonts.poppins(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: selected ? _jijiOrange : _jijiTextGray,
+                    color: selected ? _jijiGreen : _jijiTextGray,
                   ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -1306,7 +1491,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: _jijiOrange,
+                          color: _jijiGreen,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1334,6 +1519,117 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _jijiListingCardGrid(BuildContext context, Listing listing) {
+    return Container(
+      decoration: BoxDecoration(
+        color: _jijiCard,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: () => openListingDetails(
+            context: context,
+            listing: listing,
+            isFavorite: widget.favoriteIds.contains(listing.id),
+            onToggleFavorite: () => widget.onToggleFavorite(listing.id),
+            onReport: () => widget.onReportListing(listing),
+            onBlock: () => widget.onBlockUser(listing.sellerId),
+            onStartChat: () => widget.onStartChat(listing),
+          ),
+          borderRadius: BorderRadius.circular(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  Container(
+                    height: 120,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEEEEE),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                    ),
+                    child: const Center(
+                      child: Icon(Icons.image, color: _jijiTextGray, size: 36),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: IconButton(
+                      icon: Icon(
+                        widget.favoriteIds.contains(listing.id)
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                        color: widget.favoriteIds.contains(listing.id)
+                            ? Colors.red
+                            : _jijiTextGray,
+                        size: 20,
+                      ),
+                      onPressed: () => widget.onToggleFavorite(listing.id),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    ),
+                  ),
+                ],
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        listing.priceLabel,
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: _jijiGreen,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        listing.title,
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w500,
+                          fontSize: 12,
+                          color: _jijiText,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const Spacer(),
+                      Text(
+                        listing.location,
+                        style: GoogleFonts.poppins(
+                          fontSize: 11,
+                          color: _jijiTextGray,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1462,15 +1758,15 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
               runSpacing: 8,
               children: [
                 Chip(
-                  avatar: const Icon(Icons.verified_rounded, size: 18, color: _jijiOrange),
+                  avatar: const Icon(Icons.verified_rounded, size: 18, color: _jijiGreen),
                   label: Text("Verified seller", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 ),
                 Chip(
-                  avatar: const Icon(Icons.lock_outline_rounded, size: 18, color: _jijiOrange),
+                  avatar: const Icon(Icons.lock_outline_rounded, size: 18, color: _jijiGreen),
                   label: Text("Secure chat", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 ),
                 Chip(
-                  avatar: const Icon(Icons.access_time_rounded, size: 18, color: _jijiOrange),
+                  avatar: const Icon(Icons.access_time_rounded, size: 18, color: _jijiGreen),
                   label: Text("Fast responder", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
                 ),
               ],
@@ -1503,10 +1799,10 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: _jijiOrange.withOpacity(0.15),
+                        color: _jijiGreen.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: const Icon(Icons.shield_rounded, color: _jijiOrange, size: 28),
+                      child: const Icon(Icons.shield_rounded, color: _jijiGreen, size: 28),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
@@ -1558,7 +1854,7 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
                 icon: const Icon(Icons.chat_bubble_outline, size: 22),
                 label: const Text("Chat with seller"),
                 style: FilledButton.styleFrom(
-                  backgroundColor: _jijiOrange,
+                  backgroundColor: _jijiGreen,
                   foregroundColor: Colors.white,
                 ),
               ),
@@ -1779,83 +2075,235 @@ class _PostListingScreenState extends State<PostListingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = widget.role == UserRole.agent || widget.role == UserRole.landlord
-        ? "Add a property"
-        : "Post a listing";
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(labelText: "Title"),
-          ),
-          TextField(
-            controller: _descriptionController,
-            decoration: InputDecoration(labelText: "Description"),
-            maxLines: 4
-          ),
-          DropdownButtonFormField<String>(
-            value: _categoryId,
-            decoration: const InputDecoration(labelText: "Category"),
-            items: categories
-                .map(
-                  (category) => DropdownMenuItem(
-                    value: category.id,
-                    child: Text(category.name),
+    return Column(
+      children: [
+        // Green header: Cancel | New Advert | Clear
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(16, 48, 16, 14),
+          color: _jijiGreen,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: () => Navigator.maybePop(context),
+                child: Text(
+                  "Cancel",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
                   ),
-                )
-                .toList(),
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() => _categoryId = value);
-            },
-          ),
-          const SizedBox(height: 12),
-          DropdownButtonFormField<String>(
-            value: _condition,
-            decoration: const InputDecoration(labelText: "Condition"),
-            items: const [
-              DropdownMenuItem(value: "new", child: Text("New")),
-              DropdownMenuItem(value: "good", child: Text("Good")),
-              DropdownMenuItem(value: "used", child: Text("Used"))
+                ),
+              ),
+              Text(
+                "New Advert",
+                style: GoogleFonts.poppins(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+              TextButton(
+                onPressed: () {
+                  _titleController.clear();
+                  _descriptionController.clear();
+                  _priceController.clear();
+                  _locationController.clear();
+                  setState(() => _images.clear());
+                },
+                child: Text(
+                  "Clear",
+                  style: GoogleFonts.poppins(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
             ],
-            onChanged: (value) {
-              if (value == null) {
-                return;
-              }
-              setState(() => _condition = value);
-            },
           ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _priceController,
-            decoration: const InputDecoration(labelText: "Price"),
-            keyboardType: TextInputType.number,
+        ),
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  hintText: "Title*",
+                  suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.transparent),
+                ),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: _categoryId,
+                decoration: const InputDecoration(
+                  hintText: "Category*",
+                  suffixIcon: Icon(Icons.arrow_drop_down, color: _jijiTextGray),
+                ),
+                items: categories
+                    .map(
+                      (category) => DropdownMenuItem(
+                        value: category.id,
+                        child: Text(category.name),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value == null) return;
+                  setState(() => _categoryId = value);
+                },
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "Images",
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                  color: _jijiText,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Material(
+                    color: _jijiGreen.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                    child: InkWell(
+                      onTap: _addPlaceholderImage,
+                      borderRadius: BorderRadius.circular(8),
+                      child: const SizedBox(
+                        width: 80,
+                        height: 80,
+                        child: Icon(Icons.add, color: _jijiGreen, size: 36),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "First picture is the title picture.",
+                          style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                        ),
+                        Text(
+                          "Grab & drag photos to change the order",
+                          style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                        ),
+                        Text(
+                          "Supported formats are .jpg, .gif and .png",
+                          style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                        ),
+                        Text(
+                          "Each picture must not exceed 5 Mb",
+                          style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String?>(
+                value: _locationController.text.isEmpty ? null : _locationController.text,
+                decoration: const InputDecoration(
+                  hintText: "Region",
+                  suffixIcon: Icon(Icons.arrow_drop_down, color: _jijiTextGray),
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(value: null, child: Text("Region")),
+                  ...["Budapest", "Debrecen", "Szeged", "Other"]
+                      .map((s) => DropdownMenuItem<String?>(value: s, child: Text(s))),
+                ],
+                onChanged: (value) {
+                  _locationController.text = value ?? "";
+                  setState(() {});
+                },
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  hintText: "Description",
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 4,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "-Name-",
+                style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+              ),
+              const SizedBox(height: 4),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: widget.user.name,
+                  suffixIcon: const Icon(Icons.check_circle, color: _jijiGreen, size: 22),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                "-Phone number*-",
+                style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+              ),
+              const SizedBox(height: 4),
+              TextField(
+                decoration: InputDecoration(
+                  hintText: widget.user.phone ?? "Phone",
+                  suffixIcon: const Icon(Icons.check_circle, color: _jijiGreen, size: 22),
+                ),
+                keyboardType: TextInputType.phone,
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: FilledButton(
+                  onPressed: _submitting ? null : _submitListing,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: _jijiGreen,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(
+                    _submitting ? "Submitting..." : "Post ad",
+                    style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+                child: RichText(
+                  text: TextSpan(
+                    style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                    children: [
+                      const TextSpan(
+                        text: "By clicking on Post Ad, you accept the ",
+                      ),
+                      TextSpan(
+                        text: "Terms of Use",
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: _jijiGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ", confirm that you will abide by the Safety Tips, and declare that this posting does not include any Prohibited Items.",
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
-          TextField(
-            controller: _locationController,
-            decoration: const InputDecoration(labelText: "Location"),
-          ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: _addPlaceholderImage,
-            icon: const Icon(Icons.photo_library_outlined),
-            label: Text("Add photos (${_images.length}/8)"),
-          ),
-          const SizedBox(height: 12),
-          _buildCategoryFields(),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: _submitting ? null : _submitListing,
-            child: Text(_submitting ? "Submitting..." : "Submit for review")
-          )
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1885,6 +2333,7 @@ class InboxScreen extends StatefulWidget {
 
 class _InboxScreenState extends State<InboxScreen> {
   late Future<List<Conversation>> _future;
+  int _tabIndex = 0; // 0 = All, 1 = Unread, 2 = Spam
 
   @override
   void initState() {
@@ -1895,35 +2344,422 @@ class _InboxScreenState extends State<InboxScreen> {
   @override
   Widget build(BuildContext context) {
     return SafeArea(
-      child: FutureBuilder<List<Conversation>>(
-        future: _future,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final conversations = snapshot.data ?? [];
-          return ListView(
-            padding: const EdgeInsets.all(16),
+      top: false,
+      child: Column(
+        children: [
+          // Green header with search
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(16, 48, 16, 12),
+            color: _jijiGreen,
+            child: TextField(
+            decoration: InputDecoration(
+              hintText: "Search in Messages",
+              hintStyle: GoogleFonts.poppins(color: _jijiTextGray, fontSize: 14),
+              prefixIcon: const Icon(Icons.search, color: _jijiTextGray, size: 22),
+              filled: true,
+              fillColor: const Color(0xFFE8F5E9),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(24),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+          ),
+        ),
+        // Tabs: All | Unread | Spam
+        Container(
+          color: _jijiCard,
+          child: Row(
             children: [
-              Text("Chats", style: Theme.of(context).textTheme.headlineMedium),
-              const SizedBox(height: 12),
-              if (conversations.isEmpty) const Text("No conversations yet."),
-              ...conversations.map((conversation) {
-                final peerId = conversation.buyerId == widget.userId
-                    ? conversation.sellerId
-                    : conversation.buyerId;
-                return Card(
-                  child: ListTile(
-                    title: Text("Listing ${conversation.listingId}"),
-                    subtitle: Text("With $peerId"),
-                    onTap: () => widget.onOpenConversation(conversation),
+              _tab("All", 0),
+              _tab("Unread", 1),
+              _tab("Spam", 2),
+            ],
+          ),
+        ),
+        Expanded(
+          child: FutureBuilder<List<Conversation>>(
+            future: _future,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final conversations = snapshot.data ?? [];
+              if (conversations.isEmpty) {
+                return Center(
+                  child: Text(
+                    "No conversations yet.",
+                    style: GoogleFonts.poppins(color: _jijiTextGray),
                   ),
                 );
-              })
-            ],
-          );
-        },
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.only(top: 8),
+                itemCount: conversations.length,
+                itemBuilder: (context, index) {
+                  final conversation = conversations[index];
+                  final peerId = conversation.buyerId == widget.userId
+                      ? conversation.sellerId
+                      : conversation.buyerId;
+                  return Container(
+                    color: _jijiCard,
+                    margin: const EdgeInsets.only(bottom: 1),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      leading: const CircleAvatar(
+                        backgroundColor: _jijiSectionBg,
+                        child: Icon(Icons.person, color: _jijiTextGray),
+                      ),
+                      title: Text(
+                        "User $peerId",
+                        style: GoogleFonts.poppins(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: _jijiText,
+                        ),
+                      ),
+                      subtitle: Text(
+                        "Listing ${conversation.listingId}",
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: _jijiTextGray,
+                        ),
+                      ),
+                      trailing: Text(
+                        "24 Jan",
+                        style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                      ),
+                      onTap: () => widget.onOpenConversation(conversation),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
       ),
+    );
+  }
+
+  Widget _tab(String label, int index) {
+    final selected = _tabIndex == index;
+    return Expanded(
+      child: InkWell(
+        onTap: () => setState(() => _tabIndex = index),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            border: Border(
+              bottom: BorderSide(
+                color: selected ? _jijiGreen : Colors.transparent,
+                width: 3,
+              ),
+            ),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: GoogleFonts.poppins(
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              color: selected ? _jijiGreen : _jijiTextGray,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class FavoritesScreen extends StatefulWidget {
+  final Set<String> favoriteIds;
+  final List<SavedSearch> savedSearches;
+  final ApiService api;
+  final String viewerId;
+  final Future<void> Function(String listingId) onToggleFavorite;
+  final Future<void> Function(Listing listing) onReportListing;
+  final Future<void> Function(String userId) onBlockUser;
+  final Future<void> Function(Listing listing) onStartChat;
+
+  const FavoritesScreen({
+    super.key,
+    required this.favoriteIds,
+    required this.savedSearches,
+    required this.api,
+    required this.viewerId,
+    required this.onToggleFavorite,
+    required this.onReportListing,
+    required this.onBlockUser,
+    required this.onStartChat,
+  });
+
+  @override
+  State<FavoritesScreen> createState() => _FavoritesScreenState();
+}
+
+class _FavoritesScreenState extends State<FavoritesScreen> {
+  int _tabIndex = 0; // 0 = Ads, 1 = Searches
+  late Future<List<Listing>> _listingsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _listingsFuture = _loadListings();
+  }
+
+  Future<List<Listing>> _loadListings() async {
+    try {
+      final list = await widget.api.fetchListings(viewerId: widget.viewerId);
+      return list.where((l) => widget.favoriteIds.contains(l.id)).toList();
+    } catch (_) {
+      return sampleListings
+          .where((l) => widget.favoriteIds.contains(l.id))
+          .toList();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Column(
+        children: [
+          // Green header: My Favorites
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(0, 48, 0, 16),
+            color: _jijiGreen,
+            child: Center(
+              child: Text(
+                "My Favorites",
+                style: GoogleFonts.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+          // Tabs: Ads | Searches
+          Container(
+          color: _jijiCard,
+          child: Row(
+            children: [
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _tabIndex = 0),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: _tabIndex == 0 ? _jijiGreen : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      "Ads",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: _tabIndex == 0 ? _jijiGreen : _jijiTextGray,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Expanded(
+                child: InkWell(
+                  onTap: () => setState(() => _tabIndex = 1),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: _tabIndex == 1 ? _jijiGreen : Colors.transparent,
+                          width: 3,
+                        ),
+                      ),
+                    ),
+                    child: Text(
+                      "Searches",
+                      textAlign: TextAlign.center,
+                      style: GoogleFonts.poppins(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                        color: _tabIndex == 1 ? _jijiGreen : _jijiTextGray,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          ),
+          Expanded(
+            child: Container(
+              color: _jijiSectionBg,
+              child: _tabIndex == 0 ? _buildAdsTab() : _buildSearchesTab(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAdsTab() {
+    return FutureBuilder<List<Listing>>(
+      future: _listingsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final listings = snapshot.data ?? [];
+        if (listings.isEmpty) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.phone_android_outlined,
+                    size: 80,
+                    color: _jijiTextGray.withOpacity(0.5),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    "You don't have favorite ads yet",
+                    style: GoogleFonts.poppins(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: _jijiText,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "'My Favorites' can help you to save ads you are interested in so that you can check them again later.",
+                    style: GoogleFonts.poppins(
+                      fontSize: 14,
+                      color: _jijiTextGray,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.only(top: 8),
+          itemCount: listings.length,
+          itemBuilder: (context, index) {
+            final listing = listings[index];
+            return _favoriteListingTile(listing);
+          },
+        );
+      },
+    );
+  }
+
+  Widget _favoriteListingTile(Listing listing) {
+    return Container(
+      color: _jijiCard,
+      margin: const EdgeInsets.only(bottom: 1),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: const Color(0xFFEEEEEE),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: const Icon(Icons.image, color: _jijiTextGray, size: 28),
+        ),
+        title: Text(
+          listing.title,
+          style: GoogleFonts.poppins(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: _jijiText,
+          ),
+        ),
+        subtitle: Text(
+          listing.priceLabel,
+          style: GoogleFonts.poppins(fontSize: 13, color: _jijiGreen),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: _jijiTextGray),
+        onTap: () => openListingDetails(
+          context: context,
+          listing: listing,
+          isFavorite: true,
+          onToggleFavorite: () => widget.onToggleFavorite(listing.id),
+          onReport: () => widget.onReportListing(listing),
+          onBlock: () => widget.onBlockUser(listing.sellerId),
+          onStartChat: () => widget.onStartChat(listing),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchesTab() {
+    if (widget.savedSearches.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.search_off,
+                size: 80,
+                color: _jijiTextGray.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                "No saved searches yet",
+                style: GoogleFonts.poppins(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: _jijiText,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: const EdgeInsets.only(top: 8),
+      itemCount: widget.savedSearches.length,
+      itemBuilder: (context, index) {
+        final search = widget.savedSearches[index];
+        return Container(
+          color: _jijiCard,
+          margin: const EdgeInsets.only(bottom: 1),
+          child: ListTile(
+            title: Text(
+              search.query.isEmpty ? "All listings" : search.query,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: _jijiText),
+            ),
+            subtitle: Text(
+              [
+                if (search.categoryId != null) search.categoryId!,
+                if (search.location != null) search.location!,
+              ].whereType<String>().join(" • "),
+              style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+            ),
+            trailing: const Icon(Icons.chevron_right, color: _jijiTextGray),
+          ),
+        );
+      },
     );
   }
 }
@@ -2085,102 +2921,516 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final memberSince =
-        user.memberSince.isEmpty ? "Unknown" : user.memberSince.split("T").first;
-    return SafeArea(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text("Profile", style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: 8),
-          ListTile(
-            leading: const CircleAvatar(child: Icon(Icons.person)),
-            title: Text(user.name),
-            subtitle: Text(user.email ?? "No email on file")
-          ),
-          const SizedBox(height: 8),
-          Chip(label: Text(roleLabel(role))),
-          const SizedBox(height: 8),
-          Text(
-            "Member since $memberSince",
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            children: [
-              Chip(
-                label: Text(
-                  user.emailVerified ? "Email verified" : "Email unverified"
-                ),
+    return Stack(
+      children: [
+        Column(
+          children: [
+            // White header: avatar, name, settings
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.fromLTRB(
+                16,
+                MediaQuery.of(context).padding.top + 16,
+                16,
+                16,
               ),
-              Chip(
-                label: Text(
-                  user.phoneVerified ? "Phone verified" : "Phone unverified"
-                ),
+              color: _jijiCard,
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 28,
+                    backgroundColor: _jijiSectionBg,
+                    child: Text(
+                      user.name.isNotEmpty ? user.name[0].toUpperCase() : "?",
+                      style: GoogleFonts.poppins(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w700,
+                        color: _jijiGreen,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Text(
+                      user.name,
+                      style: GoogleFonts.poppins(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                        color: _jijiText,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => SettingsScreen(
+                          user: user,
+                          onSignOut: onSignOut,
+                        ),
+                      ),
+                    ),
+                    icon: const Icon(Icons.settings, color: _jijiTextGray, size: 26),
+                  ),
+                ],
               ),
-              if (user.banned) const Chip(label: Text("Account restricted")),
-            ],
-          ),
-          if (role == UserRole.seller) ...[
-            const SizedBox(height: 12),
-            Card(
-              child: ListTile(
-                title: const Text("Seller performance"),
-                subtitle: const Text("Sales rate: 82% • 24 responses"),
-                trailing: const Icon(Icons.trending_up)
-              ),
-            )
-          ],
-          const SizedBox(height: 12),
-          Text("Favorites", style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          if (favoriteIds.isEmpty) const Text("No favorites yet."),
-          ...sampleListings
-              .where((listing) => favoriteIds.contains(listing.id))
-              .map(
-                (listing) => Card(
-                  child: ListTile(
-                    title: Text(listing.title),
-                    subtitle: Text(listing.priceLabel),
+            ),
+            // Main content: action cards grid
+            Expanded(
+              child: Container(
+                color: _jijiSectionBg,
+                padding: const EdgeInsets.all(16),
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _profileCard(
+                                  icon: Icons.list_alt,
+                                  label: "My ads",
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => MyListingsScreen(
+                                        api: api,
+                                        userId: user.id,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                                _profileCard(
+                                  icon: Icons.local_shipping_outlined,
+                                  label: "Jiji delivery",
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 12),
+                                _profileCard(
+                                  icon: Icons.sentiment_satisfied_alt_outlined,
+                                  label: "Feedback",
+                                  onTap: () {},
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              children: [
+                                _profileCard(
+                                  icon: Icons.notifications_outlined,
+                                  label: "Notifications",
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 12),
+                                _profileCard(
+                                  icon: Icons.people_outline,
+                                  label: "Followers",
+                                  onTap: () {},
+                                ),
+                                const SizedBox(height: 12),
+                                _profileCard(
+                                  icon: Icons.help_outline,
+                                  label: "FAQ",
+                                  onTap: () {},
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 80),
+                    ],
                   ),
                 ),
               ),
-          const SizedBox(height: 12),
-          Text("Saved searches", style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 8),
-          if (savedSearches.isEmpty) const Text("No saved searches yet."),
-          ...savedSearches.map(
-            (search) => Card(
-              child: ListTile(
-                title: Text(search.query.isEmpty
-                    ? "All listings"
-                    : search.query),
-                subtitle: Text([
-                  if (search.categoryId != null) search.categoryId,
-                  if (search.location != null) search.location,
-                ].whereType<String>().join(" • ")),
+            ),
+          ],
+        ),
+        // Support FAB
+        Positioned(
+          right: 16,
+          bottom: 16,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(12),
+            color: _jijiGreen,
+            child: InkWell(
+              onTap: () {},
+              borderRadius: BorderRadius.circular(12),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.help_outline, color: Colors.white, size: 22),
+                    const SizedBox(width: 8),
+                    Text(
+                      "Support",
+                      style: GoogleFonts.poppins(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          FilledButton(
-            onPressed: () => Navigator.push(
+        ),
+      ],
+    );
+  }
+
+  Widget _profileCard({
+    required IconData icon,
+    required String label,
+    String? badge,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: _jijiCard,
+      borderRadius: BorderRadius.circular(12),
+      elevation: 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              if (badge != null)
+                Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Icon(icon, color: _jijiTextGray, size: 24),
+                    Positioned(
+                      top: -6,
+                      right: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.red,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          badge,
+                          style: GoogleFonts.poppins(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                )
+              else
+                Icon(icon, color: _jijiTextGray, size: 24),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: _jijiText,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: _jijiTextGray, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class SettingsScreen extends StatelessWidget {
+  final UserProfile user;
+  final VoidCallback onSignOut;
+
+  const SettingsScreen({
+    super.key,
+    required this.user,
+    required this.onSignOut,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _jijiCard,
+      appBar: AppBar(
+        backgroundColor: _jijiSectionBg,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: _jijiText),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "Settings",
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: _jijiText,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          _settingsTile(
+            icon: Icons.person_outline,
+            iconBg: _jijiSectionBg,
+            label: "Personal info",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.business_center_outlined,
+            iconBg: const Color(0xFFFF6B00),
+            label: "Business info",
+            onTap: () => Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => MyListingsScreen(
-                  api: api,
-                  userId: user.id,
-                )
+                builder: (_) => const BusinessDetailsScreen(),
               ),
             ),
-            child: const Text("My Listings")
           ),
-          TextButton(onPressed: onSignOut, child: const Text("Switch role"))
+          _divider(),
+          _settingsTile(
+            icon: Icons.description_outlined,
+            iconBg: _jijiGreen,
+            label: "Verify your details",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.language,
+            iconBg: const Color(0xFFFF6B00),
+            label: "Change language",
+            trailing: "English",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.phone_outlined,
+            iconBg: _jijiGreen,
+            label: "Change phone number",
+            trailing: user.phone ?? "—",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.alternate_email,
+            iconBg: const Color(0xFFFF6B00),
+            label: "Change e-mail",
+            trailing: user.email ?? "—",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.chat_bubble_outline,
+            iconBg: _jijiGreen,
+            label: "Disable chats",
+            trailing: "Enabled",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.sentiment_satisfied_alt_outlined,
+            iconBg: const Color(0xFFFF6B00),
+            label: "Disable feedback",
+            trailing: "Enabled",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.local_shipping_outlined,
+            iconBg: const Color(0xFF2196F3),
+            label: "Jiji delivery",
+            trailing: "Activate",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.notifications_active_outlined,
+            iconBg: const Color(0xFFE53935),
+            label: "Manage notifications",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.info_outline,
+            iconBg: const Color(0xFF424242),
+            label: "About InterHungary",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.star_outline,
+            iconBg: const Color(0xFF424242),
+            label: "Rate us",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.lock_outline,
+            iconBg: const Color(0xFF90A4AE),
+            label: "Change password",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.delete_outline,
+            iconBg: const Color(0xFF90A4AE),
+            label: "Delete my account permanently",
+            onTap: () {},
+          ),
+          _divider(),
+          _settingsTile(
+            icon: Icons.logout,
+            iconBg: const Color(0xFF90A4AE),
+            label: "Log out",
+            onTap: () {
+              Navigator.popUntil(context, (route) => route.isFirst);
+              onSignOut();
+            },
+          ),
+          const SizedBox(height: 24),
         ],
       ),
     );
   }
+
+  Widget _settingsTile({
+    required IconData icon,
+    required Color iconBg,
+    required String label,
+    String? trailing,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: _jijiCard,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: _jijiText,
+                  ),
+                ),
+              ),
+              if (trailing != null)
+                Text(
+                  trailing,
+                  style: GoogleFonts.poppins(
+                    fontSize: 14,
+                    color: _jijiTextGray,
+                  ),
+                ),
+              const SizedBox(width: 8),
+              const Icon(Icons.chevron_right, color: _jijiTextGray, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() => Divider(height: 1, color: Colors.grey.shade200);
+}
+
+class BusinessDetailsScreen extends StatelessWidget {
+  const BusinessDetailsScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: _jijiCard,
+      appBar: AppBar(
+        backgroundColor: _jijiCard,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: _jijiGreen),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Text(
+          "Business details",
+          style: GoogleFonts.poppins(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: _jijiText,
+          ),
+        ),
+        centerTitle: true,
+      ),
+      body: Column(
+        children: [
+          _businessTile("Company name, description & links", () {}),
+          _divider(),
+          _businessTile("Store address and business hours", () {}),
+          _divider(),
+          _businessTile("My own delivery", () {}),
+          const Spacer(),
+        ],
+      ),
+    );
+  }
+
+  Widget _businessTile(String label, VoidCallback onTap) {
+    return Material(
+      color: _jijiCard,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  label,
+                  style: GoogleFonts.poppins(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w500,
+                    color: _jijiText,
+                  ),
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: _jijiTextGray, size: 22),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _divider() => Divider(height: 1, color: Colors.grey.shade200);
 }
 
 class MyListingsScreen extends StatefulWidget {
