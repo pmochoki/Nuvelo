@@ -2,7 +2,7 @@
 
 ## What’s already done
 
-- **Committed** in your local repo: Jiji-style UI (green theme), 5-tab nav (Home, Saved, Sell, Messages, Profile), Home tab with list/grid toggle, “All Hungary” location, quick action cards (Apply for job, How to sell, How to buy), iOS docs, setup script.  
+- **Committed** in your local repo: Jiji-style UI (green theme), 5-tab nav (Home, Saved, Sell, Messages, Profile), Home tab with list/grid toggle, “All Hungary” location, quick action cards, **Saved tab (My Favorites)** with Ads/Searches sub-tabs, empty state copy, white bottom nav bar, iOS docs, setup script. App matches reference: Jiji-style sign-in (name, phone/email, OTP, single Continue — no role selection).  
 - **You need to do:** push (needs your GitHub login in Terminal) and any deploy steps.
 
 ---
