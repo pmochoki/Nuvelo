@@ -2,12 +2,14 @@
 
 ## What’s already done
 
-- **Committed** in your local repo: Jiji-style UI (green theme), 5-tab nav (Home, Saved, Sell, Messages, Profile), Home tab with list/grid toggle, “All Hungary” location, quick action cards, **Saved tab (My Favorites)** with Ads/Searches sub-tabs, **Sell tab** with New Advert screen (green header, Title/Category/Images/Region/Description, contact, Post ad, Terms of Use & Safety Tips links), iOS docs, setup script. App matches reference: Jiji-style sign-in (name, phone/email, OTP, single Continue — no role selection).  
+- **Committed** in your local repo: Jiji-style UI (green theme), 5-tab nav (Home, Saved, Sell, Messages, Profile), Home tab with list/grid toggle, “All Hungary” location, quick action cards, **Saved tab (My Favorites)** with Ads/Searches sub-tabs, **Sell tab** with New Advert screen, **Profile tab** with avatar, settings, action cards (My ads, Jiji delivery, Feedback, Notifications, Followers, FAQ), Support FAB, Settings screen, Business details screen. iOS docs, setup script. App matches reference: Jiji-style sign-in (name, phone/email, OTP, single Continue — no role selection).  
 - **You need to do:** push (needs your GitHub login in Terminal) and any deploy steps.
 
 ---
 
 ## 1. Push to GitHub (you do this once)
+
+**Latest commits include:** Profile tab (avatar, settings gear, action cards, Support FAB, Settings screen, Business details screen), docs update.
 
 Open **Terminal** and run:
 
