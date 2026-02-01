@@ -673,6 +673,7 @@ class _MainShellState extends State<MainShell> {
         currentIndex: _index,
         onTap: (value) => setState(() => _index = value),
         items: _items,
+        backgroundColor: _jijiCard,
       ),
     );
   }
@@ -2293,7 +2294,18 @@ class _PostListingScreenState extends State<PostListingScreen> {
                         ),
                       ),
                       const TextSpan(
-                        text: ", confirm that you will abide by the Safety Tips, and declare that this posting does not include any Prohibited Items.",
+                        text: ", confirm that you will abide by the ",
+                      ),
+                      TextSpan(
+                        text: "Safety Tips",
+                        style: GoogleFonts.poppins(
+                          fontSize: 12,
+                          color: _jijiGreen,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const TextSpan(
+                        text: ", and declare that this posting does not include any Prohibited Items.",
                       ),
                     ],
                   ),
