@@ -1034,6 +1034,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
   String _query = "";
   String? _categoryId;
   String _location = "";
+  bool _trendingGridView = false; // false = list view, true = grid view
 
   List<Listing> get _filtered {
     return widget.listings.where((listing) {
