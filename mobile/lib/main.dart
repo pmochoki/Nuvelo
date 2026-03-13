@@ -1,19 +1,41 @@
 import "package:flutter/material.dart";
 import "package:google_fonts/google_fonts.dart";
+import "package:flutter/services.dart";
 
 import "api.dart";
 import "models.dart";
+import "theme.dart";
 
-// Jiji-style brand colors (green, like reference)
-const Color _jijiGreen = Color(0xFF2E7D32);
-const Color _jijiGreenDark = Color(0xFF1B5E20);
-const Color _jijiBg = Color(0xFFF5F5F5);
-const Color _jijiCard = Color(0xFFFFFFFF);
-const Color _jijiText = Color(0xFF1A1A1A);
-const Color _jijiTextGray = Color(0xFF757575);
-const Color _jijiSectionBg = Color(0xFFE8EEF0);
+// Centralized color palette (IHColors) is defined in `theme.dart`.
+// These aliases preserve existing private names used across the file,
+// while ensuring all colors stay consistent with the redesign theme.
+const Color _green = IHColors.green;
+const Color _greenLight = IHColors.greenLight;
+const Color _navy = IHColors.navy;
+const Color _navyCard = IHColors.navyCard;
+const Color _navyLight = IHColors.navyLight;
+const Color _navyBorder = IHColors.navyBorder;
+const Color _gold = IHColors.gold;
+const Color _textPrimary = IHColors.textPrimary;
+const Color _textSecondary = IHColors.textSecondary;
+const Color _textMuted = IHColors.textMuted;
+
+// Aliases for legacy color names (for compatibility)
+const Color _jijiGreen = _green;
+const Color _jijiGreenDark = _green;
+const Color _jijiBg = _navy;
+const Color _jijiCard = _navyCard;
+const Color _jijiText = _textPrimary;
+const Color _jijiTextGray = _textSecondary;
+const Color _jijiSectionBg = _navy;
 
 void main() {
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    systemNavigationBarColor: Color(0xFF111827),
+    systemNavigationBarIconBrightness: Brightness.light,
+  ));
   runApp(const InterHungaryApp());
 }
 
@@ -26,98 +48,127 @@ class InterHungaryApp extends StatelessWidget {
       title: "InterHungary",
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: _jijiGreen,
-          brightness: Brightness.light,
-          primary: _jijiGreen,
-          secondary: _jijiGreenDark,
+        scaffoldBackgroundColor: _navy,
+        colorScheme: const ColorScheme.dark(
+          primary: _green,
+          secondary: _gold,
+          surface: _navyCard,
+          background: _navy,
+          onPrimary: Colors.white,
+          onSurface: _textPrimary,
         ),
-        textTheme: GoogleFonts.poppinsTextTheme(ThemeData.light().textTheme),
-        scaffoldBackgroundColor: _jijiBg,
+        textTheme: GoogleFonts.dmSansTextTheme(ThemeData.dark().textTheme),
         appBarTheme: AppBarTheme(
+          backgroundColor: _navy,
           elevation: 0,
-          centerTitle: true,
-          titleTextStyle: GoogleFonts.poppins(
+          centerTitle: false,
+          iconTheme: const IconThemeData(color: _textPrimary),
+          titleTextStyle: GoogleFonts.dmSans(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: _jijiText,
+            color: _textPrimary,
           ),
-          backgroundColor: _jijiCard,
-          foregroundColor: _jijiText,
-          iconTheme: const IconThemeData(color: _jijiText),
         ),
-        cardTheme: CardThemeData(
-          color: _jijiCard,
-          elevation: 2,
-          shadowColor: Colors.black.withOpacity(0.08),
-          surfaceTintColor: Colors.transparent,
+        cardTheme: CardTheme(
+          color: _navyCard,
+          elevation: 0,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
+            side: const BorderSide(color: _navyBorder),
           ),
         ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true,
-          fillColor: const Color(0xFFEEEEEE),
+          fillColor: _navyLight,
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _navyBorder),
           ),
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _navyBorder),
           ),
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-            borderSide: const BorderSide(color: _jijiGreen, width: 2),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: _green, width: 1.5),
           ),
-          labelStyle: GoogleFonts.poppins(color: _jijiTextGray),
+          hintStyle: GoogleFonts.dmSans(
+            color: _textMuted,
+            fontSize: 14,
+          ),
+          labelStyle: GoogleFonts.dmSans(
+            color: _textMuted,
+            fontSize: 14,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 16,
+          ),
         ),
         filledButtonTheme: FilledButtonThemeData(
           style: FilledButton.styleFrom(
-            backgroundColor: _jijiGreen,
+            backgroundColor: _green,
             foregroundColor: Colors.white,
-            textStyle: GoogleFonts.poppins(
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(14),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-            elevation: 0,
+            padding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 24,
+            ),
+            textStyle: GoogleFonts.dmSans(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ),
         outlinedButtonTheme: OutlinedButtonThemeData(
           style: OutlinedButton.styleFrom(
-            foregroundColor: _jijiGreen,
-            side: const BorderSide(color: _jijiGreen, width: 1.5),
+            foregroundColor: _green,
+            side: const BorderSide(color: _green, width: 1.5),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(8),
+              borderRadius: BorderRadius.circular(14),
             ),
-            textStyle: GoogleFonts.poppins(fontWeight: FontWeight.w600),
+            textStyle: GoogleFonts.dmSans(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
         chipTheme: ChipThemeData(
-          backgroundColor: const Color(0xFFEEEEEE),
-          selectedColor: _jijiGreen,
-          labelStyle: GoogleFonts.poppins(fontSize: 13, fontWeight: FontWeight.w500),
-          secondaryLabelStyle: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.w600),
+          backgroundColor: _navyLight,
+          selectedColor: _green,
+          side: const BorderSide(color: _navyBorder),
+          labelStyle: GoogleFonts.dmSans(
+            fontSize: 13,
+            color: _textSecondary,
+          ),
+          secondaryLabelStyle: GoogleFonts.dmSans(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(20),
           ),
         ),
-        bottomNavigationBarTheme: BottomNavigationBarThemeData(
-          selectedItemColor: _jijiGreen,
-          unselectedItemColor: _jijiTextGray,
+        bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+          backgroundColor: _navyCard,
+          selectedItemColor: _green,
+          unselectedItemColor: _textMuted,
           type: BottomNavigationBarType.fixed,
-          elevation: 8,
-          backgroundColor: Colors.white,
+          elevation: 0,
         ),
         snackBarTheme: SnackBarThemeData(
-          backgroundColor: const Color(0xFF1F2937),
-          contentTextStyle: GoogleFonts.poppins(color: Colors.white),
+          backgroundColor: _navyLight,
+          contentTextStyle: GoogleFonts.dmSans(color: _textPrimary),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        dividerTheme: const DividerThemeData(
+          color: _navyBorder,
+          thickness: 1,
         ),
       ),
       routes: {
@@ -407,6 +458,87 @@ void showNotice(BuildContext context, String message) {
   );
 }
 
+// Gradient button used across Sign In, Listing Detail, Post Listing
+Widget _gradientButton(String label, IconData icon, VoidCallback onPressed) {
+  return Container(
+    width: double.infinity,
+    height: 54,
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(colors: [_green, _greenLight]),
+      borderRadius: BorderRadius.circular(14),
+      boxShadow: [
+        BoxShadow(
+          color: _green.withOpacity(0.35),
+          blurRadius: 16,
+          offset: const Offset(0, 6),
+        )
+      ],
+    ),
+    child: Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(14),
+        onTap: onPressed,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              label,
+              style: GoogleFonts.dmSans(
+                color: Colors.white,
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Icon(icon, color: Colors.white, size: 18),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+// Category gradient backgrounds used in listing cards and detail hero
+List<Color> _catGradient(String cat) {
+  switch (cat) {
+    case "rentals":
+    case "real-estate":
+      return [const Color(0xFF1E3A5F), const Color(0xFF0F2027)];
+    case "vehicles":
+      return [const Color(0xFF2D1B69), const Color(0xFF11998E)];
+    case "electronics":
+      return [const Color(0xFF1A1A2E), const Color(0xFF16213E)];
+    case "clothes":
+      return [const Color(0xFF4A0E8F), const Color(0xFF2D1B69)];
+    case "jobs":
+      return [const Color(0xFF0F3443), const Color(0xFF34E89E)];
+    default:
+      return [const Color(0xFF141E30), const Color(0xFF243B55)];
+  }
+}
+
+// Category icon lookup used in listing cards and detail hero
+IconData _catIcon(String cat) {
+  switch (cat) {
+    case "vehicles":
+      return Icons.directions_car_rounded;
+    case "electronics":
+      return Icons.phone_android_rounded;
+    case "clothes":
+      return Icons.checkroom_rounded;
+    case "rentals":
+    case "real-estate":
+      return Icons.apartment_rounded;
+    case "jobs":
+      return Icons.work_outline_rounded;
+    case "services":
+      return Icons.build_outlined;
+    default:
+      return Icons.sell_outlined;
+  }
+}
+
 class MainShell extends StatefulWidget {
   final UserRole role;
   final UserProfile user;
@@ -657,23 +789,94 @@ class _MainShellState extends State<MainShell> {
     ];
   }
 
-  List<BottomNavigationBarItem> get _items => const [
-    BottomNavigationBarItem(icon: Icon(Icons.home_outlined), activeIcon: Icon(Icons.home), label: "Home"),
-    BottomNavigationBarItem(icon: Icon(Icons.bookmark_border), activeIcon: Icon(Icons.bookmark), label: "Saved"),
-    BottomNavigationBarItem(icon: Icon(Icons.add_circle_outline), activeIcon: Icon(Icons.add_circle), label: "Sell"),
-    BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), activeIcon: Icon(Icons.chat_bubble), label: "Messages"),
-    BottomNavigationBarItem(icon: Icon(Icons.person_outline), activeIcon: Icon(Icons.person), label: "Profile"),
-  ];
+  Widget _navItem(int index, IconData activeIcon, IconData inactiveIcon, String label) {
+    final isActive = _index == index;
+    return GestureDetector(
+      onTap: () => setState(() => _index = index),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isActive ? _green.withOpacity(0.12) : Colors.transparent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isActive ? activeIcon : inactiveIcon,
+              color: isActive ? _green : _textMuted,
+              size: 22,
+            ),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              style: TextStyle(
+                color: isActive ? _green : _textMuted,
+                fontSize: 10,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _sellFab() {
+    return GestureDetector(
+      onTap: () => setState(() => _index = 2),
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [_green, _greenLight],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: _green.withOpacity(0.4),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.add_rounded,
+          color: Colors.white,
+          size: 26,
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: IndexedStack(index: _index, children: _pages),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _index,
-        onTap: (value) => setState(() => _index = value),
-        items: _items,
-        backgroundColor: _jijiCard,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: _navyCard,
+          border: Border(top: BorderSide(color: _navyBorder)),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _navItem(0, Icons.home_rounded, Icons.home_outlined, "Home"),
+                _navItem(1, Icons.bookmark_rounded, Icons.bookmark_border, "Saved"),
+                _sellFab(),
+                _navItem(3, Icons.chat_bubble_rounded, Icons.chat_bubble_outline_rounded, "Messages"),
+                _navItem(4, Icons.person_rounded, Icons.person_outline_rounded, "Profile"),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -710,10 +913,6 @@ class _SignInScreenState extends State<SignInScreen> {
       showNotice(context, "Please add an email or phone number.");
       return;
     }
-    if (otp.isEmpty) {
-      showNotice(context, "Please enter the OTP code.");
-      return;
-    }
     setState(() => _isSubmitting = true);
     try {
       await widget.onSignIn(name, contact, otp);
@@ -737,80 +936,136 @@ class _SignInScreenState extends State<SignInScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _jijiBg,
-      appBar: AppBar(
-        backgroundColor: _jijiCard,
-        elevation: 0,
-        title: Text(
-          "InterHungary",
-          style: GoogleFonts.poppins(
-            fontSize: 22,
-            fontWeight: FontWeight.w800,
-            color: _jijiGreen,
-          ),
-        ),
-        centerTitle: true,
-      ),
+      backgroundColor: _navy,
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          padding: EdgeInsets.zero,
           children: [
-            Text(
-              "Sign in to buy and sell",
-              style: GoogleFonts.poppins(
-                fontSize: 16,
-                color: _jijiTextGray,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: "Your name",
-                prefixIcon: Icon(Icons.person_outline, color: _jijiTextGray),
-              ),
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _contactController,
-              decoration: const InputDecoration(
-                labelText: "Phone or email",
-                prefixIcon: Icon(Icons.phone_android, color: _jijiTextGray),
-              ),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: _otpController,
-              decoration: const InputDecoration(
-                labelText: "OTP code",
-                prefixIcon: Icon(Icons.lock_outline, color: _jijiTextGray),
-              ),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 28),
-            if (_isSubmitting)
-              const Center(child: CircularProgressIndicator()),
-            if (!_isSubmitting)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: FilledButton(
-                  onPressed: _submit,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _jijiGreen,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text(
-                    "Continue",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(24, 48, 24, 40),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0F1A2E), _navyCard],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: _green,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.storefront_rounded,
+                          color: Colors.white,
+                          size: 26,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        "InterHungary",
+                        style: GoogleFonts.dmSans(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 32),
+                  Text(
+                    "Welcome back 👋",
+                    style: GoogleFonts.dmSans(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w800,
+                      color: _textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Hungary's marketplace for everyone.",
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      color: _textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: _nameController,
+                    style: const TextStyle(color: _textPrimary),
+                    decoration: const InputDecoration(
+                      hintText: "Your name",
+                      prefixIcon: Icon(
+                        Icons.person_outline,
+                        color: _textMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _contactController,
+                    style: const TextStyle(color: _textPrimary),
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      hintText: "Phone or email",
+                      prefixIcon: Icon(
+                        Icons.phone_android,
+                        color: _textMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: _otpController,
+                    style: const TextStyle(color: _textPrimary),
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(
+                      hintText: "OTP code",
+                      prefixIcon: Icon(
+                        Icons.lock_outline,
+                        color: _textMuted,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  if (_isSubmitting)
+                    const Center(
+                      child: CircularProgressIndicator(color: _green),
+                    )
+                  else
+                    _gradientButton(
+                      "Sign In",
+                      Icons.arrow_forward_rounded,
+                      _submit,
+                    ),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Text(
+                      "Admin access is managed separately.",
+                      style: GoogleFonts.dmSans(
+                        fontSize: 12,
+                        color: _textMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -1084,192 +1339,153 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
       top: false,
       child: CustomScrollView(
         slivers: [
-          // Green header: "What are you looking for?" + location + search
           SliverToBoxAdapter(
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
-              color: _jijiGreen,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Color(0xFF0F1A2E), _navy],
+                ),
+              ),
+              padding: const EdgeInsets.fromLTRB(16, 48, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "What are you looking for?",
-                    style: GoogleFonts.poppins(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
                   Row(
                     children: [
-                      // Location dropdown (white oval)
-                      Expanded(
-                        flex: 1,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Row(
-                            children: [
-                              Text(
-                                _location.isEmpty ? "All Hungary" : _location,
-                                style: GoogleFonts.poppins(
-                                  fontSize: 14,
-                                  color: _jijiText,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(width: 4),
-                              const Icon(Icons.keyboard_arrow_down, color: _jijiTextGray, size: 20),
-                            ],
-                          ),
-                        ),
+                      _pill(
+                        label: _location.isEmpty ? "Budapest, HU" : _location,
+                        icon: Icons.keyboard_arrow_down,
                       ),
-                      const SizedBox(width: 10),
-                      // Search (white oval)
-                      Expanded(
-                        flex: 2,
-                        child: TextField(
-                          decoration: InputDecoration(
-                            hintText: "I am looking for...",
-                            hintStyle: GoogleFonts.poppins(color: _jijiTextGray, fontSize: 14),
-                            prefixIcon: const Icon(Icons.search, color: _jijiTextGray, size: 22),
-                            filled: true,
-                            fillColor: Colors.white,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          ),
-                          onChanged: (value) => setState(() => _query = value),
-                        ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.notifications_outlined),
+                        color: _textPrimary,
+                        onPressed: () {},
                       ),
                     ],
                   ),
+                  const SizedBox(height: 20),
+                  Text(
+                    "Discover\neverything.",
+                    style: GoogleFonts.poppins(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w700,
+                      color: _textPrimary,
+                      height: 1.2,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _navyLight,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _navyBorder),
+                    ),
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: "Search...",
+                        hintStyle: GoogleFonts.poppins(color: _textMuted, fontSize: 14),
+                        prefixIcon: const Icon(Icons.search, color: _textMuted, size: 22),
+                        filled: true,
+                        fillColor: _navyLight,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                      ),
+                      onChanged: (value) => setState(() => _query = value),
+                    ),
+                  ),
                 ],
               ),
             ),
           ),
-          // Action buttons: Apply for job, How to sell, How to buy
           SliverToBoxAdapter(
-            child: Container(
-              color: _jijiCard,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Row(
                 children: [
-                  Expanded(
-                    child: _actionButton(
-                      icon: Icons.work_outline,
-                      label: "Apply for job",
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _actionButton(
-                      icon: Icons.payments_outlined,
-                      label: "How to sell",
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _actionButton(
-                      icon: Icons.shopping_basket_outlined,
-                      label: "How to buy",
-                      accentBg: const Color(0xFFF3E5F5), // light purple like reference
+                  _pill(label: "All", selected: _categoryId == null, onTap: () => setState(() => _categoryId = null)),
+                  ...widget.categories.map(
+                    (c) => _pill(
+                      label: c.name,
+                      selected: _categoryId == c.id,
+                      onTap: () => setState(() => _categoryId = c.id),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          // "Recommended for you" horizontal list
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: Text(
-                "Recommended for you",
-                style: GoogleFonts.poppins(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  color: _jijiText,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF0D3321), Color(0xFF1A5C3A)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    const Text("🇭🇺", style: TextStyle(fontSize: 24)),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        "New in Budapest / List your first item…",
+                        style: GoogleFonts.poppins(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: _textPrimary,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
           SliverToBoxAdapter(
-            child: SizedBox(
-              height: 110,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: widget.categories.take(6).map((c) => _recommendedCard(c)).toList(),
-              ),
-            ),
-          ),
-          // Category grid (4 columns)
-          SliverToBoxAdapter(
-            child: Container(
-              color: _jijiCard,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 4,
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 0.85,
-                children: [
-                  _buildCategoryChip(null, "All", Icons.apps),
-                  ...widget.categories.map(
-                    (c) => _buildCategoryChip(c.id, c.name, _categoryIcon(c.id)),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // "Trending" / listings section
-          SliverToBoxAdapter(
-            child: Container(
-              color: _jijiSectionBg,
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    "Trending",
+                    "Recent listings",
                     style: GoogleFonts.poppins(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: _jijiText,
+                      color: _textPrimary,
                     ),
                   ),
                   Row(
                     children: [
                       IconButton(
                         icon: Icon(
-                          Icons.grid_view,
-                          color: _trendingGridView ? _jijiGreen : _jijiTextGray,
+                          Icons.view_list,
+                          color: _trendingGridView ? _textSecondary : _green,
                           size: 22,
                         ),
-                        onPressed: () => setState(() => _trendingGridView = true),
+                        onPressed: () => setState(() => _trendingGridView = false),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       ),
                       const SizedBox(width: 4),
                       IconButton(
                         icon: Icon(
-                          Icons.view_list,
-                          color: _trendingGridView ? _jijiTextGray : _jijiGreen,
+                          Icons.grid_view,
+                          color: _trendingGridView ? _green : _textSecondary,
                           size: 22,
                         ),
-                        onPressed: () => setState(() => _trendingGridView = false),
+                        onPressed: () => setState(() => _trendingGridView = true),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
                       ),
@@ -1280,10 +1496,15 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
             ),
           ),
           if (filtered.isEmpty)
-            const SliverToBoxAdapter(
+            SliverToBoxAdapter(
               child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Center(child: Text("No listings match your filters.")),
+                padding: const EdgeInsets.all(24),
+                child: Center(
+                  child: Text(
+                    "No listings match your filters.",
+                    style: GoogleFonts.poppins(color: _textSecondary),
+                  ),
+                ),
               ),
             ),
           if (filtered.isNotEmpty && !_trendingGridView)
@@ -1291,7 +1512,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
                   final listing = filtered[index];
-                  return _jijiListingCard(context, listing);
+                  return _listCard(context, listing);
                 },
                 childCount: filtered.length,
               ),
@@ -1309,7 +1530,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                 delegate: SliverChildBuilderDelegate(
                   (context, index) {
                     final listing = filtered[index];
-                    return _jijiListingCardGrid(context, listing);
+                    return _gridCard(context, listing);
                   },
                   childCount: filtered.length,
                 ),
@@ -1320,120 +1541,36 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
     );
   }
 
-  Widget _actionButton({required IconData icon, required String label, Color? accentBg}) {
-    final bg = accentBg ?? _jijiCard;
-    return Material(
-      color: bg,
-      borderRadius: BorderRadius.circular(12),
-      elevation: 1,
-      child: InkWell(
-        onTap: () {},
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(icon, color: _jijiGreen, size: 32),
-              const SizedBox(height: 8),
-              Text(
-                label,
-                style: GoogleFonts.poppins(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: _jijiText,
-                ),
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _recommendedCard(Category c) {
+  Widget _pill({required String label, IconData? icon, bool selected = false, VoidCallback? onTap}) {
     return Padding(
-      padding: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.only(right: 8),
       child: Material(
-        color: _jijiCard,
-        borderRadius: BorderRadius.circular(8),
-        elevation: 1,
+        color: selected ? _green : _navyCard,
+        borderRadius: BorderRadius.circular(20),
         child: InkWell(
-          onTap: () => setState(() => _categoryId = c.id),
-          borderRadius: BorderRadius.circular(8),
+          onTap: onTap ?? () {},
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            width: 90,
-            padding: const EdgeInsets.all(8),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFEEEEEE),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(_categoryIcon(c.id), color: _jijiGreen, size: 24),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  c.name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    color: _jijiText,
-                  ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ],
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: selected ? _green : _navyBorder),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCategoryChip(String? id, String label, IconData icon) {
-    final selected = _categoryId == id;
-    return Padding(
-      padding: const EdgeInsets.only(right: 12),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => setState(() => _categoryId = id),
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 8),
-            child: Column(
+            child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: selected ? _jijiGreen : const Color(0xFFEEEEEE),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Icon(icon, color: selected ? Colors.white : _jijiTextGray, size: 24),
-                ),
-                const SizedBox(height: 6),
                 Text(
                   label,
                   style: GoogleFonts.poppins(
-                    fontSize: 11,
+                    fontSize: 13,
                     fontWeight: FontWeight.w500,
-                    color: selected ? _jijiGreen : _jijiTextGray,
+                    color: selected ? Colors.white : _textSecondary,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
                 ),
+                if (icon != null) ...[
+                  const SizedBox(width: 4),
+                  Icon(icon, color: selected ? Colors.white : _textMuted, size: 18),
+                ],
               ],
             ),
           ),
@@ -1442,12 +1579,27 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
     );
   }
 
-  Widget _jijiListingCard(BuildContext context, Listing listing) {
+  // Redesign listing card mapped to real `Listing` model + callbacks
+  //
+  // - `listing.title` / `listing.location` / `listing.priceLabel`:
+  //   fill the visual fields from the backend `Listing` entity (replaces
+  //   the redesign's sample map like `{'title': ..., 'location': ...}`).
+  // - `widget.favoriteIds` / `widget.onToggleFavorite`:
+  //   drive the heart icon state and toggle using the existing favorites API.
+  // - `openListingDetails(...)`:
+  //   keeps original navigation & chat/report/block flows while using
+  //   the new gradient image/header layout from the redesign.
+  Widget _listCard(BuildContext context, Listing listing) {
+    final gradient = _catGradient(listing.categoryId);
     return Container(
-      color: _jijiCard,
-      margin: const EdgeInsets.only(bottom: 1),
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      decoration: BoxDecoration(
+        color: _navyCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _navyBorder),
+      ),
       child: Material(
-        color: _jijiCard,
+        color: Colors.transparent,
         child: InkWell(
           onTap: () => openListingDetails(
             context: context,
@@ -1458,19 +1610,24 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
             onBlock: () => widget.onBlockUser(listing.sellerId),
             onStartChat: () => widget.onStartChat(listing),
           ),
+          borderRadius: BorderRadius.circular(12),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            padding: const EdgeInsets.all(12),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 96,
-                  height: 96,
+                  width: 88,
+                  height: 88,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEEEEEE),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: gradient,
+                    ),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(Icons.image, color: _jijiTextGray, size: 36),
+                  child: Icon(_catIcon(listing.categoryId), color: _textPrimary.withOpacity(0.9), size: 32),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1482,7 +1639,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w600,
                           fontSize: 14,
-                          color: _jijiText,
+                          color: _textPrimary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1493,7 +1650,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 15,
                           fontWeight: FontWeight.w700,
-                          color: _jijiGreen,
+                          color: _green,
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -1501,7 +1658,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                         listing.location,
                         style: GoogleFonts.poppins(
                           fontSize: 12,
-                          color: _jijiTextGray,
+                          color: _textMuted,
                         ),
                       ),
                     ],
@@ -1509,12 +1666,8 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                 ),
                 IconButton(
                   icon: Icon(
-                    widget.favoriteIds.contains(listing.id)
-                        ? Icons.favorite
-                        : Icons.favorite_border,
-                    color: widget.favoriteIds.contains(listing.id)
-                        ? Colors.red
-                        : _jijiTextGray,
+                    widget.favoriteIds.contains(listing.id) ? Icons.favorite : Icons.favorite_border,
+                    color: widget.favoriteIds.contains(listing.id) ? Colors.red : _textSecondary,
                     size: 22,
                   ),
                   onPressed: () => widget.onToggleFavorite(listing.id),
@@ -1527,22 +1680,24 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
     );
   }
 
-  Widget _jijiListingCardGrid(BuildContext context, Listing listing) {
+  // Grid variant of the redesign listing card wired to real data:
+  //
+  // - Uses the same `Listing` fields (`title`, `location`, `priceLabel`)
+  //   and favorite IDs as the list view, but in a compact grid layout
+  //   matching the redesign.
+  // - Reuses `openListingDetails(...)` so existing routing, chat start,
+  //   report and block logic stay unchanged under the new UI.
+  Widget _gridCard(BuildContext context, Listing listing) {
+    final gradient = _catGradient(listing.categoryId);
     return Container(
       decoration: BoxDecoration(
-        color: _jijiCard,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: _navyCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _navyBorder),
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: () => openListingDetails(
             context: context,
@@ -1553,7 +1708,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
             onBlock: () => widget.onBlockUser(listing.sellerId),
             onStartChat: () => widget.onStartChat(listing),
           ),
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(12),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -1563,23 +1718,21 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                   Container(
                     height: 120,
                     decoration: BoxDecoration(
-                      color: const Color(0xFFEEEEEE),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: gradient,
+                      ),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                     ),
-                    child: const Center(
-                      child: Icon(Icons.image, color: _jijiTextGray, size: 36),
-                    ),
+                    child: Icon(_catIcon(listing.categoryId), color: _textPrimary.withOpacity(0.9), size: 36),
                   ),
                   Padding(
                     padding: const EdgeInsets.all(6),
                     child: IconButton(
                       icon: Icon(
-                        widget.favoriteIds.contains(listing.id)
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: widget.favoriteIds.contains(listing.id)
-                            ? Colors.red
-                            : _jijiTextGray,
+                        widget.favoriteIds.contains(listing.id) ? Icons.favorite : Icons.favorite_border,
+                        color: widget.favoriteIds.contains(listing.id) ? Colors.red : _textSecondary,
                         size: 20,
                       ),
                       onPressed: () => widget.onToggleFavorite(listing.id),
@@ -1591,7 +1744,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
               ),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 8),
+                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
@@ -1601,7 +1754,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                         style: GoogleFonts.poppins(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: _jijiGreen,
+                          color: _green,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1612,7 +1765,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                         style: GoogleFonts.poppins(
                           fontWeight: FontWeight.w500,
                           fontSize: 12,
-                          color: _jijiText,
+                          color: _textPrimary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -1622,7 +1775,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                         listing.location,
                         style: GoogleFonts.poppins(
                           fontSize: 11,
-                          color: _jijiTextGray,
+                          color: _textMuted,
                         ),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -1663,29 +1816,168 @@ class RoleDashboardScreen extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text(title, style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            title,
+            style: GoogleFonts.dmSans(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: _textPrimary,
+            ),
+          ),
           const SizedBox(height: 6),
-          Text(subtitle),
+          Text(
+            subtitle,
+            style: GoogleFonts.dmSans(
+              fontSize: 14,
+              color: _textSecondary,
+            ),
+          ),
           const SizedBox(height: 16),
-          Text("Listings", style: Theme.of(context).textTheme.titleLarge),
+          Text(
+            "Listings",
+            style: GoogleFonts.dmSans(
+              fontSize: 18,
+              fontWeight: FontWeight.w600,
+              color: _textPrimary,
+            ),
+          ),
           const SizedBox(height: 8),
           ...listings.map(
-            (listing) => Card(
-              child: ListTile(
-                title: Text(listing.title),
-                subtitle: Text("${listing.location} • ${listing.priceLabel}"),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => openListingDetails(
-                  context: context,
-                  listing: listing,
-                  isFavorite: false,
-                  onToggleFavorite: () {},
-                  onReport: () => onReportListing(listing),
-                  onBlock: () => onBlockUser(listing.sellerId),
-                  onStartChat: () => onStartChat(listing),
+            (listing) {
+              final gradient = _catGradient(listing.categoryId);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                decoration: BoxDecoration(
+                  color: _navyCard,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: _navyBorder),
                 ),
-              ),
-            ),
+                child: Material(
+                  color: Colors.transparent,
+                  borderRadius: BorderRadius.circular(14),
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(14),
+                    onTap: () => openListingDetails(
+                      context: context,
+                      listing: listing,
+                      isFavorite: false,
+                      onToggleFavorite: () {},
+                      onReport: () => onReportListing(listing),
+                      onBlock: () => onBlockUser(listing.sellerId),
+                      onStartChat: () => onStartChat(listing),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          margin: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: gradient,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            _catIcon(listing.categoryId),
+                            color: _textPrimary.withOpacity(0.85),
+                            size: 30,
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              right: 12,
+                              top: 12,
+                              bottom: 12,
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  listing.title,
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w600,
+                                    color: _textPrimary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.location_on_outlined,
+                                      size: 14,
+                                      color: _textMuted,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Expanded(
+                                      child: Text(
+                                        listing.location,
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 12,
+                                          color: _textSecondary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    Text(
+                                      listing.priceLabel,
+                                      style: GoogleFonts.dmSans(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w700,
+                                        color: _green,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 3,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _navyLight,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(color: _navyBorder),
+                                      ),
+                                      child: Text(
+                                        listing.status.toUpperCase(),
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600,
+                                          color: _textSecondary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(right: 10),
+                          child: Icon(
+                            Icons.chevron_right_rounded,
+                            color: _textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
           )
         ],
       ),
@@ -1703,166 +1995,353 @@ class ListingDetailsScreen extends StatefulWidget {
 class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
   bool? _isFavorite;
 
+  Widget _badge(String label, IconData icon, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: _navyCard,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _navyBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: 8),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: _textPrimary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _detailChip(String key, String value) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: _navyCard,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: _navyBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "$key: ",
+            style: GoogleFonts.dmSans(
+              fontSize: 13,
+              color: _textMuted,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: GoogleFonts.dmSans(
+              fontSize: 13,
+              color: _textPrimary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final args =
         ModalRoute.of(context)?.settings.arguments as ListingDetailsArgs?;
     final data = args?.listing ?? sampleListings.first;
     final isFavorite = _isFavorite ?? args?.isFavorite ?? false;
+    final gradientColors = _catGradient(data.categoryId);
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Listing"),
-        backgroundColor: _jijiCard,
-        foregroundColor: _jijiText,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: ListView(
-          children: [
-            Text(
-              data.title,
-              style: GoogleFonts.poppins(
-                fontSize: 24,
-                fontWeight: FontWeight.w800,
-                color: const Color(0xFF1F2937),
+      backgroundColor: _navy,
+      body: CustomScrollView(
+        slivers: [
+          SliverAppBar(
+            expandedHeight: 200,
+            pinned: true,
+            stretch: true,
+            backgroundColor: _navy,
+            leading: IconButton(
+              icon: const Icon(Icons.arrow_back_rounded, color: _textPrimary),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.share_rounded, color: _textPrimary),
+                onPressed: () {},
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              "${data.location} • ${data.priceLabel}",
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w600,
-                color: _jijiTextGray,
-                fontSize: 15,
+              IconButton(
+                onPressed: () {
+                  args?.onToggleFavorite();
+                  setState(() => _isFavorite = !isFavorite);
+                },
+                icon: Icon(
+                  isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: isFavorite ? Colors.redAccent : _textPrimary,
+                  size: 24,
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              data.description,
-              style: GoogleFonts.poppins(
-                fontSize: 15,
-                height: 1.5,
-                color: const Color(0xFF475569),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              "Seller: ${data.sellerName}",
-              style: GoogleFonts.poppins(
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
-                color: const Color(0xFF1F2937),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(
-                  avatar: const Icon(Icons.verified_rounded, size: 18, color: _jijiGreen),
-                  label: Text("Verified seller", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                ),
-                Chip(
-                  avatar: const Icon(Icons.lock_outline_rounded, size: 18, color: _jijiGreen),
-                  label: Text("Secure chat", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                ),
-                Chip(
-                  avatar: const Icon(Icons.access_time_rounded, size: 18, color: _jijiGreen),
-                  label: Text("Fast responder", style: GoogleFonts.poppins(fontWeight: FontWeight.w600)),
-                ),
-              ],
-            ),
-            const SizedBox(height: 14),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                Chip(
-                  label: Text("Condition: ${data.condition}", style: GoogleFonts.poppins(fontWeight: FontWeight.w500)),
-                ),
-                ...data.categoryFields.entries.map(
-                  (entry) => Chip(
-                    label: Text("${entry.key}: ${entry.value}", style: GoogleFonts.poppins(fontSize: 12)),
+            ],
+            flexibleSpace: FlexibleSpaceBar(
+              background: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: gradientColors,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Card(
-              elevation: 6,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+                child: Center(
+                  child: Icon(
+                    _catIcon(data.categoryId),
+                    size: 72,
+                    color: _textPrimary.withValues(alpha: 0.9),
+                  ),
+                ),
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: _jijiGreen.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(Icons.shield_rounded, color: _jijiGreen, size: 28),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Text(
-                        "Use secure chat and meet in public for safe transactions.",
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: const Color(0xFF475569),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Title + price row
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          data.title,
+                          style: GoogleFonts.dmSans(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: _textPrimary,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                IconButton(
-                  onPressed: () {
-                    args?.onToggleFavorite();
-                    setState(() => _isFavorite = !isFavorite);
-                  },
-                  icon: Icon(
-                    isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                    color: isFavorite ? Colors.redAccent : const Color(0xFF94A3B8),
-                    size: 28,
+                      const SizedBox(width: 12),
+                      Text(
+                        data.priceLabel,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: _green,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: args?.onReport,
-                  child: const Text("Report"),
-                ),
-                const SizedBox(width: 8),
-                OutlinedButton(
-                  onPressed: args?.onBlock,
-                  child: const Text("Block"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              height: 50,
-              child: FilledButton.icon(
-                onPressed: args?.onStartChat,
-                icon: const Icon(Icons.chat_bubble_outline, size: 22),
-                label: const Text("Chat with seller"),
-                style: FilledButton.styleFrom(
-                  backgroundColor: _jijiGreen,
-                  foregroundColor: Colors.white,
-                ),
+                  const SizedBox(height: 8),
+                  // Location row
+                  Row(
+                    children: [
+                      Icon(Icons.location_on_outlined, size: 18, color: _textSecondary),
+                      const SizedBox(width: 6),
+                      Text(
+                        data.location,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 14,
+                          color: _textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Seller card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _navyCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _navyBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: _navyLight,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _navyBorder),
+                          ),
+                          child: Center(
+                            child: Text(
+                              data.sellerName.isNotEmpty ? data.sellerName[0].toUpperCase() : "?",
+                              style: GoogleFonts.dmSans(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                                color: _green,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                data.sellerName,
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: _textPrimary,
+                                ),
+                              ),
+                              TextButton(
+                                onPressed: () {},
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets.zero,
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  foregroundColor: _green,
+                                ),
+                                child: Text(
+                                  "View profile",
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Trust badges
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _badge("Verified seller", Icons.verified_rounded, _green),
+                      _badge("Secure chat", Icons.lock_outline_rounded, _green),
+                      _badge("Fast responder", Icons.access_time_rounded, _green),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // About this listing
+                  Text(
+                    "About this listing",
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: _textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    data.description,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 15,
+                      height: 1.5,
+                      color: _textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Details chips
+                  Text(
+                    "Details",
+                    style: GoogleFonts.dmSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: _textMuted,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _detailChip("Condition", data.condition),
+                      ...data.categoryFields.entries.map(
+                        (entry) => _detailChip(entry.key, entry.value),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // Safety notice card
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: _navyCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _navyBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: _gold.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.shield_rounded, color: _gold, size: 28),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            "Use secure chat and meet in public for safe transactions.",
+                            style: GoogleFonts.dmSans(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: _textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  // Report / Block
+                  Row(
+                    children: [
+                      OutlinedButton(
+                        onPressed: args?.onReport,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _textSecondary,
+                          side: const BorderSide(color: _navyBorder),
+                        ),
+                        child: const Text("Report"),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton(
+                        onPressed: args?.onBlock,
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _textSecondary,
+                          side: const BorderSide(color: _navyBorder),
+                        ),
+                        child: const Text("Block"),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  // Chat button
+                  _gradientButton(
+                    "Chat with seller",
+                    Icons.chat_bubble_outline_rounded,
+                    args?.onStartChat ?? () {},
+                  ),
+                  const SizedBox(height: 24),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -2079,11 +2558,17 @@ class _PostListingScreenState extends State<PostListingScreen> {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // Green header: Cancel | New Advert | Clear
+        // Dark gradient header: Cancel | New Advert | Clear
         Container(
           width: double.infinity,
           padding: const EdgeInsets.fromLTRB(16, 48, 16, 14),
-          color: _jijiGreen,
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF0F1A2E), _navyCard],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -2091,8 +2576,8 @@ class _PostListingScreenState extends State<PostListingScreen> {
                 onPressed: () => Navigator.maybePop(context),
                 child: Text(
                   "Cancel",
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
+                  style: GoogleFonts.dmSans(
+                    color: _textPrimary,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
@@ -2100,8 +2585,8 @@ class _PostListingScreenState extends State<PostListingScreen> {
               ),
               Text(
                 "New Advert",
-                style: GoogleFonts.poppins(
-                  color: Colors.white,
+                style: GoogleFonts.dmSans(
+                  color: _textPrimary,
                   fontWeight: FontWeight.w700,
                   fontSize: 18,
                 ),
@@ -2112,15 +2597,47 @@ class _PostListingScreenState extends State<PostListingScreen> {
                   _descriptionController.clear();
                   _priceController.clear();
                   _locationController.clear();
+                  for (final controller in _fieldControllers.values) {
+                    controller.clear();
+                  }
                   setState(() => _images.clear());
                 },
                 child: Text(
                   "Clear",
-                  style: GoogleFonts.poppins(
-                    color: Colors.white,
+                  style: GoogleFonts.dmSans(
+                    color: _textPrimary,
                     fontWeight: FontWeight.w600,
                     fontSize: 16,
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Step progress bar
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          color: _navyCard,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Step 1 of 3 — Basic info",
+                style: GoogleFonts.dmSans(
+                  fontSize: 13,
+                  color: _textSecondary,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 8),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: 1 / 3,
+                  backgroundColor: _navyLight,
+                  valueColor: const AlwaysStoppedAnimation<Color>(_green),
+                  minHeight: 4,
                 ),
               ),
             ],
@@ -2142,8 +2659,9 @@ class _PostListingScreenState extends State<PostListingScreen> {
                 value: _categoryId,
                 decoration: const InputDecoration(
                   hintText: "Category*",
-                  suffixIcon: Icon(Icons.arrow_drop_down, color: _jijiTextGray),
+                  suffixIcon: Icon(Icons.arrow_drop_down, color: _textSecondary),
                 ),
+                dropdownColor: _navyCard,
                 items: categories
                     .map(
                       (category) => DropdownMenuItem(
@@ -2158,73 +2676,66 @@ class _PostListingScreenState extends State<PostListingScreen> {
                 },
               ),
               const SizedBox(height: 16),
-              Text(
-                "Images",
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 14,
-                  color: _jijiText,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Material(
-                    color: _jijiGreen.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(8),
-                    child: InkWell(
-                      onTap: _addPlaceholderImage,
-                      borderRadius: BorderRadius.circular(8),
-                      child: const SizedBox(
-                        width: 80,
-                        height: 80,
-                        child: Icon(Icons.add, color: _jijiGreen, size: 36),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
+              Material(
+                color: _navyLight,
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  onTap: _addPlaceholderImage,
+                  borderRadius: BorderRadius.circular(14),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 24),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        Icon(Icons.camera_alt_rounded, color: _textMuted, size: 40),
+                        const SizedBox(height: 8),
                         Text(
-                          "First picture is the title picture.",
-                          style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
-                        ),
-                        Text(
-                          "Grab & drag photos to change the order",
-                          style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
-                        ),
-                        Text(
-                          "Supported formats are .jpg, .gif and .png",
-                          style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
-                        ),
-                        Text(
-                          "Each picture must not exceed 5 Mb",
-                          style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                          "Add photos",
+                          style: GoogleFonts.dmSans(
+                            fontSize: 14,
+                            color: _textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
+                ),
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<String?>(
-                value: _locationController.text.isEmpty ? null : _locationController.text,
-                decoration: const InputDecoration(
-                  hintText: "Region",
-                  suffixIcon: Icon(Icons.arrow_drop_down, color: _jijiTextGray),
-                ),
-                items: [
-                  const DropdownMenuItem<String?>(value: null, child: Text("Region")),
-                  ...["Budapest", "Debrecen", "Szeged", "Other"]
-                      .map((s) => DropdownMenuItem<String?>(value: s, child: Text(s))),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: DropdownButtonFormField<String?>(
+                      value: _locationController.text.isEmpty ? null : _locationController.text,
+                      decoration: const InputDecoration(
+                        hintText: "Region",
+                        suffixIcon: Icon(Icons.arrow_drop_down, color: _textSecondary),
+                      ),
+                      dropdownColor: _navyCard,
+                      items: [
+                        const DropdownMenuItem<String?>(value: null, child: Text("Region")),
+                        ...["Budapest", "Debrecen", "Szeged", "Other"]
+                            .map((s) => DropdownMenuItem<String?>(value: s, child: Text(s))),
+                      ],
+                      onChanged: (value) {
+                        _locationController.text = value ?? "";
+                        setState(() {});
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _priceController,
+                      decoration: const InputDecoration(
+                        hintText: "Price",
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ),
                 ],
-                onChanged: (value) {
-                  _locationController.text = value ?? "";
-                  setState(() {});
-                },
               ),
               const SizedBox(height: 12),
               TextField(
@@ -2236,61 +2747,28 @@ class _PostListingScreenState extends State<PostListingScreen> {
                 maxLines: 4,
               ),
               const SizedBox(height: 16),
-              Text(
-                "-Name-",
-                style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
-              ),
-              const SizedBox(height: 4),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: widget.user.name,
-                  suffixIcon: const Icon(Icons.check_circle, color: _jijiGreen, size: 22),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                "-Phone number*-",
-                style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
-              ),
-              const SizedBox(height: 4),
-              TextField(
-                decoration: InputDecoration(
-                  hintText: widget.user.phone ?? "Phone",
-                  suffixIcon: const Icon(Icons.check_circle, color: _jijiGreen, size: 22),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
+              _buildCategoryFields(),
               const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                height: 50,
-                child: FilledButton(
-                  onPressed: _submitting ? null : _submitListing,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: _jijiGreen,
-                    foregroundColor: Colors.white,
-                  ),
-                  child: Text(
-                    _submitting ? "Submitting..." : "Post ad",
-                    style: GoogleFonts.poppins(fontWeight: FontWeight.w700, fontSize: 16),
-                  ),
-                ),
+              _gradientButton(
+                _submitting ? "Submitting…" : "Continue",
+                Icons.arrow_forward_rounded,
+                _submitting ? () {} : _submitListing,
               ),
               const SizedBox(height: 16),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 4),
                 child: RichText(
                   text: TextSpan(
-                    style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+                    style: GoogleFonts.dmSans(fontSize: 12, color: _textMuted),
                     children: [
                       const TextSpan(
-                        text: "By clicking on Post Ad, you accept the ",
+                        text: "By clicking Continue, you accept the ",
                       ),
                       TextSpan(
                         text: "Terms of Use",
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.dmSans(
                           fontSize: 12,
-                          color: _jijiGreen,
+                          color: _green,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -2299,9 +2777,9 @@ class _PostListingScreenState extends State<PostListingScreen> {
                       ),
                       TextSpan(
                         text: "Safety Tips",
-                        style: GoogleFonts.poppins(
+                        style: GoogleFonts.dmSans(
                           fontSize: 12,
-                          color: _jijiGreen,
+                          color: _green,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -2360,98 +2838,208 @@ class _InboxScreenState extends State<InboxScreen> {
       top: false,
       child: Column(
         children: [
-          // Green header with search
+          // Top gradient header: 0xFF0F1A2E -> _navyCard
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 48, 16, 12),
-            color: _jijiGreen,
-            child: TextField(
-            decoration: InputDecoration(
-              hintText: "Search in Messages",
-              hintStyle: GoogleFonts.poppins(color: _jijiTextGray, fontSize: 14),
-              prefixIcon: const Icon(Icons.search, color: _jijiTextGray, size: 22),
-              filled: true,
-              fillColor: const Color(0xFFE8F5E9),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: BorderSide.none,
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Color(0xFF0F1A2E), _navyCard],
               ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            ),
+            padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Messages",
+                  style: GoogleFonts.dmSans(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search in Messages",
+                    hintStyle: GoogleFonts.dmSans(color: _textMuted, fontSize: 14),
+                    prefixIcon: const Icon(Icons.search, color: _textMuted, size: 22),
+                    filled: true,
+                    fillColor: _navyLight,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: _navyBorder),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(14),
+                      borderSide: const BorderSide(color: _navyBorder),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ],
             ),
           ),
-        ),
-        // Tabs: All | Unread | Spam
-        Container(
-          color: _jijiCard,
-          child: Row(
-            children: [
-              _tab("All", 0),
-              _tab("Unread", 1),
-              _tab("Spam", 2),
-            ],
+          // Tab row in _navyCard
+          Container(
+            color: _navyCard,
+            child: Row(
+              children: [
+                _tab("All", 0),
+                _tab("Unread", 1),
+                _tab("Spam", 2),
+              ],
+            ),
           ),
-        ),
-        Expanded(
-          child: FutureBuilder<List<Conversation>>(
-            future: _future,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final conversations = snapshot.data ?? [];
-              if (conversations.isEmpty) {
-                return Center(
-                  child: Text(
-                    "No conversations yet.",
-                    style: GoogleFonts.poppins(color: _jijiTextGray),
-                  ),
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.only(top: 8),
-                itemCount: conversations.length,
-                itemBuilder: (context, index) {
-                  final conversation = conversations[index];
-                  final peerId = conversation.buyerId == widget.userId
-                      ? conversation.sellerId
-                      : conversation.buyerId;
-                  return Container(
-                    color: _jijiCard,
-                    margin: const EdgeInsets.only(bottom: 1),
-                    child: ListTile(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      leading: const CircleAvatar(
-                        backgroundColor: _jijiSectionBg,
-                        child: Icon(Icons.person, color: _jijiTextGray),
-                      ),
-                      title: Text(
-                        "User $peerId",
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 14,
-                          color: _jijiText,
+          Expanded(
+            child: FutureBuilder<List<Conversation>>(
+              future: _future,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator(color: _green),
+                  );
+                }
+                final conversations = snapshot.data ?? [];
+                if (conversations.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.chat_bubble_outline, size: 64, color: _textMuted),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No conversations yet.",
+                          style: GoogleFonts.dmSans(color: _textMuted, fontSize: 16),
                         ),
-                      ),
-                      subtitle: Text(
-                        "Listing ${conversation.listingId}",
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: _jijiTextGray,
-                        ),
-                      ),
-                      trailing: Text(
-                        "24 Jan",
-                        style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
-                      ),
-                      onTap: () => widget.onOpenConversation(conversation),
+                      ],
                     ),
                   );
-                },
-              );
-            },
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: conversations.length,
+                  separatorBuilder: (_, __) =>
+                      const Divider(height: 1, color: _navyBorder),
+                  itemBuilder: (context, index) {
+                    final conv = conversations[index];
+                    final peerId = conv.buyerId == widget.userId
+                        ? conv.sellerId
+                        : conv.buyerId;
+                    final initials = peerId.isNotEmpty
+                        ? peerId
+                            .split(" ")
+                            .where((p) => p.isNotEmpty)
+                            .map((p) => p[0])
+                            .take(2)
+                            .join()
+                            .toUpperCase()
+                        : "?";
+                    return GestureDetector(
+                      onTap: () => widget.onOpenConversation(conv),
+                      child: Container(
+                        color: Colors.transparent,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [_green, _greenLight],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  initials,
+                                  style: GoogleFonts.dmSans(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          "User $peerId",
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: GoogleFonts.dmSans(
+                                            fontWeight: FontWeight.w600,
+                                            fontSize: 14,
+                                            color: _textPrimary,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        _ChatScreenState._timeDisplay(
+                                          conv.createdAt,
+                                        ),
+                                        style: GoogleFonts.dmSans(
+                                          fontSize: 11,
+                                          color: _textMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    "Listing ${conv.listingId}",
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 12,
+                                      color: _textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Unread pill placeholder – stylistic only (no backend count)
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 8,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _green.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              child: Text(
+                                "Chat",
+                                style: GoogleFonts.dmSans(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: _green,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
           ),
-        ),
-      ],
+        ],
       ),
     );
   }
@@ -2466,7 +3054,7 @@ class _InboxScreenState extends State<InboxScreen> {
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
-                color: selected ? _jijiGreen : Colors.transparent,
+                color: selected ? _green : Colors.transparent,
                 width: 3,
               ),
             ),
@@ -2474,10 +3062,10 @@ class _InboxScreenState extends State<InboxScreen> {
           child: Text(
             label,
             textAlign: TextAlign.center,
-            style: GoogleFonts.poppins(
+            style: GoogleFonts.dmSans(
               fontWeight: FontWeight.w600,
               fontSize: 14,
-              color: selected ? _jijiGreen : _jijiTextGray,
+              color: selected ? _green : _textMuted,
             ),
           ),
         ),
@@ -2533,89 +3121,74 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
     }
   }
 
+  Widget _favTab(String label, int index) {
+    final isActive = _tabIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _tabIndex = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isActive ? _green : Colors.transparent,
+              width: 3,
+            ),
+          ),
+        ),
+        child: Text(
+          label,
+          textAlign: TextAlign.center,
+          style: GoogleFonts.dmSans(
+            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            fontSize: 14,
+            color: isActive ? _green : _textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       top: false,
       child: Column(
         children: [
-          // Green header: My Favorites
+          // Dark header: Saved
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(0, 48, 0, 16),
-            color: _jijiGreen,
-            child: Center(
-              child: Text(
-                "My Favorites",
-                style: GoogleFonts.poppins(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
+            padding: const EdgeInsets.fromLTRB(24, 48, 24, 20),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0F1A2E), _navyCard],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
-          ),
-          // Tabs: Ads | Searches
-          Container(
-          color: _jijiCard,
-          child: Row(
-            children: [
-              Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _tabIndex = 0),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: _tabIndex == 0 ? _jijiGreen : Colors.transparent,
-                          width: 3,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      "Ads",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: _tabIndex == 0 ? _jijiGreen : _jijiTextGray,
-                      ),
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Saved",
+                  style: GoogleFonts.dmSans(
+                    fontSize: 24,
+                    fontWeight: FontWeight.w700,
+                    color: _textPrimary,
                   ),
                 ),
-              ),
-              Expanded(
-                child: InkWell(
-                  onTap: () => setState(() => _tabIndex = 1),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    decoration: BoxDecoration(
-                      border: Border(
-                        bottom: BorderSide(
-                          color: _tabIndex == 1 ? _jijiGreen : Colors.transparent,
-                          width: 3,
-                        ),
-                      ),
-                    ),
-                    child: Text(
-                      "Searches",
-                      textAlign: TextAlign.center,
-                      style: GoogleFonts.poppins(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                        color: _tabIndex == 1 ? _jijiGreen : _jijiTextGray,
-                      ),
-                    ),
-                  ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(child: _favTab("Ads", 0)),
+                    Expanded(child: _favTab("Searches", 1)),
+                  ],
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           ),
           Expanded(
             child: Container(
-              color: _jijiSectionBg,
+              color: _navy,
               child: _tabIndex == 0 ? _buildAdsTab() : _buildSearchesTab(),
             ),
           ),
@@ -2629,7 +3202,9 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       future: _listingsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: _green),
+          );
         }
         final listings = snapshot.data ?? [];
         if (listings.isEmpty) {
@@ -2640,26 +3215,26 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Icon(
-                    Icons.phone_android_outlined,
+                    Icons.bookmark_border_rounded,
                     size: 80,
-                    color: _jijiTextGray.withOpacity(0.5),
+                    color: _textMuted.withValues(alpha: 0.6),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     "You don't have favorite ads yet",
-                    style: GoogleFonts.poppins(
+                    style: GoogleFonts.dmSans(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: _jijiText,
+                      color: _textPrimary,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "'My Favorites' can help you to save ads you are interested in so that you can check them again later.",
-                    style: GoogleFonts.poppins(
+                    "Save ads you're interested in to find them here later.",
+                    style: GoogleFonts.dmSans(
                       fontSize: 14,
-                      color: _jijiTextGray,
+                      color: _textSecondary,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -2681,41 +3256,70 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Widget _favoriteListingTile(Listing listing) {
+    final cat = listing.categoryId;
     return Container(
-      color: _jijiCard,
+      color: _navyCard,
       margin: const EdgeInsets.only(bottom: 1),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: Container(
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: const Color(0xFFEEEEEE),
-            borderRadius: BorderRadius.circular(8),
+      child: Material(
+        color: _navyCard,
+        child: InkWell(
+          onTap: () => openListingDetails(
+            context: context,
+            listing: listing,
+            isFavorite: true,
+            onToggleFavorite: () => widget.onToggleFavorite(listing.id),
+            onReport: () => widget.onReportListing(listing),
+            onBlock: () => widget.onBlockUser(listing.sellerId),
+            onStartChat: () => widget.onStartChat(listing),
           ),
-          child: const Icon(Icons.image, color: _jijiTextGray, size: 28),
-        ),
-        title: Text(
-          listing.title,
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-            color: _jijiText,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: _catGradient(cat),
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(_catIcon(cat), color: Colors.white, size: 28),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        listing.title,
+                        style: GoogleFonts.dmSans(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: _textPrimary,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        listing.priceLabel,
+                        style: GoogleFonts.dmSans(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: _green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: _textMuted, size: 22),
+              ],
+            ),
           ),
-        ),
-        subtitle: Text(
-          listing.priceLabel,
-          style: GoogleFonts.poppins(fontSize: 13, color: _jijiGreen),
-        ),
-        trailing: const Icon(Icons.chevron_right, color: _jijiTextGray),
-        onTap: () => openListingDetails(
-          context: context,
-          listing: listing,
-          isFavorite: true,
-          onToggleFavorite: () => widget.onToggleFavorite(listing.id),
-          onReport: () => widget.onReportListing(listing),
-          onBlock: () => widget.onBlockUser(listing.sellerId),
-          onStartChat: () => widget.onStartChat(listing),
         ),
       ),
     );
@@ -2730,17 +3334,26 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                Icons.search_off,
+                Icons.search_off_rounded,
                 size: 80,
-                color: _jijiTextGray.withOpacity(0.5),
+                color: _textMuted.withValues(alpha: 0.6),
               ),
               const SizedBox(height: 16),
               Text(
                 "No saved searches yet",
-                style: GoogleFonts.poppins(
+                style: GoogleFonts.dmSans(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
-                  color: _jijiText,
+                  color: _textPrimary,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "Save a search to get notified when new ads match.",
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  color: _textSecondary,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -2755,21 +3368,28 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       itemBuilder: (context, index) {
         final search = widget.savedSearches[index];
         return Container(
-          color: _jijiCard,
+          color: _navyCard,
           margin: const EdgeInsets.only(bottom: 1),
           child: ListTile(
             title: Text(
               search.query.isEmpty ? "All listings" : search.query,
-              style: GoogleFonts.poppins(fontWeight: FontWeight.w600, color: _jijiText),
+              style: GoogleFonts.dmSans(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: _textPrimary,
+              ),
             ),
             subtitle: Text(
               [
                 if (search.categoryId != null) search.categoryId!,
                 if (search.location != null) search.location!,
               ].whereType<String>().join(" • "),
-              style: GoogleFonts.poppins(fontSize: 12, color: _jijiTextGray),
+              style: GoogleFonts.dmSans(
+                fontSize: 12,
+                color: _textSecondary,
+              ),
             ),
-            trailing: const Icon(Icons.chevron_right, color: _jijiTextGray),
+            trailing: const Icon(Icons.chevron_right, color: _textMuted, size: 22),
           ),
         );
       },
@@ -2837,6 +3457,14 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
+  static String _timeDisplay(String raw) {
+    final d = DateTime.tryParse(raw);
+    if (d != null) {
+      return "${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}";
+    }
+    return raw;
+  }
+
   @override
   Widget build(BuildContext context) {
     final args = _args;
@@ -2844,7 +3472,90 @@ class _ChatScreenState extends State<ChatScreen> {
       return const Scaffold(body: Center(child: Text("No conversation.")));
     }
     return Scaffold(
-      appBar: AppBar(title: Text("Listing ${args.listingId}")),
+      backgroundColor: _navy,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(70),
+        child: Container(
+          decoration: const BoxDecoration(
+            color: _navyCard,
+            border: Border(
+              bottom: BorderSide(color: _navyBorder),
+            ),
+          ),
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.of(context).pop(),
+                    child: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: _textPrimary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_green, _greenLight],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Center(
+                      child: Text(
+                        args.peerId.isNotEmpty
+                            ? args.peerId[0].toUpperCase()
+                            : "?",
+                        style: GoogleFonts.dmSans(
+                          color: Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "Chat",
+                          style: GoogleFonts.dmSans(
+                            color: _textPrimary,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          "Listing ${args.listingId}",
+                          style: GoogleFonts.dmSans(
+                            color: _textSecondary,
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      _headerActionButton(Icons.call_outlined),
+                      const SizedBox(width: 6),
+                      _headerActionButton(Icons.more_vert_rounded),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
       body: Column(
         children: [
           Expanded(
@@ -2852,64 +3563,239 @@ class _ChatScreenState extends State<ChatScreen> {
               future: _future,
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const Center(
+                    child: CircularProgressIndicator(color: _green),
+                  );
                 }
                 final messages = snapshot.data ?? [];
                 if (messages.isEmpty) {
-                  return const Center(child: Text("No messages yet."));
-                }
-                return ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: messages
-                      .map(
-                        (message) => Align(
-                          alignment: message.senderId == args.currentUserId
-                              ? Alignment.centerRight
-                              : Alignment.centerLeft,
-                          child: ChatBubble(text: message.text),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 48,
+                          color: _textMuted,
                         ),
-                      )
-                      .toList(),
+                        const SizedBox(height: 16),
+                        Text(
+                          "No messages yet",
+                          style: GoogleFonts.dmSans(
+                            color: _textPrimary,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          "Start the conversation below",
+                          style: GoogleFonts.dmSans(
+                            color: _textSecondary,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.all(20),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index];
+                    final isMine = message.senderId == args.currentUserId;
+                    return Align(
+                      alignment: isMine
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: _DarkBubble(
+                        text: message.text,
+                        isMine: isMine,
+                        time: _timeDisplay(message.createdAt),
+                      ),
+                    );
+                  },
                 );
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
+          Container(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
+            decoration: const BoxDecoration(
+              color: _navyCard,
+              border: Border(
+                top: BorderSide(color: _navyBorder),
+              ),
+            ),
             child: Row(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(hintText: "Type a message")
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: _navyLight,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _navyBorder),
+                  ),
+                  child: const Icon(
+                    Icons.attach_file_rounded,
+                    color: _textSecondary,
+                    size: 18,
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(onPressed: _sendMessage, icon: const Icon(Icons.send))
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: _navyLight,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: _navyBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _messageController,
+                            style: GoogleFonts.dmSans(
+                              color: _textPrimary,
+                              fontSize: 14,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: "Type a message…",
+                              hintStyle: GoogleFonts.dmSans(
+                                color: _textMuted,
+                                fontSize: 14,
+                              ),
+                              border: InputBorder.none,
+                              filled: false,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                            ),
+                            onSubmitted: (_) => _sendMessage(),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [_green, _greenLight],
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      boxShadow: [
+                        BoxShadow(
+                          color: _green.withOpacity(0.4),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.send_rounded,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
               ],
             ),
-          )
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _headerActionButton(IconData icon) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(
+        color: _navyLight,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: _navyBorder),
+      ),
+      child: Icon(
+        icon,
+        color: _textSecondary,
+        size: 16,
       ),
     );
   }
 }
 
-class ChatBubble extends StatelessWidget {
+class _DarkBubble extends StatelessWidget {
   final String text;
+  final bool isMine;
+  final String time;
 
-  const ChatBubble({super.key, required this.text});
+  const _DarkBubble({
+    required this.text,
+    required this.isMine,
+    required this.time,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceVariant,
-        borderRadius: BorderRadius.circular(12)
+      margin: const EdgeInsets.only(bottom: 10),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.of(context).size.width * 0.72,
       ),
-      child: Text(text),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: isMine ? _green : _navyCard,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(16),
+          topRight: const Radius.circular(16),
+          bottomLeft: Radius.circular(isMine ? 16 : 4),
+          bottomRight: Radius.circular(isMine ? 4 : 16),
+        ),
+        border: isMine
+            ? null
+            : Border.all(color: _navyBorder),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.15),
+            blurRadius: 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment:
+            isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            text,
+            style: GoogleFonts.dmSans(
+              fontSize: 14,
+              height: 1.4,
+              color: isMine ? Colors.white : _textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            time,
+            style: GoogleFonts.dmSans(
+              fontSize: 10,
+              color: isMine
+                  ? Colors.white.withOpacity(0.6)
+                  : _textMuted,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -2934,170 +3820,455 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Column(
-          children: [
-            // White header: avatar, name, settings
-            Container(
-              width: double.infinity,
+    final initials = user.name.isNotEmpty ? user.name[0].toUpperCase() : "?";
+    final memberSinceLabel =
+        (user.memberSince.isNotEmpty ? user.memberSince : "").trim();
+    final favoritesCount = favoriteIds.length;
+    final savedSearchCount = savedSearches.length;
+
+    final hasEmail = user.email != null && user.email!.isNotEmpty;
+
+    // Approximate "sales rate" from approved vs total listings when available
+    final listingsTotal = user.listingCount;
+    final approved = user.approvedListings;
+    final salesRate =
+        listingsTotal > 0 ? ((approved / listingsTotal) * 100).clamp(0, 100) : 0.0;
+
+    return Container(
+      color: _navy,
+      child: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: Container(
               padding: EdgeInsets.fromLTRB(
-                16,
-                MediaQuery.of(context).padding.top + 16,
-                16,
-                16,
+                20,
+                MediaQuery.of(context).padding.top + 20,
+                20,
+                24,
               ),
-              color: _jijiCard,
-              child: Row(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF0D1F12), _navy],
+                ),
+              ),
+              child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: _jijiSectionBg,
-                    child: Text(
-                      user.name.isNotEmpty ? user.name[0].toUpperCase() : "?",
-                      style: GoogleFonts.poppins(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700,
-                        color: _jijiGreen,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Text(
-                      user.name,
-                      style: GoogleFonts.poppins(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
-                        color: _jijiText,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SettingsScreen(
-                          user: user,
-                          onSignOut: onSignOut,
+                  Row(
+                    children: [
+                      Text(
+                        "Profile",
+                        style: GoogleFonts.dmSans(
+                          fontSize: 22,
+                          fontWeight: FontWeight.w800,
+                          color: _textPrimary,
                         ),
                       ),
-                    ),
-                    icon: const Icon(Icons.settings, color: _jijiTextGray, size: 26),
+                      const Spacer(),
+                      Container(
+                        padding:
+                            const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _navyCard,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: _navyBorder),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SettingsScreen(
+                                user: user,
+                                onSignOut: onSignOut,
+                              ),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.settings_outlined,
+                                size: 16,
+                                color: _textSecondary,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "Settings",
+                                style: GoogleFonts.dmSans(
+                                  color: _textSecondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-            // Main content: action cards grid
-            Expanded(
-              child: Container(
-                color: _jijiSectionBg,
-                padding: const EdgeInsets.all(16),
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(height: 24),
+                  Row(
                     children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Stack(
                         children: [
-                          Expanded(
-                            child: Column(
-                              children: [
-                                _profileCard(
-                                  icon: Icons.list_alt,
-                                  label: "My ads",
-                                  onTap: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => MyListingsScreen(
-                                        api: api,
-                                        userId: user.id,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                _profileCard(
-                                  icon: Icons.local_shipping_outlined,
-                                  label: "Jiji delivery",
-                                  onTap: () {},
-                                ),
-                                const SizedBox(height: 12),
-                                _profileCard(
-                                  icon: Icons.sentiment_satisfied_alt_outlined,
-                                  label: "Feedback",
-                                  onTap: () {},
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [_green, _greenLight],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(22),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _green.withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
+                            child: Center(
+                              child: Text(
+                                initials,
+                                style: GoogleFonts.dmSans(
+                                  color: Colors.white,
+                                  fontSize: 28,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              children: [
-                                _profileCard(
-                                  icon: Icons.notifications_outlined,
-                                  label: "Notifications",
-                                  onTap: () {},
-                                ),
-                                const SizedBox(height: 12),
-                                _profileCard(
-                                  icon: Icons.people_outline,
-                                  label: "Followers",
-                                  onTap: () {},
-                                ),
-                                const SizedBox(height: 12),
-                                _profileCard(
-                                  icon: Icons.help_outline,
-                                  label: "FAQ",
-                                  onTap: () {},
-                                ),
-                              ],
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 22,
+                              height: 22,
+                              decoration: BoxDecoration(
+                                color: _green,
+                                shape: BoxShape.circle,
+                                border:
+                                    Border.all(color: _navy, width: 2),
+                              ),
+                              child: const Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 12,
+                              ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 80),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              user.name,
+                              style: GoogleFonts.dmSans(
+                                color: _textPrimary,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            if (hasEmail) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                user.email!,
+                                style: GoogleFonts.dmSans(
+                                  color: _textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 4,
+                              ),
+                              decoration: BoxDecoration(
+                                color: _green.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: _green.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                roleLabel(role),
+                                style: GoogleFonts.dmSans(
+                                  color: _green,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        // Support FAB
-        Positioned(
-          right: 16,
-          bottom: 16,
-          child: Material(
-            elevation: 4,
-            borderRadius: BorderRadius.circular(12),
-            color: _jijiGreen,
-            child: InkWell(
-              onTap: () {},
-              borderRadius: BorderRadius.circular(12),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.help_outline, color: Colors.white, size: 22),
-                    const SizedBox(width: 8),
-                    Text(
-                      "Support",
-                      style: GoogleFonts.poppins(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ],
-                ),
+                ],
               ),
             ),
           ),
-        ),
-      ],
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate(
+                [
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _navyCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _navyBorder),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.calendar_today_outlined,
+                                size: 14,
+                                color: _textMuted,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                memberSinceLabel.isNotEmpty
+                                    ? "Member since $memberSinceLabel"
+                                    : "Member since —",
+                                style: GoogleFonts.dmSans(
+                                  color: _textSecondary,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              _ProfileBadge(
+                                label: "Email verified",
+                                icon: Icons.email_outlined,
+                                active: user.emailVerified,
+                              ),
+                              _ProfileBadge(
+                                label: "Phone verified",
+                                icon: Icons.phone_outlined,
+                                active: user.phoneVerified,
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          _green.withOpacity(0.12),
+                          _navyCard,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: _green.withOpacity(0.25),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              "Seller performance",
+                              style: GoogleFonts.dmSans(
+                                color: _textPrimary,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 15,
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.trending_up_rounded,
+                              color: _green,
+                              size: 20,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 14),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _StatCard(
+                                value: listingsTotal > 0
+                                    ? "${salesRate.toStringAsFixed(0)}%"
+                                    : "—",
+                                label: "Sales rate",
+                                icon: Icons.percent_rounded,
+                                color: _green,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _StatCard(
+                                value: approved.toString(),
+                                label: "Approved ads",
+                                icon: Icons.check_circle_outline,
+                                color: const Color(0xFF60A5FA),
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: _StatCard(
+                                value: listingsTotal.toString(),
+                                label: "Total ads",
+                                icon: Icons.list_alt_rounded,
+                                color: _gold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _SectionHeader(
+                    title: "Favorites",
+                    action: favoritesCount > 0 ? "See all" : null,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _navyCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _navyBorder),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              favoritesCount > 0
+                                  ? Icons.favorite_rounded
+                                  : Icons.favorite_border_rounded,
+                              color: _textMuted,
+                              size: 28,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              favoritesCount > 0
+                                  ? "$favoritesCount favorites"
+                                  : "No favorites yet",
+                              style: GoogleFonts.dmSans(
+                                color: _textMuted,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _SectionHeader(
+                    title: "Saved searches",
+                    action: savedSearchCount > 0 ? "See all" : null,
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: _navyCard,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: _navyBorder),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.bookmark_border_rounded,
+                              color: _textMuted,
+                              size: 28,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              savedSearchCount > 0
+                                  ? "$savedSearchCount saved searches"
+                                  : "No saved searches yet",
+                              style: GoogleFonts.dmSans(
+                                color: _textMuted,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _PrimaryButton(
+                    label: "My Listings",
+                    icon: Icons.list_alt_rounded,
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MyListingsScreen(
+                          api: api,
+                          userId: user.id,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () {},
+                    style: OutlinedButton.styleFrom(
+                      minimumSize: const Size(double.infinity, 50),
+                      side: BorderSide(color: _navyBorder),
+                      foregroundColor: _textPrimary,
+                    ),
+                    icon: const Icon(Icons.swap_horiz_rounded, size: 18),
+                    label: Text(
+                      "Switch role",
+                      style: GoogleFonts.dmSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -3108,21 +4279,24 @@ class ProfileScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: _jijiCard,
+      color: _navyLight,
       borderRadius: BorderRadius.circular(12),
-      elevation: 1,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
+        child: Container(
           padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: _navyBorder),
+          ),
           child: Row(
             children: [
               if (badge != null)
                 Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    Icon(icon, color: _jijiTextGray, size: 24),
+                    Icon(icon, color: _textSecondary, size: 24),
                     Positioned(
                       top: -6,
                       right: -6,
@@ -3145,7 +4319,7 @@ class ProfileScreen extends StatelessWidget {
                   ],
                 )
               else
-                Icon(icon, color: _jijiTextGray, size: 24),
+                Icon(icon, color: _textSecondary, size: 24),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
@@ -3153,14 +4327,219 @@ class ProfileScreen extends StatelessWidget {
                   style: GoogleFonts.poppins(
                     fontWeight: FontWeight.w600,
                     fontSize: 14,
-                    color: _jijiText,
+                    color: _textPrimary,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: _jijiTextGray, size: 22),
+              const Icon(Icons.chevron_right, color: _textMuted, size: 22),
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _PrimaryButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final IconData? icon;
+
+  const _PrimaryButton({
+    required this.label,
+    this.onPressed,
+    this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      height: 54,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [_green, _greenLight],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: _green.withOpacity(0.35),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: onPressed,
+          child: Center(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (icon != null) ...[
+                  Icon(icon, size: 18, color: Colors.white),
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  label,
+                  style: GoogleFonts.dmSans(
+                    color: Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileBadge extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool active;
+
+  const _ProfileBadge({
+    required this.label,
+    required this.icon,
+    required this.active,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final Color color = active ? _green : _textSecondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: active ? color.withOpacity(0.15) : _navyLight,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: active ? color.withOpacity(0.4) : _navyBorder,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            icon,
+            size: 13,
+            color: active ? color : _textSecondary,
+          ),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(
+              color: active ? color : _textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final String? action;
+  final VoidCallback? onAction;
+
+  const _SectionHeader({
+    required this.title,
+    this.action,
+    this.onAction,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: GoogleFonts.dmSans(
+            color: _textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const Spacer(),
+        if (action != null)
+          GestureDetector(
+            onTap: onAction,
+            child: Text(
+              action!,
+              style: GoogleFonts.dmSans(
+                color: _green,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String value;
+  final String label;
+  final IconData icon;
+  final Color color;
+
+  const _StatCard({
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: _navyCard,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _navyBorder),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(icon, size: 18, color: color),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            value,
+            style: GoogleFonts.dmSans(
+              color: color,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: GoogleFonts.dmSans(
+              color: _textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -3179,20 +4558,20 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _jijiCard,
+      backgroundColor: _navyCard,
       appBar: AppBar(
-        backgroundColor: _jijiSectionBg,
+        backgroundColor: _navy,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: _jijiText),
+          icon: const Icon(Icons.arrow_back, color: _textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Settings",
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.dmSans(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: _jijiText,
+            color: _textPrimary,
           ),
         ),
         centerTitle: true,
@@ -3202,7 +4581,7 @@ class SettingsScreen extends StatelessWidget {
         children: [
           _settingsTile(
             icon: Icons.person_outline,
-            iconBg: _jijiSectionBg,
+            iconBg: _navy,
             label: "Personal info",
             onTap: () {},
           ),
@@ -3221,7 +4600,7 @@ class SettingsScreen extends StatelessWidget {
           _divider(),
           _settingsTile(
             icon: Icons.description_outlined,
-            iconBg: _jijiGreen,
+            iconBg: _green,
             label: "Verify your details",
             onTap: () {},
           ),
@@ -3236,7 +4615,7 @@ class SettingsScreen extends StatelessWidget {
           _divider(),
           _settingsTile(
             icon: Icons.phone_outlined,
-            iconBg: _jijiGreen,
+            iconBg: _green,
             label: "Change phone number",
             trailing: user.phone ?? "—",
             onTap: () {},
@@ -3252,7 +4631,7 @@ class SettingsScreen extends StatelessWidget {
           _divider(),
           _settingsTile(
             icon: Icons.chat_bubble_outline,
-            iconBg: _jijiGreen,
+            iconBg: _green,
             label: "Disable chats",
             trailing: "Enabled",
             onTap: () {},
@@ -3332,7 +4711,7 @@ class SettingsScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return Material(
-      color: _jijiCard,
+      color: _navyCard,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -3352,23 +4731,23 @@ class SettingsScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.dmSans(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: _jijiText,
+                    color: _textPrimary,
                   ),
                 ),
               ),
               if (trailing != null)
                 Text(
                   trailing,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.dmSans(
                     fontSize: 14,
-                    color: _jijiTextGray,
+                    color: _textSecondary,
                   ),
                 ),
               const SizedBox(width: 8),
-              const Icon(Icons.chevron_right, color: _jijiTextGray, size: 22),
+              const Icon(Icons.chevron_right, color: _textSecondary, size: 22),
             ],
           ),
         ),
@@ -3376,7 +4755,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _divider() => Divider(height: 1, color: Colors.grey.shade200);
+  Widget _divider() => const Divider(height: 1, color: _navyBorder);
 }
 
 class BusinessDetailsScreen extends StatelessWidget {
@@ -3385,20 +4764,20 @@ class BusinessDetailsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _jijiCard,
+      backgroundColor: _navyCard,
       appBar: AppBar(
-        backgroundColor: _jijiCard,
+        backgroundColor: _navyCard,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: _jijiGreen),
+          icon: const Icon(Icons.arrow_back, color: _green),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           "Business details",
-          style: GoogleFonts.poppins(
+          style: GoogleFonts.dmSans(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            color: _jijiText,
+            color: _textPrimary,
           ),
         ),
         centerTitle: true,
@@ -3418,7 +4797,7 @@ class BusinessDetailsScreen extends StatelessWidget {
 
   Widget _businessTile(String label, VoidCallback onTap) {
     return Material(
-      color: _jijiCard,
+      color: _navyCard,
       child: InkWell(
         onTap: onTap,
         child: Padding(
@@ -3428,14 +4807,14 @@ class BusinessDetailsScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.poppins(
+                  style: GoogleFonts.dmSans(
                     fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    color: _jijiText,
+                    color: _textPrimary,
                   ),
                 ),
               ),
-              const Icon(Icons.chevron_right, color: _jijiTextGray, size: 22),
+              const Icon(Icons.chevron_right, color: _textSecondary, size: 22),
             ],
           ),
         ),
@@ -3443,7 +4822,7 @@ class BusinessDetailsScreen extends StatelessWidget {
     );
   }
 
-  Widget _divider() => Divider(height: 1, color: Colors.grey.shade200);
+  Widget _divider() => const Divider(height: 1, color: _navyBorder);
 }
 
 class MyListingsScreen extends StatefulWidget {
@@ -3468,31 +4847,132 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("My Listings")),
+      appBar: AppBar(
+        title: Text(
+          "My Listings",
+          style: GoogleFonts.dmSans(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: _textPrimary,
+          ),
+        ),
+      ),
       body: FutureBuilder<List<Listing>>(
         future: _future,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(_green),
+              ),
+            );
           }
           final listings = snapshot.data ?? [];
           if (listings.isEmpty) {
-            return const Center(child: Text("No listings yet."));
+            return Center(
+              child: Text(
+                "No listings yet.",
+                style: GoogleFonts.dmSans(
+                  fontSize: 14,
+                  color: _textSecondary,
+                ),
+              ),
+            );
           }
-          return ListView(
+          return ListView.builder(
             padding: const EdgeInsets.all(16),
-            children: listings
-                .map(
-                  (listing) => Card(
-                    child: ListTile(
-                      title: Text(listing.title),
-                      subtitle: Text(
-                        "${listing.priceLabel} • ${listing.status.toUpperCase()}",
+            itemCount: listings.length,
+            itemBuilder: (context, index) {
+              final listing = listings[index];
+              final gradient = _catGradient(listing.categoryId);
+              return Container(
+                margin: const EdgeInsets.only(bottom: 12),
+                decoration: BoxDecoration(
+                  color: _navyCard,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: _navyBorder),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 80,
+                      height: 80,
+                      margin: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: gradient,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        _catIcon(listing.categoryId),
+                        color: _textPrimary.withOpacity(0.85),
+                        size: 32,
                       ),
                     ),
-                  ),
-                )
-                .toList(),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                          right: 12,
+                          top: 14,
+                          bottom: 14,
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              listing.title,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: _textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              listing.priceLabel,
+                              style: GoogleFonts.dmSans(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: _green,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _navyLight,
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(color: _navyBorder),
+                                  ),
+                                  child: Text(
+                                    listing.status.toUpperCase(),
+                                    style: GoogleFonts.dmSans(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: _textSecondary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           );
         },
       ),
