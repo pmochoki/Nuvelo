@@ -5,12 +5,12 @@ import "package:flutter/services.dart";
 import "api.dart";
 import "models.dart";
 
-const Color _green = Color(0xFF1DB954);
-const Color _greenLight = Color(0xFF2ECC71);
-const Color _navy = Color(0xFF0A0F1E);
-const Color _navyCard = Color(0xFF111827);
-const Color _navyLight = Color(0xFF1E2A3A);
-const Color _navyBorder = Color(0xFF2D3748);
+const Color _green = Color(0xFF7C3AED);
+const Color _greenLight = Color(0xFF8B5CF6);
+const Color _navy = Color(0xFF0D0A1E);
+const Color _navyCard = Color(0xFF13102A);
+const Color _navyLight = Color(0xFF1E1A35);
+const Color _navyBorder = Color(0xFF2E2850);
 const Color _gold = Color(0xFFF59E0B);
 const Color _textPrimary = Color(0xFFF9FAFB);
 const Color _textSecondary = Color(0xFF9CA3AF);
@@ -20,7 +20,7 @@ void main() {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
-    systemNavigationBarColor: Color(0xFF111827),
+    systemNavigationBarColor: Color(0xFF13102A),
     systemNavigationBarIconBrightness: Brightness.light,
   ));
   runApp(const NuveloApp());
@@ -491,17 +491,19 @@ List<Color> _catGradient(String cat) {
   switch (cat) {
     case "rentals":
     case "real-estate":
-      return [const Color(0xFF1E3A5F), const Color(0xFF0F2027)];
+      return [const Color(0xFF1E1B4B), const Color(0xFF312E81)];
     case "vehicles":
-      return [const Color(0xFF2D1B69), const Color(0xFF11998E)];
+      return [const Color(0xFF2E1065), const Color(0xFF4C1D95)];
     case "electronics":
-      return [const Color(0xFF1A1A2E), const Color(0xFF16213E)];
+      return [const Color(0xFF1A103A), const Color(0xFF2D1B69)];
     case "clothes":
-      return [const Color(0xFF4A0E8F), const Color(0xFF2D1B69)];
+      return [const Color(0xFF3B0764), const Color(0xFF6B21A8)];
     case "jobs":
-      return [const Color(0xFF0F3443), const Color(0xFF34E89E)];
+      return [const Color(0xFF14103A), const Color(0xFF4338CA)];
+    case "services":
+      return [const Color(0xFF1E1040), const Color(0xFF5B21B6)];
     default:
-      return [const Color(0xFF141E30), const Color(0xFF243B55)];
+      return [const Color(0xFF13102A), const Color(0xFF2E2850)];
   }
 }
 
@@ -933,7 +935,7 @@ class _SignInScreenState extends State<SignInScreen> {
               padding: const EdgeInsets.fromLTRB(24, 48, 24, 40),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF0F1A2E), _navyCard],
+                  colors: [Color(0xFF0D0A1E), _navyCard],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -1322,8 +1324,8 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
           SliverToBoxAdapter(
             child: Container(
               decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Color(0xFF0F1A2E), _navy],
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0D0A1E), Color(0xFF13102A)],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                 ),
@@ -1445,7 +1447,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF0D3321), Color(0xFF1A5C3A)],
+                  colors: [Color(0xFF1E1040), Color(0xFF4C1D95)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -2577,7 +2579,7 @@ class _PostListingScreenState extends State<PostListingScreen> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF0F1A2E), _navyCard],
+                colors: [Color(0xFF0D0A1E), _navyCard],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -2859,7 +2861,7 @@ class _InboxScreenState extends State<InboxScreen> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF0F1A2E), _navyCard],
+                colors: [Color(0xFF0D0A1E), _navyCard],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -3127,7 +3129,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
           Container(
             decoration: const BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFF0F1A2E), _navyCard],
+                colors: [Color(0xFF0D0A1E), _navyCard],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
@@ -3682,7 +3684,7 @@ class ProfileScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
-                  colors: [Color(0xFF0D1F12), _navy],
+                  colors: [Color(0xFF0D0A1E), Color(0xFF13102A)],
                 ),
               ),
               child: Column(
