@@ -92,6 +92,27 @@ authBtn?.addEventListener("click", () => {
   openModal();
 });
 
+/** Enter in text fields should submit; native behavior is unreliable inside dialogs. */
+loginForm?.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") {
+    return;
+  }
+  if (e.isComposing || e.repeat) {
+    return;
+  }
+  const t = e.target;
+  if (!t || t.tagName !== "INPUT") {
+    return;
+  }
+  e.preventDefault();
+  e.stopPropagation();
+  if (typeof loginForm.requestSubmit === "function") {
+    loginForm.requestSubmit();
+  } else {
+    loginForm.querySelector("button[type='submit']")?.click();
+  }
+});
+
 loginForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const fd = new FormData(loginForm);
