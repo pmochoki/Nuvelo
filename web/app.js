@@ -1,7 +1,28 @@
-const API_BASE =
-  window.location.origin === "null"
-    ? "http://localhost:4000"
-    : window.location.origin;
+/** Public API (Render). Override in console: window.__INTERHUNGARY_API__ = "https://…" */
+const RENDER_API_DEFAULT = "https://interhungary-backend.onrender.com";
+
+const API_BASE = (() => {
+  if (typeof window === "undefined") {
+    return RENDER_API_DEFAULT;
+  }
+  const injected = window.__INTERHUNGARY_API__;
+  if (injected) {
+    return String(injected).replace(/\/$/, "");
+  }
+  const { hostname, origin } = window.location;
+  if (!hostname || origin === "null") {
+    return "http://localhost:4000";
+  }
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    return origin;
+  }
+  // Backend serves both site + API on Render
+  if (hostname.endsWith(".onrender.com")) {
+    return origin;
+  }
+  // Site on Vercel (or any other static host) → API stays on Render
+  return RENDER_API_DEFAULT;
+})();
 
 const STORAGE_KEY = "ih_user_profile";
 
