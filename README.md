@@ -9,7 +9,8 @@ The goal is to make it easy to discover and offer opportunities across language 
 
 - **Multi-category marketplace**: rentals, jobs, services, and goods in one feed.
 - **Cross‑platform app**: single Flutter codebase targeting iOS, Android, and Huawei devices.
-- **Admin moderation UI**: lightweight dashboard for reviewing listings and users.
+- **Public website**: browse and post listings in the browser (same API as the app).
+- **Admin moderation UI**: lightweight dashboard for reviewing listings and users (`/admin` on the backend host).
 - **API backend**: Node.js service exposing REST endpoints for the mobile app and admin UI.
 - **MVP-focused**: simple scaffolding with in‑memory / mock data to iterate quickly.
 
@@ -19,13 +20,15 @@ The goal is to make it easy to discover and offer opportunities across language 
 
 - **Mobile**: Flutter (Dart)
 - **Backend**: Node.js (TypeScript/JavaScript)
-- **Admin UI**: HTML/CSS/JS (framework‑minimal)
+- **Public web**: HTML/CSS/JS (`web/`, served at `/` by the backend)
+- **Admin UI**: HTML/CSS/JS (framework‑minimal, served at `/admin`)
 - **Infrastructure**: Render (backend), Codemagic (CI/CD for mobile)
 
 Repository layout:
 
 - `mobile/` – Flutter application (iOS/Android/Huawei)
 - `backend/` – Node.js API server
+- `web/` – Public marketplace site (browse, sign-in, post listings)
 - `admin-ui/` – Browser-based moderation dashboard
 - `docs/` – Product scope, data model, API contracts, release notes
 - `assets/` – Design assets, icons, logos
@@ -48,18 +51,14 @@ npm run start
 - The server will start on the port defined in the backend config (check `.env` or config files).
 - This MVP currently uses **in‑memory data**, so no external database is required to get started.
 
-#### 2. Admin UI
+#### 2. Public website & admin UI
 
-The admin UI is a static site intended for quick moderation and debugging.
+With the backend running, the same process serves:
 
-```bash
-cd admin-ui
-# Option A: open index.html directly in a browser
-# Option B: serve it via a simple HTTP server
-python3 -m http.server 8080
-```
+- **Marketplace (public):** `http://localhost:4000/` — browse listings, sign in, post new ones.
+- **Moderation (admin):** `http://localhost:4000/admin/` — review pending listings and reports.
 
-Then open `http://localhost:8080` (or just open `index.html` in your browser if served directly).
+Opening `admin-ui/index.html` directly without the API will not work for moderation; use the URLs above so requests go to the same origin as the API.
 
 #### 3. Mobile app
 

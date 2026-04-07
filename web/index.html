@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="InterHungary — rentals, jobs, services, and goods for internationals and locals in Hungary."
+    />
+    <title>InterHungary — Marketplace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,600;0,9..40,700;1,9..40,400&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="site-header__inner">
+        <a class="brand" href="#/">InterHungary</a>
+        <nav class="site-nav" aria-label="Main">
+          <a href="#/">Browse</a>
+          <a href="#/post">Post a listing</a>
+          <button type="button" class="btn btn--ghost" id="auth-btn" hidden>
+            Sign in
+          </button>
+          <span class="user-chip" id="user-chip" hidden></span>
+        </nav>
+      </div>
+    </header>
+
+    <main id="app" class="main" aria-live="polite"></main>
+
+    <footer class="site-footer">
+      <p>
+        Rentals, jobs, services &amp; goods — built for Hungary’s international
+        community. App coming to the App Store; same account works on web and
+        mobile.
+      </p>
+      <p class="muted">
+        <a href="/admin/">Moderation dashboard</a>
+      </p>
+    </footer>
+
+    <div id="login-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title" hidden>
+      <div class="modal__backdrop" data-close-modal></div>
+      <div class="modal__panel">
+        <h2 id="login-title">Sign in</h2>
+        <p class="muted small">
+          MVP sign-in: your profile is stored for this browser session. Use the
+          same name &amp; email later to reconnect to your listings.
+        </p>
+        <form id="login-form" class="stack">
+          <label>
+            Display name
+            <input name="name" required minlength="2" autocomplete="name" placeholder="Maria Kovacs" />
+          </label>
+          <label>
+            Role
+            <select name="role" required>
+              <option value="customer">Buyer / renter</option>
+              <option value="seller">Seller</option>
+              <option value="agent">Agent</option>
+              <option value="landlord">Landlord</option>
+            </select>
+          </label>
+          <label>
+            Email (optional)
+            <input name="email" type="email" autocomplete="email" placeholder="you@example.com" />
+          </label>
+          <label>
+            Phone (optional)
+            <input name="phone" autocomplete="tel" placeholder="+36 …" />
+          </label>
+          <div class="button-row">
+            <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
+            <button type="submit" class="btn btn--primary">Continue</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

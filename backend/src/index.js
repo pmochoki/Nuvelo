@@ -17,7 +17,6 @@ const { validateListing, validateMessage } = require("./validation");
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "../../admin-ui")));
 
 const generateId = (prefix) =>
   `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
@@ -328,7 +327,7 @@ app.get("/conversations", (req, res) => {
   const result = conversations.filter(
     (conv) => conv.buyerId === userId || conv.sellerId === userId
   );
-  res.json(result.map(enrichListing));
+  res.json(result);
 });
 
 app.get("/conversations/:id/messages", (req, res) => {
@@ -636,6 +635,9 @@ app.get("/admin/metrics", (req, res) => {
     totalUsers: users.length
   });
 });
+
+app.use(express.static(path.join(__dirname, "../../web")));
+app.use("/admin", express.static(path.join(__dirname, "../../admin-ui")));
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
