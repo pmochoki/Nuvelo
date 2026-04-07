@@ -114,7 +114,7 @@ class IHTheme {
         type: BottomNavigationBarType.fixed,
         elevation: 0,
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         color: IHColors.navyCard,
         elevation: 0,
         shape: RoundedRectangleBorder(

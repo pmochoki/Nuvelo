@@ -4,30 +4,17 @@ import "package:flutter/services.dart";
 
 import "api.dart";
 import "models.dart";
-import "theme.dart";
 
-// Centralized color palette (IHColors) is defined in `theme.dart`.
-// These aliases preserve existing private names used across the file,
-// while ensuring all colors stay consistent with the redesign theme.
-const Color _green = IHColors.green;
-const Color _greenLight = IHColors.greenLight;
-const Color _navy = IHColors.navy;
-const Color _navyCard = IHColors.navyCard;
-const Color _navyLight = IHColors.navyLight;
-const Color _navyBorder = IHColors.navyBorder;
-const Color _gold = IHColors.gold;
-const Color _textPrimary = IHColors.textPrimary;
-const Color _textSecondary = IHColors.textSecondary;
-const Color _textMuted = IHColors.textMuted;
-
-// Aliases for legacy color names (for compatibility)
-const Color _jijiGreen = _green;
-const Color _jijiGreenDark = _green;
-const Color _jijiBg = _navy;
-const Color _jijiCard = _navyCard;
-const Color _jijiText = _textPrimary;
-const Color _jijiTextGray = _textSecondary;
-const Color _jijiSectionBg = _navy;
+const Color _green = Color(0xFF1DB954);
+const Color _greenLight = Color(0xFF2ECC71);
+const Color _navy = Color(0xFF0A0F1E);
+const Color _navyCard = Color(0xFF111827);
+const Color _navyLight = Color(0xFF1E2A3A);
+const Color _navyBorder = Color(0xFF2D3748);
+const Color _gold = Color(0xFFF59E0B);
+const Color _textPrimary = Color(0xFFF9FAFB);
+const Color _textSecondary = Color(0xFF9CA3AF);
+const Color _textMuted = Color(0xFF4B5563);
 
 void main() {
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -36,16 +23,16 @@ void main() {
     systemNavigationBarColor: Color(0xFF111827),
     systemNavigationBarIconBrightness: Brightness.light,
   ));
-  runApp(const InterHungaryApp());
+  runApp(const NuveloApp());
 }
 
-class InterHungaryApp extends StatelessWidget {
-  const InterHungaryApp({super.key});
+class NuveloApp extends StatelessWidget {
+  const NuveloApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "InterHungary",
+      title: "Nuvelo",
       theme: ThemeData(
         useMaterial3: true,
         scaffoldBackgroundColor: _navy,
@@ -69,7 +56,7 @@ class InterHungaryApp extends StatelessWidget {
             color: _textPrimary,
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           color: _navyCard,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -971,7 +958,7 @@ class _SignInScreenState extends State<SignInScreen> {
                       ),
                       const SizedBox(width: 12),
                       Text(
-                        "InterHungary",
+                        "Nuvelo",
                         style: GoogleFonts.dmSans(
                           fontSize: 22,
                           fontWeight: FontWeight.w800,
@@ -991,7 +978,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Hungary's marketplace for everyone.",
+                    "Discover. Connect. Trade. Anywhere.",
                     style: GoogleFonts.dmSans(
                       fontSize: 15,
                       color: _textSecondary,
@@ -1137,7 +1124,9 @@ class _HomeLoaderState extends State<HomeLoader> {
       future: _future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: _green),
+          );
         }
         if (!snapshot.hasData) {
           return Center(
@@ -1311,15 +1300,6 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
     }).toList();
   }
 
-  Future<void> _saveSearch() async {
-    final search = SavedSearch(
-      query: _query,
-      categoryId: _categoryId,
-      location: _location.isEmpty ? null : _location
-    );
-    await widget.onSaveSearch(search);
-  }
-
   IconData _categoryIcon(String categoryId) {
     switch (categoryId) {
       case "vehicles": return Icons.directions_car;
@@ -1341,63 +1321,105 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
         slivers: [
           SliverToBoxAdapter(
             child: Container(
-              width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
+                  colors: [Color(0xFF0F1A2E), _navy],
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFF0F1A2E), _navy],
                 ),
               ),
-              padding: const EdgeInsets.fromLTRB(16, 48, 16, 24),
+              padding: const EdgeInsets.fromLTRB(20, 56, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      _pill(
-                        label: _location.isEmpty ? "Budapest, HU" : _location,
-                        icon: Icons.keyboard_arrow_down,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: _navyLight,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: _navyBorder),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(color: _green, shape: BoxShape.circle),
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _location.isEmpty ? "Your City" : _location,
+                              style: GoogleFonts.dmSans(
+                                color: _textSecondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                       const Spacer(),
-                      IconButton(
-                        icon: const Icon(Icons.notifications_outlined),
-                        color: _textPrimary,
-                        onPressed: () {},
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color: _navyLight,
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: _navyBorder),
+                        ),
+                        child: const Icon(Icons.notifications_none_rounded, color: _textSecondary, size: 22),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
                   Text(
                     "Discover\neverything.",
-                    style: GoogleFonts.poppins(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w700,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 30,
+                      fontWeight: FontWeight.w800,
                       color: _textPrimary,
-                      height: 1.2,
+                      height: 1.15,
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   Container(
                     decoration: BoxDecoration(
                       color: _navyLight,
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                       border: Border.all(color: _navyBorder),
                     ),
-                    child: TextField(
-                      decoration: InputDecoration(
-                        hintText: "Search...",
-                        hintStyle: GoogleFonts.poppins(color: _textMuted, fontSize: 14),
-                        prefixIcon: const Icon(Icons.search, color: _textMuted, size: 22),
-                        filled: true,
-                        fillColor: _navyLight,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 14),
+                        const Icon(Icons.search, color: _textMuted, size: 22),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            style: const TextStyle(color: _textPrimary),
+                            decoration: InputDecoration(
+                              hintText: "Search listings near you…",
+                              hintStyle: GoogleFonts.dmSans(color: _textMuted, fontSize: 14),
+                              border: InputBorder.none,
+                              enabledBorder: InputBorder.none,
+                              focusedBorder: InputBorder.none,
+                              filled: false,
+                              contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                            onChanged: (v) => setState(() => _query = v),
+                          ),
                         ),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      ),
-                      onChanged: (value) => setState(() => _query = value),
+                        Container(
+                          margin: const EdgeInsets.all(6),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: _green,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.tune_rounded, color: Colors.white, size: 18),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -1405,121 +1427,150 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
             ),
           ),
           SliverToBoxAdapter(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: SizedBox(
+              height: 52,
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                children: [
+                  _pill(null, "All", Icons.apps_rounded),
+                  ...widget.categories.map((c) => _pill(c.id, c.name, _categoryIcon(c.id))),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Container(
+              margin: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF0D3321), Color(0xFF1A5C3A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _green.withOpacity(0.3)),
+              ),
               child: Row(
                 children: [
-                  _pill(label: "All", selected: _categoryId == null, onTap: () => setState(() => _categoryId = null)),
-                  ...widget.categories.map(
-                    (c) => _pill(
-                      label: c.name,
-                      selected: _categoryId == c.id,
-                      onTap: () => setState(() => _categoryId = c.id),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: _green.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            "🌍 New on Nuvelo",
+                            style: GoogleFonts.dmSans(
+                              color: _green,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          "List your first item\nfor free today",
+                          style: GoogleFonts.dmSans(
+                            color: _textPrimary,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            height: 1.3,
+                          ),
+                        ),
+                        const SizedBox(height: 14),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: _green,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            "Post now",
+                            style: GoogleFonts.dmSans(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  const Icon(Icons.rocket_launch_rounded, color: _green, size: 56),
                 ],
               ),
             ),
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF0D3321), Color(0xFF1A5C3A)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: [
-                    const Text("🇭🇺", style: TextStyle(fontSize: 24)),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        "New in Budapest / List your first item…",
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: _textPrimary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
                     "Recent listings",
-                    style: GoogleFonts.poppins(
-                      fontSize: 16,
+                    style: GoogleFonts.dmSans(
+                      fontSize: 18,
                       fontWeight: FontWeight.w700,
                       color: _textPrimary,
                     ),
                   ),
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: Icon(
-                          Icons.view_list,
-                          color: _trendingGridView ? _textSecondary : _green,
-                          size: 22,
-                        ),
-                        onPressed: () => setState(() => _trendingGridView = false),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      ),
-                      const SizedBox(width: 4),
-                      IconButton(
-                        icon: Icon(
-                          Icons.grid_view,
-                          color: _trendingGridView ? _green : _textSecondary,
-                          size: 22,
-                        ),
-                        onPressed: () => setState(() => _trendingGridView = true),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                      ),
-                    ],
+                  const Spacer(),
+                  IconButton(
+                    icon: Icon(
+                      Icons.grid_view_rounded,
+                      color: _trendingGridView ? _green : _textMuted,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _trendingGridView = true),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 12),
+                  IconButton(
+                    icon: Icon(
+                      Icons.view_list_rounded,
+                      color: !_trendingGridView ? _green : _textMuted,
+                      size: 20,
+                    ),
+                    onPressed: () => setState(() => _trendingGridView = false),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
                   ),
                 ],
               ),
             ),
           ),
           if (filtered.isEmpty)
-            SliverToBoxAdapter(
+            const SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.all(24),
+                padding: EdgeInsets.all(32),
                 child: Center(
                   child: Text(
                     "No listings match your filters.",
-                    style: GoogleFonts.poppins(color: _textSecondary),
+                    style: TextStyle(color: _textSecondary),
                   ),
                 ),
               ),
             ),
           if (filtered.isNotEmpty && !_trendingGridView)
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (context, index) {
-                  final listing = filtered[index];
-                  return _listCard(context, listing);
-                },
-                childCount: filtered.length,
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              sliver: SliverList(
+                delegate: SliverChildBuilderDelegate(
+                  (ctx, i) => _listCard(ctx, filtered[i]),
+                  childCount: filtered.length,
+                ),
               ),
             ),
           if (filtered.isNotEmpty && _trendingGridView)
             SliverPadding(
-              padding: const EdgeInsets.fromLTRB(12, 0, 12, 16),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               sliver: SliverGrid(
                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: 2,
@@ -1528,10 +1579,7 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
                   childAspectRatio: 0.72,
                 ),
                 delegate: SliverChildBuilderDelegate(
-                  (context, index) {
-                    final listing = filtered[index];
-                    return _gridCard(context, listing);
-                  },
+                  (ctx, i) => _gridCard(ctx, filtered[i]),
                   childCount: filtered.length,
                 ),
               ),
@@ -1541,251 +1589,249 @@ class _CustomerBrowseScreenState extends State<CustomerBrowseScreen> {
     );
   }
 
-  Widget _pill({required String label, IconData? icon, bool selected = false, VoidCallback? onTap}) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: Material(
-        color: selected ? _green : _navyCard,
-        borderRadius: BorderRadius.circular(20),
-        child: InkWell(
-          onTap: onTap ?? () {},
+  Widget _pill(String? id, String label, IconData icon) {
+    final selected = _categoryId == id;
+    return GestureDetector(
+      onTap: () => setState(() => _categoryId = id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        margin: const EdgeInsets.only(right: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? _green : _navyLight,
           borderRadius: BorderRadius.circular(20),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: selected ? _green : _navyBorder),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: selected ? Colors.white : _textSecondary,
+          border: Border.all(color: selected ? _green : _navyBorder),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: _green.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
                   ),
-                ),
-                if (icon != null) ...[
-                  const SizedBox(width: 4),
-                  Icon(icon, color: selected ? Colors.white : _textMuted, size: 18),
-                ],
-              ],
+                ]
+              : [],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: selected ? Colors.white : _textSecondary),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                color: selected ? Colors.white : _textSecondary,
+                fontSize: 13,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
   }
 
-  // Redesign listing card mapped to real `Listing` model + callbacks
-  //
-  // - `listing.title` / `listing.location` / `listing.priceLabel`:
-  //   fill the visual fields from the backend `Listing` entity (replaces
-  //   the redesign's sample map like `{'title': ..., 'location': ...}`).
-  // - `widget.favoriteIds` / `widget.onToggleFavorite`:
-  //   drive the heart icon state and toggle using the existing favorites API.
-  // - `openListingDetails(...)`:
-  //   keeps original navigation & chat/report/block flows while using
-  //   the new gradient image/header layout from the redesign.
   Widget _listCard(BuildContext context, Listing listing) {
-    final gradient = _catGradient(listing.categoryId);
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-      decoration: BoxDecoration(
-        color: _navyCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _navyBorder),
+    final isFav = widget.favoriteIds.contains(listing.id);
+    return GestureDetector(
+      onTap: () => openListingDetails(
+        context: context,
+        listing: listing,
+        isFavorite: isFav,
+        onToggleFavorite: () => widget.onToggleFavorite(listing.id),
+        onReport: () => widget.onReportListing(listing),
+        onBlock: () => widget.onBlockUser(listing.sellerId),
+        onStartChat: () => widget.onStartChat(listing),
       ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => openListingDetails(
-            context: context,
-            listing: listing,
-            isFavorite: widget.favoriteIds.contains(listing.id),
-            onToggleFavorite: () => widget.onToggleFavorite(listing.id),
-            onReport: () => widget.onReportListing(listing),
-            onBlock: () => widget.onBlockUser(listing.sellerId),
-            onStartChat: () => widget.onStartChat(listing),
-          ),
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: _navyCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _navyBorder),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                gradient: LinearGradient(
+                  colors: _catGradient(listing.categoryId),
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Center(
+                child: Icon(
+                  _catIcon(listing.categoryId),
+                  color: Colors.white.withOpacity(0.15),
+                  size: 40,
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      listing.title,
+                      style: GoogleFonts.dmSans(
+                        color: _textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      listing.priceLabel,
+                      style: GoogleFonts.dmSans(
+                        color: _green,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(Icons.location_on_outlined, size: 12, color: _textMuted),
+                        const SizedBox(width: 3),
+                        Text(
+                          listing.location,
+                          style: GoogleFonts.dmSans(color: _textSecondary, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: IconButton(
+                icon: Icon(
+                  isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                  color: isFav ? Colors.redAccent : _textMuted,
+                  size: 22,
+                ),
+                onPressed: () => widget.onToggleFavorite(listing.id),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _gridCard(BuildContext context, Listing listing) {
+    final isFav = widget.favoriteIds.contains(listing.id);
+    return GestureDetector(
+      onTap: () => openListingDetails(
+        context: context,
+        listing: listing,
+        isFavorite: isFav,
+        onToggleFavorite: () => widget.onToggleFavorite(listing.id),
+        onReport: () => widget.onReportListing(listing),
+        onBlock: () => widget.onBlockUser(listing.sellerId),
+        onStartChat: () => widget.onStartChat(listing),
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: _navyCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: _navyBorder),
+        ),
+        child: Column(
+          children: [
+            Stack(
               children: [
                 Container(
-                  width: 88,
-                  height: 88,
+                  height: 120,
                   decoration: BoxDecoration(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                     gradient: LinearGradient(
+                      colors: _catGradient(listing.categoryId),
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: gradient,
                     ),
-                    borderRadius: BorderRadius.circular(8),
                   ),
-                  child: Icon(_catIcon(listing.categoryId), color: _textPrimary.withOpacity(0.9), size: 32),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        listing.title,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: _textPrimary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        listing.priceLabel,
-                        style: GoogleFonts.poppins(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: _green,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        listing.location,
-                        style: GoogleFonts.poppins(
-                          fontSize: 12,
-                          color: _textMuted,
-                        ),
-                      ),
-                    ],
+                  child: Center(
+                    child: Icon(
+                      _catIcon(listing.categoryId),
+                      color: Colors.white.withOpacity(0.12),
+                      size: 44,
+                    ),
                   ),
                 ),
-                IconButton(
-                  icon: Icon(
-                    widget.favoriteIds.contains(listing.id) ? Icons.favorite : Icons.favorite_border,
-                    color: widget.favoriteIds.contains(listing.id) ? Colors.red : _textSecondary,
-                    size: 22,
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: GestureDetector(
+                    onTap: () => widget.onToggleFavorite(listing.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.4),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isFav ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                        color: isFav ? Colors.redAccent : Colors.white,
+                        size: 16,
+                      ),
+                    ),
                   ),
-                  onPressed: () => widget.onToggleFavorite(listing.id),
                 ),
               ],
             ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Grid variant of the redesign listing card wired to real data:
-  //
-  // - Uses the same `Listing` fields (`title`, `location`, `priceLabel`)
-  //   and favorite IDs as the list view, but in a compact grid layout
-  //   matching the redesign.
-  // - Reuses `openListingDetails(...)` so existing routing, chat start,
-  //   report and block logic stay unchanged under the new UI.
-  Widget _gridCard(BuildContext context, Listing listing) {
-    final gradient = _catGradient(listing.categoryId);
-    return Container(
-      decoration: BoxDecoration(
-        color: _navyCard,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _navyBorder),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(12),
-        child: InkWell(
-          onTap: () => openListingDetails(
-            context: context,
-            listing: listing,
-            isFavorite: widget.favoriteIds.contains(listing.id),
-            onToggleFavorite: () => widget.onToggleFavorite(listing.id),
-            onReport: () => widget.onReportListing(listing),
-            onBlock: () => widget.onBlockUser(listing.sellerId),
-            onStartChat: () => widget.onStartChat(listing),
-          ),
-          borderRadius: BorderRadius.circular(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Stack(
-                alignment: Alignment.topRight,
-                children: [
-                  Container(
-                    height: 120,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: gradient,
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      listing.priceLabel,
+                      style: GoogleFonts.dmSans(
+                        color: _green,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
                       ),
-                      borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
                     ),
-                    child: Icon(_catIcon(listing.categoryId), color: _textPrimary.withOpacity(0.9), size: 36),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.all(6),
-                    child: IconButton(
-                      icon: Icon(
-                        widget.favoriteIds.contains(listing.id) ? Icons.favorite : Icons.favorite_border,
-                        color: widget.favoriteIds.contains(listing.id) ? Colors.red : _textSecondary,
-                        size: 20,
+                    const SizedBox(height: 4),
+                    Text(
+                      listing.title,
+                      style: GoogleFonts.dmSans(
+                        color: _textPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
                       ),
-                      onPressed: () => widget.onToggleFavorite(listing.id),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                  ),
-                ],
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        listing.priceLabel,
-                        style: GoogleFonts.poppins(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w700,
-                          color: _green,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        listing.title,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          color: _textPrimary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const Spacer(),
-                      Text(
-                        listing.location,
-                        style: GoogleFonts.poppins(
-                          fontSize: 11,
-                          color: _textMuted,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+                    const Spacer(),
+                    Text(
+                      listing.location,
+                      style: GoogleFonts.dmSans(color: _textMuted, fontSize: 11),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -1997,23 +2043,23 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
 
   Widget _badge(String label, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _navyCard,
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _navyBorder),
+        border: Border.all(color: color.withOpacity(0.3)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: 8),
+          Icon(icon, size: 13, color: color),
+          const SizedBox(width: 5),
           Text(
             label,
-            style: GoogleFonts.dmSans(
-              fontSize: 13,
+            style: TextStyle(
+              color: color,
+              fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: _textPrimary,
             ),
           ),
         ],
@@ -2023,32 +2069,15 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
 
   Widget _detailChip(String key, String value) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: _navyCard,
-        borderRadius: BorderRadius.circular(12),
+        color: _navyLight,
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: _navyBorder),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            "$key: ",
-            style: GoogleFonts.dmSans(
-              fontSize: 13,
-              color: _textMuted,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-          Text(
-            value,
-            style: GoogleFonts.dmSans(
-              fontSize: 13,
-              color: _textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
+      child: Text(
+        "$key: $value",
+        style: GoogleFonts.dmSans(color: _textSecondary, fontSize: 12),
       ),
     );
   }
@@ -2059,35 +2088,54 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
         ModalRoute.of(context)?.settings.arguments as ListingDetailsArgs?;
     final data = args?.listing ?? sampleListings.first;
     final isFavorite = _isFavorite ?? args?.isFavorite ?? false;
-    final gradientColors = _catGradient(data.categoryId);
 
     return Scaffold(
       backgroundColor: _navy,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
-            expandedHeight: 200,
+            expandedHeight: 260,
             pinned: true,
-            stretch: true,
             backgroundColor: _navy,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back_rounded, color: _textPrimary),
-              onPressed: () => Navigator.of(context).pop(),
+            leading: GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+              ),
             ),
             actions: [
-              IconButton(
-                icon: const Icon(Icons.share_rounded, color: _textPrimary),
-                onPressed: () {},
+              Container(
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.share_outlined, color: Colors.white, size: 20),
+                  onPressed: () {},
+                ),
               ),
-              IconButton(
-                onPressed: () {
-                  args?.onToggleFavorite();
-                  setState(() => _isFavorite = !isFavorite);
-                },
-                icon: Icon(
-                  isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
-                  color: isFavorite ? Colors.redAccent : _textPrimary,
-                  size: 24,
+              Container(
+                margin: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: IconButton(
+                  icon: Icon(
+                    isFavorite ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                    color: isFavorite ? Colors.redAccent : Colors.white,
+                    size: 20,
+                  ),
+                  onPressed: () {
+                    args?.onToggleFavorite();
+                    setState(() => _isFavorite = !isFavorite);
+                  },
                 ),
               ),
             ],
@@ -2095,16 +2143,16 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
               background: Container(
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
+                    colors: _catGradient(data.categoryId),
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: gradientColors,
                   ),
                 ),
                 child: Center(
                   child: Icon(
                     _catIcon(data.categoryId),
-                    size: 72,
-                    color: _textPrimary.withValues(alpha: 0.9),
+                    color: Colors.white.withOpacity(0.08),
+                    size: 120,
                   ),
                 ),
               ),
@@ -2116,7 +2164,6 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title + price row
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -2125,7 +2172,7 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
                           data.title,
                           style: GoogleFonts.dmSans(
                             fontSize: 22,
-                            fontWeight: FontWeight.w700,
+                            fontWeight: FontWeight.w800,
                             color: _textPrimary,
                           ),
                         ),
@@ -2134,31 +2181,25 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
                       Text(
                         data.priceLabel,
                         style: GoogleFonts.dmSans(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w700,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
                           color: _green,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Location row
                   Row(
                     children: [
-                      Icon(Icons.location_on_outlined, size: 18, color: _textSecondary),
-                      const SizedBox(width: 6),
+                      const Icon(Icons.location_on_outlined, size: 14, color: _textMuted),
+                      const SizedBox(width: 4),
                       Text(
                         data.location,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 14,
-                          color: _textSecondary,
-                          fontWeight: FontWeight.w500,
-                        ),
+                        style: GoogleFonts.dmSans(color: _textSecondary, fontSize: 13),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  // Seller card
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
@@ -2169,25 +2210,24 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
                     child: Row(
                       children: [
                         Container(
-                          width: 48,
-                          height: 48,
+                          width: 44,
+                          height: 44,
                           decoration: BoxDecoration(
-                            color: _navyLight,
+                            color: _green,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: _navyBorder),
                           ),
                           child: Center(
                             child: Text(
-                              data.sellerName.isNotEmpty ? data.sellerName[0].toUpperCase() : "?",
+                              data.sellerName.isNotEmpty ? data.sellerName[0] : "?",
                               style: GoogleFonts.dmSans(
-                                fontSize: 20,
+                                color: Colors.white,
+                                fontSize: 18,
                                 fontWeight: FontWeight.w700,
-                                color: _green,
                               ),
                             ),
                           ),
                         ),
-                        const SizedBox(width: 14),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -2195,153 +2235,127 @@ class _ListingDetailsScreenState extends State<ListingDetailsScreen> {
                               Text(
                                 data.sellerName,
                                 style: GoogleFonts.dmSans(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
                                   color: _textPrimary,
+                                  fontWeight: FontWeight.w700,
                                 ),
                               ),
-                              TextButton(
-                                onPressed: () {},
-                                style: TextButton.styleFrom(
-                                  padding: EdgeInsets.zero,
-                                  minimumSize: Size.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                                  foregroundColor: _green,
-                                ),
-                                child: Text(
-                                  "View profile",
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                              Text(
+                                "Seller",
+                                style: GoogleFonts.dmSans(
+                                  color: _textSecondary,
+                                  fontSize: 12,
                                 ),
                               ),
                             ],
                           ),
                         ),
+                        OutlinedButton(
+                          onPressed: () {},
+                          child: const Text("View profile"),
+                        ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Trust badges
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      _badge("Verified seller", Icons.verified_rounded, _green),
-                      _badge("Secure chat", Icons.lock_outline_rounded, _green),
-                      _badge("Fast responder", Icons.access_time_rounded, _green),
+                      _badge("Verified", Icons.verified_rounded, _green),
+                      _badge("Secure chat", Icons.lock_outline_rounded, const Color(0xFF60A5FA)),
+                      _badge("Fast responder", Icons.access_time_rounded, _gold),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  // About this listing
                   Text(
                     "About this listing",
                     style: GoogleFonts.dmSans(
-                      fontSize: 14,
+                      fontSize: 16,
                       fontWeight: FontWeight.w700,
-                      color: _textMuted,
+                      color: _textPrimary,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     data.description,
                     style: GoogleFonts.dmSans(
-                      fontSize: 15,
-                      height: 1.5,
-                      color: _textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  // Details chips
-                  Text(
-                    "Details",
-                    style: GoogleFonts.dmSans(
                       fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: _textMuted,
+                      color: _textSecondary,
+                      height: 1.6,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      _detailChip("Condition", data.condition),
-                      ...data.categoryFields.entries.map(
-                        (entry) => _detailChip(entry.key, entry.value),
-                      ),
-                    ],
-                  ),
                   const SizedBox(height: 20),
-                  // Safety notice card
+                  if (data.categoryFields.isNotEmpty) ...[
+                    Text(
+                      "Details",
+                      style: GoogleFonts.dmSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: _textPrimary,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [
+                        _detailChip("Condition", data.condition),
+                        ...data.categoryFields.entries.map(
+                          (e) => _detailChip(e.key, e.value),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                  ],
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: _navyCard,
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: _navyBorder),
+                      color: _gold.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _gold.withOpacity(0.3)),
                     ),
                     child: Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: _gold.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.shield_rounded, color: _gold, size: 28),
-                        ),
-                        const SizedBox(width: 14),
+                        const Icon(Icons.shield_rounded, color: _gold, size: 24),
+                        const SizedBox(width: 12),
                         Expanded(
                           child: Text(
                             "Use secure chat and meet in public for safe transactions.",
                             style: GoogleFonts.dmSans(
-                              fontWeight: FontWeight.w600,
-                              fontSize: 14,
                               color: _textSecondary,
+                              fontSize: 13,
                             ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  // Report / Block
+                  const SizedBox(height: 16),
                   Row(
                     children: [
-                      OutlinedButton(
-                        onPressed: args?.onReport,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _textSecondary,
-                          side: const BorderSide(color: _navyBorder),
-                        ),
-                        child: const Text("Report"),
-                      ),
-                      const SizedBox(width: 8),
-                      OutlinedButton(
-                        onPressed: args?.onBlock,
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: _textSecondary,
-                          side: const BorderSide(color: _navyBorder),
-                        ),
-                        child: const Text("Block"),
-                      ),
+                      OutlinedButton(onPressed: args?.onReport, child: const Text("Report")),
+                      const SizedBox(width: 12),
+                      OutlinedButton(onPressed: args?.onBlock, child: const Text("Block")),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  // Chat button
-                  _gradientButton(
-                    "Chat with seller",
-                    Icons.chat_bubble_outline_rounded,
-                    args?.onStartChat ?? () {},
-                  ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+        decoration: const BoxDecoration(
+          color: _navyCard,
+          border: Border(top: BorderSide(color: _navyBorder)),
+        ),
+        child: _gradientButton(
+          "Chat with seller",
+          Icons.chat_bubble_outline_rounded,
+          args?.onStartChat ?? () {},
+        ),
       ),
     );
   }
@@ -2556,245 +2570,249 @@ class _PostListingScreenState extends State<PostListingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        // Dark gradient header: Cancel | New Advert | Clear
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 48, 16, 14),
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF0F1A2E), _navyCard],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+    return Scaffold(
+      backgroundColor: _navy,
+      body: Column(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFF0F1A2E), _navyCard],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              MediaQuery.of(context).padding.top + 16,
+              16,
+              16,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.maybePop(context),
+                  child: Text(
+                    "Cancel",
+                    style: GoogleFonts.dmSans(
+                      color: _textSecondary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Text(
+                  "New Advert",
+                  style: GoogleFonts.dmSans(
+                    color: _textPrimary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _titleController.clear();
+                    _descriptionController.clear();
+                    _priceController.clear();
+                    _locationController.clear();
+                    for (final controller in _fieldControllers.values) {
+                      controller.clear();
+                    }
+                    setState(() => _images.clear());
+                  },
+                  child: Text(
+                    "Clear",
+                    style: GoogleFonts.dmSans(
+                      color: _green,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              TextButton(
-                onPressed: () => Navigator.maybePop(context),
-                child: Text(
-                  "Cancel",
-                  style: GoogleFonts.dmSans(
-                    color: _textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              Text(
-                "New Advert",
-                style: GoogleFonts.dmSans(
-                  color: _textPrimary,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 18,
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  _titleController.clear();
-                  _descriptionController.clear();
-                  _priceController.clear();
-                  _locationController.clear();
-                  for (final controller in _fieldControllers.values) {
-                    controller.clear();
-                  }
-                  setState(() => _images.clear());
-                },
-                child: Text(
-                  "Clear",
-                  style: GoogleFonts.dmSans(
-                    color: _textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        // Step progress bar
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          color: _navyCard,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                "Step 1 of 3 — Basic info",
-                style: GoogleFonts.dmSans(
-                  fontSize: 13,
-                  color: _textSecondary,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: 1 / 3,
-                  backgroundColor: _navyLight,
-                  valueColor: const AlwaysStoppedAnimation<Color>(_green),
-                  minHeight: 4,
-                ),
-              ),
-            ],
-          ),
-        ),
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              TextField(
-                controller: _titleController,
-                decoration: const InputDecoration(
-                  hintText: "Title*",
-                  suffixIcon: Icon(Icons.arrow_drop_down, color: Colors.transparent),
-                ),
-              ),
-              const SizedBox(height: 12),
-              DropdownButtonFormField<String>(
-                value: _categoryId,
-                decoration: const InputDecoration(
-                  hintText: "Category*",
-                  suffixIcon: Icon(Icons.arrow_drop_down, color: _textSecondary),
-                ),
-                dropdownColor: _navyCard,
-                items: categories
-                    .map(
-                      (category) => DropdownMenuItem(
-                        value: category.id,
-                        child: Text(category.name),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _green,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
                       ),
-                    )
-                    .toList(),
-                onChanged: (value) {
-                  if (value == null) return;
-                  setState(() => _categoryId = value);
-                },
-              ),
-              const SizedBox(height: 16),
-              Material(
-                color: _navyLight,
-                borderRadius: BorderRadius.circular(14),
-                child: InkWell(
-                  onTap: _addPlaceholderImage,
-                  borderRadius: BorderRadius.circular(14),
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 24),
-                    child: Column(
-                      children: [
-                        Icon(Icons.camera_alt_rounded, color: _textMuted, size: 40),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Add photos",
-                          style: GoogleFonts.dmSans(
-                            fontSize: 14,
-                            color: _textSecondary,
-                            fontWeight: FontWeight.w500,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _navyBorder,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: _navyBorder,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  "Step 1 of 3 — Basic info",
+                  style: GoogleFonts.dmSans(color: _textSecondary, fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                TextField(
+                  controller: _titleController,
+                  style: const TextStyle(color: _textPrimary),
+                  decoration: const InputDecoration(hintText: "Title*"),
+                ),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: _categoryId,
+                  dropdownColor: _navyCard,
+                  style: const TextStyle(color: _textPrimary),
+                  decoration: const InputDecoration(hintText: "Category*"),
+                  items: categories
+                      .map(
+                        (c) => DropdownMenuItem(
+                          value: c.id,
+                          child: Text(
+                            c.name,
+                            style: const TextStyle(color: _textPrimary),
                           ),
                         ),
+                      )
+                      .toList(),
+                  onChanged: (v) {
+                    if (v != null) {
+                      setState(() => _categoryId = v);
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                GestureDetector(
+                  onTap: _addPlaceholderImage,
+                  child: Container(
+                    height: 90,
+                    decoration: BoxDecoration(
+                      color: _navyLight,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _green.withOpacity(0.5), width: 1.5),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.camera_alt_outlined, color: _green, size: 28),
+                        const SizedBox(width: 12),
+                        Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Add photos",
+                              style: GoogleFonts.dmSans(
+                                color: _green,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              "${_images.length}/8 added",
+                              style: GoogleFonts.dmSans(color: _textMuted, fontSize: 12),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: DropdownButtonFormField<String?>(
-                      value: _locationController.text.isEmpty ? null : _locationController.text,
-                      decoration: const InputDecoration(
-                        hintText: "Region",
-                        suffixIcon: Icon(Icons.arrow_drop_down, color: _textSecondary),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<String?>(
+                        value: _locationController.text.isEmpty ? null : _locationController.text,
+                        dropdownColor: _navyCard,
+                        style: const TextStyle(color: _textPrimary),
+                        decoration: const InputDecoration(hintText: "Region"),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text("Region", style: TextStyle(color: _textMuted)),
+                          ),
+                          ...["Budapest", "Vienna", "Prague", "Other"].map(
+                            (s) => DropdownMenuItem<String?>(
+                              value: s,
+                              child: Text(s, style: const TextStyle(color: _textPrimary)),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) {
+                          _locationController.text = v ?? "";
+                          setState(() {});
+                        },
                       ),
-                      dropdownColor: _navyCard,
-                      items: [
-                        const DropdownMenuItem<String?>(value: null, child: Text("Region")),
-                        ...["Budapest", "Debrecen", "Szeged", "Other"]
-                            .map((s) => DropdownMenuItem<String?>(value: s, child: Text(s))),
-                      ],
-                      onChanged: (value) {
-                        _locationController.text = value ?? "";
-                        setState(() {});
-                      },
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _priceController,
-                      decoration: const InputDecoration(
-                        hintText: "Price",
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _priceController,
+                        style: const TextStyle(color: _textPrimary),
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(hintText: "Price (HUF)"),
                       ),
-                      keyboardType: TextInputType.number,
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  hintText: "Description",
-                  alignLabelWithHint: true,
+                  ],
                 ),
-                maxLines: 4,
-              ),
-              const SizedBox(height: 16),
-              _buildCategoryFields(),
-              const SizedBox(height: 24),
-              _gradientButton(
-                _submitting ? "Submitting…" : "Continue",
-                Icons.arrow_forward_rounded,
-                _submitting ? () {} : _submitListing,
-              ),
-              const SizedBox(height: 16),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4),
-                child: RichText(
-                  text: TextSpan(
-                    style: GoogleFonts.dmSans(fontSize: 12, color: _textMuted),
-                    children: [
-                      const TextSpan(
-                        text: "By clicking Continue, you accept the ",
-                      ),
-                      TextSpan(
-                        text: "Terms of Use",
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          color: _green,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const TextSpan(
-                        text: ", confirm that you will abide by the ",
-                      ),
-                      TextSpan(
-                        text: "Safety Tips",
-                        style: GoogleFonts.dmSans(
-                          fontSize: 12,
-                          color: _green,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const TextSpan(
-                        text: ", and declare that this posting does not include any Prohibited Items.",
-                      ),
-                    ],
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _descriptionController,
+                  style: const TextStyle(color: _textPrimary),
+                  maxLines: 4,
+                  decoration: const InputDecoration(
+                    hintText: "Description",
+                    alignLabelWithHint: true,
                   ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+                const SizedBox(height: 16),
+                _buildCategoryFields(),
+                const SizedBox(height: 24),
+                _gradientButton(
+                  _submitting ? "Submitting…" : "Continue",
+                  Icons.arrow_forward_rounded,
+                  _submitting ? () {} : _submitListing,
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  "By posting, you accept the Terms of Use and confirm compliance with our Safety Tips.",
+                  style: GoogleFonts.dmSans(fontSize: 12, color: _textMuted),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -2838,51 +2856,55 @@ class _InboxScreenState extends State<InboxScreen> {
       top: false,
       child: Column(
         children: [
-          // Top gradient header: 0xFF0F1A2E -> _navyCard
           Container(
-            width: double.infinity,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
+                colors: [Color(0xFF0F1A2E), _navyCard],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xFF0F1A2E), _navyCard],
               ),
             ),
-            padding: const EdgeInsets.fromLTRB(16, 48, 16, 16),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              MediaQuery.of(context).padding.top + 16,
+              16,
+              16,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Messages",
                   style: GoogleFonts.dmSans(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
                     color: _textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: "Search in Messages",
-                    hintStyle: GoogleFonts.dmSans(color: _textMuted, fontSize: 14),
-                    prefixIcon: const Icon(Icons.search, color: _textMuted, size: 22),
-                    filled: true,
-                    fillColor: _navyLight,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: _navyBorder),
+                Container(
+                  decoration: BoxDecoration(
+                    color: _navyLight,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: _navyBorder),
+                  ),
+                  child: TextField(
+                    style: const TextStyle(color: _textPrimary),
+                    decoration: InputDecoration(
+                      hintText: "Search in Messages",
+                      hintStyle: GoogleFonts.dmSans(color: _textMuted, fontSize: 14),
+                      prefixIcon: const Icon(Icons.search, color: _textMuted, size: 22),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      filled: false,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      borderSide: const BorderSide(color: _navyBorder),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   ),
                 ),
               ],
             ),
           ),
-          // Tab row in _navyCard
           Container(
             color: _navyCard,
             child: Row(
@@ -2906,132 +2928,84 @@ class _InboxScreenState extends State<InboxScreen> {
                 if (conversations.isEmpty) {
                   return Center(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.chat_bubble_outline, size: 64, color: _textMuted),
-                        const SizedBox(height: 16),
+                        const Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          color: _textMuted,
+                          size: 48,
+                        ),
+                        const SizedBox(height: 12),
                         Text(
                           "No conversations yet.",
-                          style: GoogleFonts.dmSans(color: _textMuted, fontSize: 16),
+                          style: GoogleFonts.dmSans(color: _textMuted, fontSize: 15),
                         ),
                       ],
                     ),
                   );
                 }
-                return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                return ListView.builder(
+                  padding: const EdgeInsets.all(12),
                   itemCount: conversations.length,
-                  separatorBuilder: (_, __) =>
-                      const Divider(height: 1, color: _navyBorder),
                   itemBuilder: (context, index) {
                     final conv = conversations[index];
                     final peerId = conv.buyerId == widget.userId
                         ? conv.sellerId
                         : conv.buyerId;
-                    final initials = peerId.isNotEmpty
-                        ? peerId
-                            .split(" ")
-                            .where((p) => p.isNotEmpty)
-                            .map((p) => p[0])
-                            .take(2)
-                            .join()
-                            .toUpperCase()
-                        : "?";
-                    return GestureDetector(
-                      onTap: () => widget.onOpenConversation(conv),
-                      child: Container(
-                        color: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(vertical: 14),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [_green, _greenLight],
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                ),
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  initials,
-                                  style: GoogleFonts.dmSans(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w700,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          "User $peerId",
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: GoogleFonts.dmSans(
-                                            fontWeight: FontWeight.w600,
-                                            fontSize: 14,
-                                            color: _textPrimary,
-                                          ),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        _ChatScreenState._timeDisplay(
-                                          conv.createdAt,
-                                        ),
-                                        style: GoogleFonts.dmSans(
-                                          fontSize: 11,
-                                          color: _textMuted,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    "Listing ${conv.listingId}",
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: GoogleFonts.dmSans(
-                                      fontSize: 12,
-                                      color: _textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            // Unread pill placeholder – stylistic only (no backend count)
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                              decoration: BoxDecoration(
-                                color: _green.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(999),
-                              ),
-                              child: Text(
-                                "Chat",
-                                style: GoogleFonts.dmSans(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: _green,
-                                ),
-                              ),
-                            ),
-                          ],
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      decoration: BoxDecoration(
+                        color: _navyCard,
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: _navyBorder),
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
                         ),
+                        leading: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: _navyLight,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: _navyBorder),
+                          ),
+                          child: Center(
+                            child: Text(
+                              peerId.isNotEmpty ? peerId[0].toUpperCase() : "?",
+                              style: GoogleFonts.dmSans(
+                                color: _green,
+                                fontWeight: FontWeight.w700,
+                                fontSize: 18,
+                              ),
+                            ),
+                          ),
+                        ),
+                        title: Text(
+                          "User $peerId",
+                          style: GoogleFonts.dmSans(
+                            color: _textPrimary,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        subtitle: Text(
+                          "Listing ${conv.listingId}",
+                          style: GoogleFonts.dmSans(
+                            color: _textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        trailing: Text(
+                          "Now",
+                          style: GoogleFonts.dmSans(
+                            color: _textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
+                        onTap: () => widget.onOpenConversation(conv),
                       ),
                     );
                   },
@@ -3055,7 +3029,7 @@ class _InboxScreenState extends State<InboxScreen> {
             border: Border(
               bottom: BorderSide(
                 color: selected ? _green : Colors.transparent,
-                width: 3,
+                width: 2,
               ),
             ),
           ),
@@ -3122,26 +3096,22 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Widget _favTab(String label, int index) {
-    final isActive = _tabIndex == index;
+    final selected = _tabIndex == index;
     return GestureDetector(
       onTap: () => setState(() => _tabIndex = index),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          border: Border(
-            bottom: BorderSide(
-              color: isActive ? _green : Colors.transparent,
-              width: 3,
-            ),
-          ),
+          color: selected ? _green : Colors.transparent,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(10)),
         ),
         child: Text(
           label,
-          textAlign: TextAlign.center,
           style: GoogleFonts.dmSans(
-            fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+            color: selected ? Colors.white : _textSecondary,
+            fontWeight: FontWeight.w600,
             fontSize: 14,
-            color: isActive ? _green : _textMuted,
           ),
         ),
       ),
@@ -3154,10 +3124,7 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
       top: false,
       child: Column(
         children: [
-          // Dark header: Saved
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(24, 48, 24, 20),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 colors: [Color(0xFF0F1A2E), _navyCard],
@@ -3165,32 +3132,36 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
                 end: Alignment.bottomCenter,
               ),
             ),
+            padding: EdgeInsets.fromLTRB(
+              16,
+              MediaQuery.of(context).padding.top + 16,
+              16,
+              0,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   "Saved",
                   style: GoogleFonts.dmSans(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w800,
                     color: _textPrimary,
                   ),
                 ),
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    Expanded(child: _favTab("Ads", 0)),
-                    Expanded(child: _favTab("Searches", 1)),
+                    _favTab("Ads", 0),
+                    const SizedBox(width: 4),
+                    _favTab("Searches", 1),
                   ],
                 ),
               ],
             ),
           ),
           Expanded(
-            child: Container(
-              color: _navy,
-              child: _tabIndex == 0 ? _buildAdsTab() : _buildSearchesTab(),
-            ),
+            child: _tabIndex == 0 ? _buildAdsTab() : _buildSearchesTab(),
           ),
         ],
       ),
@@ -3256,70 +3227,49 @@ class _FavoritesScreenState extends State<FavoritesScreen> {
   }
 
   Widget _favoriteListingTile(Listing listing) {
-    final cat = listing.categoryId;
     return Container(
-      color: _navyCard,
-      margin: const EdgeInsets.only(bottom: 1),
-      child: Material(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+      decoration: BoxDecoration(
         color: _navyCard,
-        child: InkWell(
-          onTap: () => openListingDetails(
-            context: context,
-            listing: listing,
-            isFavorite: true,
-            onToggleFavorite: () => widget.onToggleFavorite(listing.id),
-            onReport: () => widget.onReportListing(listing),
-            onBlock: () => widget.onBlockUser(listing.sellerId),
-            onStartChat: () => widget.onStartChat(listing),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _navyBorder),
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        leading: Container(
+          width: 52,
+          height: 52,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            gradient: LinearGradient(colors: _catGradient(listing.categoryId)),
           ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: _catGradient(cat),
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(_catIcon(cat), color: Colors.white, size: 28),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        listing.title,
-                        style: GoogleFonts.dmSans(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 14,
-                          color: _textPrimary,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        listing.priceLabel,
-                        style: GoogleFonts.dmSans(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: _green,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.chevron_right, color: _textMuted, size: 22),
-              ],
-            ),
+          child: Icon(
+            _catIcon(listing.categoryId),
+            color: Colors.white.withOpacity(0.2),
+            size: 26,
           ),
+        ),
+        title: Text(
+          listing.title,
+          style: GoogleFonts.dmSans(
+            color: _textPrimary,
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+          ),
+        ),
+        subtitle: Text(
+          listing.priceLabel,
+          style: GoogleFonts.dmSans(color: _green, fontSize: 13),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: _textMuted),
+        onTap: () => openListingDetails(
+          context: context,
+          listing: listing,
+          isFavorite: true,
+          onToggleFavorite: () => widget.onToggleFavorite(listing.id),
+          onReport: () => widget.onReportListing(listing),
+          onBlock: () => widget.onBlockUser(listing.sellerId),
+          onStartChat: () => widget.onStartChat(listing),
         ),
       ),
     );
@@ -3457,104 +3407,55 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  static String _timeDisplay(String raw) {
-    final d = DateTime.tryParse(raw);
-    if (d != null) {
-      return "${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}";
-    }
-    return raw;
-  }
-
   @override
   Widget build(BuildContext context) {
     final args = _args;
     if (args == null) {
-      return const Scaffold(body: Center(child: Text("No conversation.")));
+      return const Scaffold(
+        backgroundColor: _navy,
+        body: Center(
+          child: Text(
+            "No conversation.",
+            style: TextStyle(color: _textSecondary),
+          ),
+        ),
+      );
     }
     return Scaffold(
       backgroundColor: _navy,
-      appBar: PreferredSize(
-        preferredSize: const Size.fromHeight(70),
-        child: Container(
-          decoration: const BoxDecoration(
-            color: _navyCard,
-            border: Border(
-              bottom: BorderSide(color: _navyBorder),
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).pop(),
-                    child: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: _textPrimary,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [_green, _greenLight],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Center(
-                      child: Text(
-                        args.peerId.isNotEmpty
-                            ? args.peerId[0].toUpperCase()
-                            : "?",
-                        style: GoogleFonts.dmSans(
-                          color: Colors.white,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          "Chat",
-                          style: GoogleFonts.dmSans(
-                            color: _textPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                          ),
-                        ),
-                        Text(
-                          "Listing ${args.listingId}",
-                          style: GoogleFonts.dmSans(
-                            color: _textSecondary,
-                            fontSize: 11,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
-                  Row(
-                    children: [
-                      _headerActionButton(Icons.call_outlined),
-                      const SizedBox(width: 6),
-                      _headerActionButton(Icons.more_vert_rounded),
-                    ],
-                  ),
-                ],
+      appBar: AppBar(
+        backgroundColor: _navyCard,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded, color: _textPrimary),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Listing ${args.listingId}",
+              style: GoogleFonts.dmSans(
+                fontSize: 15,
+                fontWeight: FontWeight.w700,
+                color: _textPrimary,
               ),
             ),
-          ),
+            Text(
+              "Tap to view listing",
+              style: GoogleFonts.dmSans(fontSize: 11, color: _textSecondary),
+            ),
+          ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.call_outlined, color: _textSecondary),
+            onPressed: () {},
+          ),
+          IconButton(
+            icon: const Icon(Icons.more_vert, color: _textSecondary),
+            onPressed: () {},
+          ),
+        ],
       ),
       body: Column(
         children: [
@@ -3571,68 +3472,55 @@ class _ChatScreenState extends State<ChatScreen> {
                 if (messages.isEmpty) {
                   return Center(
                     child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.chat_bubble_outline_rounded,
-                          size: 48,
                           color: _textMuted,
+                          size: 48,
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 12),
                         Text(
-                          "No messages yet",
-                          style: GoogleFonts.dmSans(
-                            color: _textPrimary,
-                            fontSize: 17,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          "No messages yet.",
+                          style: GoogleFonts.dmSans(color: _textMuted, fontSize: 15),
                         ),
-                        const SizedBox(height: 6),
                         Text(
-                          "Start the conversation below",
-                          style: GoogleFonts.dmSans(
-                            color: _textSecondary,
-                            fontSize: 13,
-                          ),
+                          "Start the conversation below.",
+                          style: GoogleFonts.dmSans(color: _textMuted, fontSize: 13),
                         ),
                       ],
                     ),
                   );
                 }
-                return ListView.builder(
-                  padding: const EdgeInsets.all(20),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMine = message.senderId == args.currentUserId;
+                return ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: messages.map((msg) {
                     return Align(
-                      alignment: isMine
+                      alignment: msg.senderId == args.currentUserId
                           ? Alignment.centerRight
                           : Alignment.centerLeft,
                       child: _DarkBubble(
-                        text: message.text,
-                        isMine: isMine,
-                        time: _timeDisplay(message.createdAt),
+                        text: msg.text,
+                        isMine: msg.senderId == args.currentUserId,
+                        time: msg.createdAt,
                       ),
                     );
-                  },
+                  }).toList(),
                 );
               },
             ),
           ),
           Container(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 28),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 24),
             decoration: const BoxDecoration(
               color: _navyCard,
-              border: Border(
-                top: BorderSide(color: _navyBorder),
-              ),
+              border: Border(top: BorderSide(color: _navyBorder)),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 40,
-                  height: 40,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     color: _navyLight,
                     borderRadius: BorderRadius.circular(12),
@@ -3641,43 +3529,21 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: const Icon(
                     Icons.attach_file_rounded,
                     color: _textSecondary,
-                    size: 18,
+                    size: 20,
                   ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: _navyLight,
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(color: _navyBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _messageController,
-                            style: GoogleFonts.dmSans(
-                              color: _textPrimary,
-                              fontSize: 14,
-                            ),
-                            decoration: InputDecoration(
-                              hintText: "Type a message…",
-                              hintStyle: GoogleFonts.dmSans(
-                                color: _textMuted,
-                                fontSize: 14,
-                              ),
-                              border: InputBorder.none,
-                              filled: false,
-                              contentPadding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 10,
-                              ),
-                            ),
-                            onSubmitted: (_) => _sendMessage(),
-                          ),
-                        ),
-                      ],
+                  child: TextField(
+                    controller: _messageController,
+                    style: const TextStyle(color: _textPrimary, fontSize: 14),
+                    decoration: InputDecoration(
+                      hintText: "Type a message…",
+                      hintStyle: GoogleFonts.dmSans(color: _textMuted),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                     ),
                   ),
                 ),
@@ -3688,46 +3554,23 @@ class _ChatScreenState extends State<ChatScreen> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [_green, _greenLight],
-                      ),
-                      borderRadius: BorderRadius.circular(14),
+                      gradient: const LinearGradient(colors: [_green, _greenLight]),
+                      borderRadius: BorderRadius.circular(12),
                       boxShadow: [
                         BoxShadow(
-                          color: _green.withOpacity(0.4),
+                          color: _green.withOpacity(0.3),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         ),
                       ],
                     ),
-                    child: const Icon(
-                      Icons.send_rounded,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                    child: const Icon(Icons.send_rounded, color: Colors.white, size: 20),
                   ),
                 ),
               ],
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _headerActionButton(IconData icon) {
-    return Container(
-      width: 34,
-      height: 34,
-      decoration: BoxDecoration(
-        color: _navyLight,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: _navyBorder),
-      ),
-      child: Icon(
-        icon,
-        color: _textSecondary,
-        size: 16,
       ),
     );
   }
@@ -3746,53 +3589,42 @@ class _DarkBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final timeLabel =
+        time.length > 15 ? time.substring(11, 16) : time;
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 12),
       constraints: BoxConstraints(
         maxWidth: MediaQuery.of(context).size.width * 0.72,
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: isMine ? _green : _navyCard,
-        borderRadius: BorderRadius.only(
-          topLeft: const Radius.circular(16),
-          topRight: const Radius.circular(16),
-          bottomLeft: Radius.circular(isMine ? 16 : 4),
-          bottomRight: Radius.circular(isMine ? 4 : 16),
-        ),
-        border: isMine
-            ? null
-            : Border.all(color: _navyBorder),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.15),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment:
             isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            text,
-            style: GoogleFonts.dmSans(
-              fontSize: 14,
-              height: 1.4,
-              color: isMine ? Colors.white : _textPrimary,
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isMine ? _green : _navyCard,
+              borderRadius: BorderRadius.only(
+                topLeft: const Radius.circular(16),
+                topRight: const Radius.circular(16),
+                bottomLeft: Radius.circular(isMine ? 16 : 4),
+                bottomRight: Radius.circular(isMine ? 4 : 16),
+              ),
+              border: isMine ? null : Border.all(color: _navyBorder),
+            ),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: isMine ? Colors.white : _textPrimary,
+                fontSize: 14,
+                height: 1.4,
+              ),
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            time,
-            style: GoogleFonts.dmSans(
-              fontSize: 10,
-              color: isMine
-                  ? Colors.white.withOpacity(0.6)
-                  : _textMuted,
-            ),
+            timeLabel,
+            style: GoogleFonts.dmSans(color: _textMuted, fontSize: 10),
           ),
         ],
       ),
@@ -4271,73 +4103,6 @@ class ProfileScreen extends StatelessWidget {
       ),
     );
   }
-
-  Widget _profileCard({
-    required IconData icon,
-    required String label,
-    String? badge,
-    required VoidCallback onTap,
-  }) {
-    return Material(
-      color: _navyLight,
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _navyBorder),
-          ),
-          child: Row(
-            children: [
-              if (badge != null)
-                Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Icon(icon, color: _textSecondary, size: 24),
-                    Positioned(
-                      top: -6,
-                      right: -6,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: Colors.red,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          badge,
-                          style: GoogleFonts.poppins(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              else
-                Icon(icon, color: _textSecondary, size: 24),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  label,
-                  style: GoogleFonts.poppins(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: _textPrimary,
-                  ),
-                ),
-              ),
-              const Icon(Icons.chevron_right, color: _textMuted, size: 22),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _PrimaryButton extends StatelessWidget {
@@ -4450,12 +4215,10 @@ class _ProfileBadge extends StatelessWidget {
 class _SectionHeader extends StatelessWidget {
   final String title;
   final String? action;
-  final VoidCallback? onAction;
 
   const _SectionHeader({
     required this.title,
     this.action,
-    this.onAction,
   });
 
   @override
@@ -4472,15 +4235,12 @@ class _SectionHeader extends StatelessWidget {
         ),
         const Spacer(),
         if (action != null)
-          GestureDetector(
-            onTap: onAction,
-            child: Text(
-              action!,
-              style: GoogleFonts.dmSans(
-                color: _green,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              ),
+          Text(
+            action!,
+            style: GoogleFonts.dmSans(
+              color: _green,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
             ),
           ),
       ],
@@ -4648,7 +4408,7 @@ class SettingsScreen extends StatelessWidget {
           _settingsTile(
             icon: Icons.local_shipping_outlined,
             iconBg: const Color(0xFF2196F3),
-            label: "Jiji delivery",
+            label: "Nuvelo delivery",
             trailing: "Activate",
             onTap: () {},
           ),
@@ -4663,7 +4423,7 @@ class SettingsScreen extends StatelessWidget {
           _settingsTile(
             icon: Icons.info_outline,
             iconBg: const Color(0xFF424242),
-            label: "About InterHungary",
+            label: "About Nuvelo",
             onTap: () {},
           ),
           _divider(),
@@ -4766,7 +4526,7 @@ class BusinessDetailsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: _navyCard,
       appBar: AppBar(
-        backgroundColor: _navyCard,
+        backgroundColor: _navy,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: _green),
