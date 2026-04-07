@@ -19,43 +19,63 @@
   </head>
   <body>
     <header class="site-header">
-      <div class="site-header__inner site-header__top">
-        <a class="brand" href="#/">
-          <img
-            class="brand__logo"
-            src="./nuvelo-logo.svg"
-            width="500"
-            height="220"
-            alt="Nuvelo"
-          />
-        </a>
-        <nav class="site-nav" aria-label="Main">
-          <a class="site-nav__link site-nav__link--muted" href="#/browse">All ads</a>
-          <a class="btn btn--primary btn--sell" href="#/post">Sell</a>
-          <button type="button" class="btn btn--ghost" id="auth-btn" hidden>
-            Sign in
+      <div class="nav-shell">
+        <div class="nav-bar">
+          <button
+            type="button"
+            class="nav-burger"
+            id="nav-burger"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="nav-drawer"
+          >
+            <span class="nav-burger__line"></span>
+            <span class="nav-burger__line"></span>
+            <span class="nav-burger__line"></span>
           </button>
-          <span class="user-chip" id="user-chip" hidden></span>
-        </nav>
-      </div>
-      <div class="site-header__search-row" id="header-search-wrap" hidden>
-        <form id="header-search-form" class="header-search" autocomplete="off">
-          <input
-            class="header-search__input header-search__q"
-            name="q"
-            type="search"
-            placeholder="I am looking for…"
-            aria-label="Search keywords"
-          />
-          <input
-            class="header-search__input header-search__loc"
-            name="loc"
-            type="text"
-            placeholder="Whole Hungary"
-            aria-label="Location"
-          />
-          <button type="submit" class="btn btn--primary header-search__submit">Search</button>
-        </form>
+          <a class="brand brand--nav" href="#/">
+            <img
+              class="brand__logo"
+              src="./nuvelo-logo.svg"
+              width="500"
+              height="220"
+              alt="Nuvelo"
+            />
+          </a>
+          <div class="nav-search-host" id="header-search-wrap" hidden>
+            <form id="header-search-form" class="nav-search-form" autocomplete="off">
+              <input
+                class="nav-search-form__input nav-search-form__q"
+                name="q"
+                type="search"
+                placeholder="Search for anything…"
+                aria-label="Search keywords"
+              />
+              <input
+                class="nav-search-form__input nav-search-form__loc"
+                name="loc"
+                type="text"
+                placeholder="Location"
+                aria-label="Location"
+              />
+              <button type="submit" class="btn btn--primary nav-search-form__submit">Search</button>
+            </form>
+          </div>
+          <div class="nav-actions" id="nav-actions">
+            <a class="btn btn--primary btn--pill btn--sell" href="#/post">Sell / Post ad</a>
+            <button type="button" class="nav-signin btn btn--ghost btn--signin" id="auth-btn">
+              Sign in
+            </button>
+            <span class="user-chip" id="user-chip" hidden></span>
+          </div>
+        </div>
+        <div class="nav-drawer" id="nav-drawer" hidden aria-hidden="true">
+          <nav class="nav-drawer__inner" aria-label="Mobile">
+            <a href="#/browse">Browse ads</a>
+            <a href="#/post">Sell / Post ad</a>
+            <button type="button" class="nav-drawer__signin" id="drawer-signin">Sign in</button>
+          </nav>
+        </div>
       </div>
     </header>
 
@@ -63,14 +83,20 @@
 
     <footer class="site-footer">
       <div class="site-footer__grid">
-        <div class="site-footer__col">
-          <h3 class="site-footer__heading">Nuvelo</h3>
+        <div class="site-footer__col site-footer__col--brand">
+          <img
+            class="site-footer__logo"
+            src="./nuvelo-logo.svg"
+            width="200"
+            height="88"
+            alt="Nuvelo"
+          />
           <p class="site-footer__text">
             Rentals, jobs, services &amp; goods for Hungary’s international community.
           </p>
         </div>
         <div class="site-footer__col">
-          <h3 class="site-footer__heading">Support</h3>
+          <h3 class="site-footer__heading">Links</h3>
           <a href="#/browse">Browse ads</a>
           <a href="#/post">Post an ad</a>
           <a href="#/">Home</a>

@@ -166,6 +166,12 @@ const fetchListings = (params) => {
   if (params.location) {
     q.set("location", params.location);
   }
+  if (params.minPrice != null && params.minPrice !== "" && !Number.isNaN(Number(params.minPrice))) {
+    q.set("minPrice", String(params.minPrice));
+  }
+  if (params.maxPrice != null && params.maxPrice !== "" && !Number.isNaN(Number(params.maxPrice))) {
+    q.set("maxPrice", String(params.maxPrice));
+  }
   const viewer = getUser();
   if (viewer?.id) {
     q.set("viewerId", viewer.id);
@@ -177,6 +183,91 @@ const fetchListings = (params) => {
     return r.json();
   });
 };
+
+const PAGE_SIZE = 12;
+
+let browseListingsCache = { key: "", data: [] };
+
+const parseBrowseParams = () => {
+  const p = new URLSearchParams(window.location.search);
+  const minp = p.get("minp");
+  const maxp = p.get("maxp");
+  return {
+    query: p.get("q") || "",
+    categoryId: p.get("cat") || "",
+    location: p.get("loc") || "",
+    minPrice: minp != null && minp !== "" ? Number(minp) : null,
+    maxPrice: maxp != null && maxp !== "" ? Number(maxp) : null,
+    conditionNew: p.get("cnew") === "1",
+    conditionUsed: p.get("cused") === "1",
+    sort: p.get("sort") || "latest",
+    page: Math.max(1, parseInt(p.get("page") || "1", 10) || 1)
+  };
+};
+
+const filterByCondition = (listings, cnew, cused) => {
+  if (cnew && cused) {
+    return listings;
+  }
+  if (!cnew && !cused) {
+    return listings;
+  }
+  if (cnew) {
+    return listings.filter((l) => String(l.condition || "").toLowerCase() === "new");
+  }
+  return listings.filter((l) => String(l.condition || "").toLowerCase() !== "new");
+};
+
+const sortListings = (listings, sortKey) => {
+  const copy = [...listings];
+  if (sortKey === "price_asc") {
+    copy.sort((a, b) => (a.price ?? Infinity) - (b.price ?? Infinity));
+  } else if (sortKey === "price_desc") {
+    copy.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
+  } else if (sortKey === "popular") {
+    copy.sort(
+      (a, b) =>
+        (Number(b.viewCount) || Number(b.views) || 0) -
+        (Number(a.viewCount) || Number(a.views) || 0)
+    );
+  } else {
+    copy.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+  }
+  return copy;
+};
+
+const formatPostedTime = (iso) => {
+  if (!iso) {
+    return "";
+  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
+  const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (diff < 60) {
+    return "just now";
+  }
+  if (diff < 3600) {
+    return `${Math.floor(diff / 60)}m ago`;
+  }
+  if (diff < 86400) {
+    return `${Math.floor(diff / 3600)}h ago`;
+  }
+  if (diff < 604800) {
+    return `${Math.floor(diff / 86400)}d ago`;
+  }
+  return d.toLocaleDateString();
+};
+
+const browseCacheKey = (f) =>
+  JSON.stringify({
+    q: f.query,
+    cat: f.categoryId,
+    loc: f.location,
+    minp: f.minPrice,
+    maxp: f.maxPrice
+  });
 
 const fetchListing = (id) =>
   fetch(
@@ -218,9 +309,12 @@ const categoryIcon = (id) => {
     rentals: "🏠",
     jobs: "💼",
     clothes: "👕",
+    fashion: "👕",
     services: "🛠️",
     electronics: "📱",
     vehicles: "🚗",
+    furniture: "🛋️",
+    other: "📦",
     "real-estate": "🏢"
   };
   return map[id] || "📦";
@@ -238,6 +332,10 @@ const syncHeaderChrome = (route) => {
   const wrap = document.getElementById("header-search-wrap");
   if (wrap) {
     wrap.hidden = route.view === "landing";
+    wrap.removeAttribute("aria-hidden");
+    if (wrap.hidden) {
+      wrap.setAttribute("aria-hidden", "true");
+    }
   }
 };
 
@@ -282,11 +380,13 @@ const renderLanding = () => {
 
 const renderList = async () => {
   await fetchCategories().catch(() => {});
-  const params = new URLSearchParams(window.location.search);
-  const filters = {
-    query: params.get("q") || "",
-    categoryId: params.get("cat") || "",
-    location: params.get("loc") || ""
+  const filters = parseBrowseParams();
+  const fetchFilters = {
+    query: filters.query,
+    categoryId: filters.categoryId,
+    location: filters.location,
+    minPrice: filters.minPrice,
+    maxPrice: filters.maxPrice
   };
 
   const hf = document.getElementById("header-search-form");
@@ -295,13 +395,27 @@ const renderList = async () => {
     hf.elements.loc.value = filters.location;
   }
 
+  const cacheKey = browseCacheKey(fetchFilters);
   let listings = [];
   let error = null;
   try {
-    listings = await fetchListings(filters);
+    if (browseListingsCache.key === cacheKey) {
+      listings = browseListingsCache.data;
+    } else {
+      listings = await fetchListings(fetchFilters);
+      browseListingsCache = { key: cacheKey, data: listings };
+    }
   } catch (e) {
     error = e.message;
+    browseListingsCache = { key: "", data: [] };
   }
+
+  const afterCondition = error ? [] : filterByCondition(listings, filters.conditionNew, filters.conditionUsed);
+  const sorted = error ? [] : sortListings(afterCondition, filters.sort);
+  const totalCount = sorted.length;
+  const end = filters.page * PAGE_SIZE;
+  const pageSlice = sorted.slice(0, end);
+  const hasMore = totalCount > pageSlice.length;
 
   const catChips = [
     `<button type="button" class="cat-chip${!filters.categoryId ? " cat-chip--active" : ""}" data-cat=""><span class="cat-chip__emoji" aria-hidden="true">✨</span><span class="cat-chip__label">All</span></button>`,
@@ -315,29 +429,107 @@ const renderList = async () => {
     ? `Ads in ${esc(filters.location)}`
     : "Popular in Hungary";
 
+  const catOptions = [
+    `<option value=""${!filters.categoryId ? " selected" : ""}>All categories</option>`,
+    ...categoriesCache.map(
+      (c) =>
+        `<option value="${esc(c.id)}"${c.id === filters.categoryId ? " selected" : ""}>${esc(c.name)}</option>`
+    )
+  ].join("");
+
+  const sortSel = filters.sort;
   appEl.innerHTML = `
-    <div class="feed-layout">
-      <div class="category-rail-wrap">
-        <div class="category-rail" id="category-rail" role="tablist" aria-label="Categories">
+    <div class="feed-layout feed-layout--browse">
+      <div class="category-rail-wrap category-strip-wrap">
+        <div class="category-strip category-strip--grid" id="category-rail" role="tablist" aria-label="Categories">
           ${catChips}
         </div>
       </div>
-      <div class="feed-head">
+      <div class="feed-head feed-head--browse">
         <h1 class="feed-head__title">${feedTitle}</h1>
         <p class="feed-head__sub muted">Free classifieds · rentals, jobs, services &amp; more</p>
       </div>
       ${error ? `<div class="banner-error">${esc(error)}</div>` : ""}
-      <div class="ad-grid" id="listing-cards"></div>
+      <div class="browse-layout">
+        <aside class="browse-sidebar" aria-label="Filters">
+          <form id="sidebar-filter-form" class="filter-panel">
+            <h2 class="filter-panel__title">Filter</h2>
+            <label class="filter-panel__field">
+              <span class="filter-panel__label">Category</span>
+              <select name="cat" id="sidebar-f-cat" class="filter-panel__select">
+                ${catOptions}
+              </select>
+            </label>
+            <label class="filter-panel__field">
+              <span class="filter-panel__label">Location</span>
+              <input name="loc" id="sidebar-f-loc" type="text" placeholder="City or area" value="${esc(filters.location)}" />
+            </label>
+            <div class="filter-panel__row">
+              <label class="filter-panel__field filter-panel__field--half">
+                <span class="filter-panel__label">Min price</span>
+                <input name="minp" id="sidebar-f-minp" type="number" min="0" step="1" placeholder="0" value="${filters.minPrice != null && !Number.isNaN(filters.minPrice) ? esc(String(filters.minPrice)) : ""}" />
+              </label>
+              <label class="filter-panel__field filter-panel__field--half">
+                <span class="filter-panel__label">Max price</span>
+                <input name="maxp" id="sidebar-f-maxp" type="number" min="0" step="1" placeholder="Any" value="${filters.maxPrice != null && !Number.isNaN(filters.maxPrice) ? esc(String(filters.maxPrice)) : ""}" />
+              </label>
+            </div>
+            <fieldset class="filter-panel__fieldset">
+              <legend class="filter-panel__label">Condition</legend>
+              <label class="filter-panel__check">
+                <input type="checkbox" name="cnew" id="sidebar-f-new" value="1" ${filters.conditionNew ? "checked" : ""} />
+                New
+              </label>
+              <label class="filter-panel__check">
+                <input type="checkbox" name="cused" id="sidebar-f-used" value="1" ${filters.conditionUsed ? "checked" : ""} />
+                Used
+              </label>
+            </fieldset>
+            <button type="submit" class="btn btn--primary filter-panel__apply">Apply filters</button>
+          </form>
+        </aside>
+        <div class="browse-main">
+          <div class="sort-bar">
+            <label class="sort-bar__sort">
+              <span class="sort-bar__sort-label">Sort by:</span>
+              <select id="browse-sort-select" class="sort-bar__select" aria-label="Sort listings">
+                <option value="latest" ${sortSel === "latest" ? "selected" : ""}>Latest</option>
+                <option value="price_asc" ${sortSel === "price_asc" ? "selected" : ""}>Price ↑</option>
+                <option value="price_desc" ${sortSel === "price_desc" ? "selected" : ""}>Price ↓</option>
+                <option value="popular" ${sortSel === "popular" ? "selected" : ""}>Most popular</option>
+              </select>
+            </label>
+            <p class="sort-bar__count muted" id="browse-results-count">${totalCount} ad${totalCount === 1 ? "" : "s"} found</p>
+          </div>
+          <div class="ad-grid ad-grid--browse" id="listing-cards"></div>
+          <div class="browse-pagination" id="browse-pagination"></div>
+        </div>
+      </div>
     </div>
   `;
 
   const grid = document.getElementById("listing-cards");
-  if (!listings.length) {
+  const pagEl = document.getElementById("browse-pagination");
+
+  if (!pageSlice.length && !error) {
     grid.innerHTML = `<div class="empty-state">No ads match your filters yet. Try another category or search.</div>`;
+    if (pagEl) {
+      pagEl.innerHTML = "";
+    }
     return;
   }
 
-  listings.forEach((listing) => {
+  if (pagEl) {
+    if (hasMore) {
+      pagEl.innerHTML = `<button type="button" class="btn btn--ghost browse-load-more" id="browse-load-more">Load more</button>`;
+    } else if (totalCount > 0 && filters.page > 1) {
+      pagEl.innerHTML = `<p class="browse-pagination__hint muted small">Showing all ${totalCount} ads</p>`;
+    } else {
+      pagEl.innerHTML = "";
+    }
+  }
+
+  pageSlice.forEach((listing) => {
     const thumb = listingImageUrl(listing);
     const imgBlock = thumb
       ? `<img class="ad-card__img" src="${esc(thumb)}" alt="" loading="lazy" decoding="async" />`
@@ -347,20 +539,35 @@ const renderList = async () => {
         ? `${esc(listing.currency || "HUF")} ${esc(String(listing.price))}`
         : "Ask for price";
 
+    const badges = [];
+    if (listing.featured || listing.isFeatured) {
+      badges.push(`<span class="ad-card__badge ad-card__badge--featured">FEATURED</span>`);
+    }
+    if (listing.urgent || listing.isUrgent) {
+      badges.push(`<span class="ad-card__badge ad-card__badge--urgent">URGENT</span>`);
+    }
+    const badgeHtml = badges.length ? `<div class="ad-card__badges">${badges.join("")}</div>` : "";
+    const posted = formatPostedTime(listing.createdAt);
+    const metaBits = [listing.location, posted].filter(Boolean);
+    const metaLine = metaBits.join(" · ");
+
     const card = document.createElement("article");
     card.className = "ad-card";
     card.tabIndex = 0;
     card.setAttribute("role", "link");
     card.setAttribute(
       "aria-label",
-      `${listing.title}, ${priceLine}, ${listing.location}`
+      `${listing.title}, ${priceLine}, ${metaLine}`
     );
     card.innerHTML = `
-      <div class="ad-card__media">${imgBlock}</div>
+      <div class="ad-card__media">
+        ${badgeHtml}
+        ${imgBlock}
+      </div>
       <div class="ad-card__body">
         <p class="ad-card__price">${priceLine}</p>
         <h2 class="ad-card__title">${esc(listing.title)}</h2>
-        <p class="ad-card__meta">${esc(listing.location)} · ${esc(listing.sellerName || "Seller")}</p>
+        <p class="ad-card__meta">${esc(metaLine || "—")}</p>
         <span class="ad-card__cat">${esc(categoryName(listing.categoryId))}</span>
       </div>
     `;
@@ -651,7 +858,23 @@ const renderPost = async () => {
   });
 };
 
+const navDrawerEl = () => document.getElementById("nav-drawer");
+const navBurgerEl = () => document.getElementById("nav-burger");
+
+const setNavDrawerOpen = (open) => {
+  const drawer = navDrawerEl();
+  const burger = navBurgerEl();
+  if (!drawer || !burger) {
+    return;
+  }
+  drawer.hidden = !open;
+  drawer.setAttribute("aria-hidden", open ? "false" : "true");
+  burger.setAttribute("aria-expanded", open ? "true" : "false");
+  document.body.classList.toggle("nav-drawer-open", open);
+};
+
 const render = async () => {
+  setNavDrawerOpen(false);
   updateAuthUi();
   const route = parseHash();
   if (route.view === "landing" && getUser()) {
@@ -676,6 +899,14 @@ const render = async () => {
   await renderList();
 };
 
+navBurgerEl()?.addEventListener("click", () => {
+  const drawer = navDrawerEl();
+  if (!drawer) {
+    return;
+  }
+  setNavDrawerOpen(drawer.hidden);
+});
+
 document.body.addEventListener("click", (e) => {
   const btn = e.target.closest("#category-rail [data-cat]");
   if (!btn) {
@@ -688,6 +919,99 @@ document.body.addEventListener("click", (e) => {
   } else {
     next.delete("cat");
   }
+  next.delete("page");
+  const qs = next.toString();
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
+  );
+  render();
+});
+
+document.body.addEventListener("click", (e) => {
+  if (e.target.id === "browse-load-more") {
+    const next = new URLSearchParams(window.location.search);
+    const cur = Math.max(1, parseInt(next.get("page") || "1", 10) || 1);
+    next.set("page", String(cur + 1));
+    const qs = next.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
+    );
+    render();
+    return;
+  }
+  const drawerLink = e.target.closest("#nav-drawer a[href]");
+  if (drawerLink) {
+    setNavDrawerOpen(false);
+  }
+  if (e.target.id === "drawer-signin" || e.target.closest("#drawer-signin")) {
+    e.preventDefault();
+    setNavDrawerOpen(false);
+    openModal();
+  }
+});
+
+document.body.addEventListener("change", (e) => {
+  if (e.target.id !== "browse-sort-select") {
+    return;
+  }
+  const next = new URLSearchParams(window.location.search);
+  next.set("sort", e.target.value);
+  next.delete("page");
+  const qs = next.toString();
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
+  );
+  render();
+});
+
+document.body.addEventListener("submit", (e) => {
+  if (e.target.id !== "sidebar-filter-form") {
+    return;
+  }
+  e.preventDefault();
+  const fd = new FormData(e.target);
+  const next = new URLSearchParams(window.location.search);
+  const cat = String(fd.get("cat") || "").trim();
+  const loc = String(fd.get("loc") || "").trim();
+  const minp = String(fd.get("minp") || "").trim();
+  const maxp = String(fd.get("maxp") || "").trim();
+  if (cat) {
+    next.set("cat", cat);
+  } else {
+    next.delete("cat");
+  }
+  if (loc) {
+    next.set("loc", loc);
+  } else {
+    next.delete("loc");
+  }
+  if (minp) {
+    next.set("minp", minp);
+  } else {
+    next.delete("minp");
+  }
+  if (maxp) {
+    next.set("maxp", maxp);
+  } else {
+    next.delete("maxp");
+  }
+  if (fd.get("cnew")) {
+    next.set("cnew", "1");
+  } else {
+    next.delete("cnew");
+  }
+  if (fd.get("cused")) {
+    next.set("cused", "1");
+  } else {
+    next.delete("cused");
+  }
+  next.delete("page");
   const qs = next.toString();
   window.history.replaceState(
     null,
@@ -714,6 +1038,8 @@ document.getElementById("header-search-form")?.addEventListener("submit", (e) =>
   } else {
     next.delete("loc");
   }
+  next.delete("page");
+  browseListingsCache = { key: "", data: [] };
   const qs = next.toString();
   window.history.replaceState(
     null,
