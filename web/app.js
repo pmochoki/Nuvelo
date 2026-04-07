@@ -62,7 +62,18 @@ const updateAuthUi = () => {
   }
 };
 
-const openModal = () => {
+const openModal = (mode = "login") => {
+  const titleEl = document.getElementById("login-title");
+  const subEl = document.getElementById("login-subtitle");
+  if (titleEl) {
+    titleEl.textContent = mode === "signup" ? "Sign up" : "Log in";
+  }
+  if (subEl) {
+    subEl.textContent =
+      mode === "signup"
+        ? "Create your Nuvelo profile to post listings and message sellers."
+        : "Use the same name and email as before to reconnect to your listings.";
+  }
   loginModal.hidden = false;
   loginModal.querySelector("input[name='name']")?.focus();
 };
@@ -102,7 +113,7 @@ loginForm?.addEventListener("submit", async (e) => {
   setUser(profile);
   updateAuthUi();
   closeModal();
-  render();
+  setHash("/browse");
 });
 
 const esc = (s) => {
@@ -168,7 +179,10 @@ const parseHash = () => {
   if (parts[0] === "post") {
     return { view: "post" };
   }
-  return { view: "list" };
+  if (parts[0] === "browse") {
+    return { view: "list" };
+  }
+  return { view: "landing" };
 };
 
 const setHash = (path) => {
@@ -177,6 +191,40 @@ const setHash = (path) => {
 
 const categoryName = (id) =>
   categoriesCache.find((c) => c.id === id)?.name || id;
+
+const renderLanding = () => {
+  appEl.innerHTML = `
+    <section class="landing" aria-labelledby="landing-title">
+      <div class="landing__mark" aria-hidden="true">N</div>
+      <h1 id="landing-title" class="landing__title">Nuvelo</h1>
+      <p class="landing__tagline">
+        Rentals, jobs, services &amp; goods — for Hungary’s international community.
+      </p>
+      <div class="landing__actions">
+        <button type="button" class="btn btn--primary btn--lg" id="landing-login">
+          Log in
+        </button>
+        <button type="button" class="btn btn--outline btn--lg" id="landing-signup">
+          Sign up
+        </button>
+      </div>
+      <p class="landing__guest">
+        <button type="button" class="btn btn--link" id="landing-browse">
+          Browse without an account
+        </button>
+      </p>
+    </section>
+  `;
+  document.getElementById("landing-login")?.addEventListener("click", () => {
+    openModal("login");
+  });
+  document.getElementById("landing-signup")?.addEventListener("click", () => {
+    openModal("signup");
+  });
+  document.getElementById("landing-browse")?.addEventListener("click", () => {
+    setHash("/browse");
+  });
+};
 
 const renderList = async () => {
   await fetchCategories().catch(() => {});
@@ -255,7 +303,7 @@ const renderList = async () => {
     window.history.replaceState(
       null,
       "",
-      `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash || "#/"}`
+      `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash || "#/browse"}`
     );
     render();
   });
@@ -295,11 +343,11 @@ const renderDetail = async (id) => {
   }
   if (error) {
     appEl.innerHTML = `<div class="banner-error">${esc(error)}</div>
-      <p><a href="#/">← Back to listings</a></p>`;
+      <p><a href="#/browse">← Back to listings</a></p>`;
     return;
   }
   if (!listing) {
-    appEl.innerHTML = `<p>Listing not found. <a href="#/">Back to browse</a></p>`;
+    appEl.innerHTML = `<p>Listing not found. <a href="#/browse">Back to browse</a></p>`;
     return;
   }
 
@@ -315,7 +363,7 @@ const renderDetail = async (id) => {
 
   appEl.innerHTML = `
     <article class="detail">
-      <p><a href="#/">← All listings</a></p>
+      <p><a href="#/browse">← All listings</a></p>
       <p class="pill">${esc(categoryName(listing.categoryId))}</p>
       <h1>${esc(listing.title)}</h1>
       <p class="lead">${esc(listing.location)} · ${esc(listing.sellerName || "Seller")}</p>
@@ -493,7 +541,7 @@ const renderPost = async () => {
         <textarea name="images" required rows="3" placeholder="https://…"></textarea>
       </label>
       <div class="button-row">
-        <a class="btn btn--ghost" href="#/">Cancel</a>
+        <a class="btn btn--ghost" href="#/browse">Cancel</a>
         <button type="submit" class="btn btn--primary">Submit for review</button>
       </div>
       <p class="muted small" id="post-msg"></p>
@@ -552,6 +600,15 @@ const renderPost = async () => {
 const render = async () => {
   updateAuthUi();
   const route = parseHash();
+  if (route.view === "landing" && getUser()) {
+    setHash("/browse");
+    return;
+  }
+  document.body.classList.toggle("is-landing", route.view === "landing");
+  if (route.view === "landing") {
+    renderLanding();
+    return;
+  }
   appEl.innerHTML = `<p class="muted">Loading…</p>`;
   if (route.view === "detail") {
     await renderDetail(route.id);

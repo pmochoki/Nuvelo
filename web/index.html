@@ -21,7 +21,7 @@
       <div class="site-header__inner">
         <a class="brand" href="#/">Nuvelo</a>
         <nav class="site-nav" aria-label="Main">
-          <a href="#/">Browse</a>
+          <a href="#/browse">Browse</a>
           <a href="#/post">Post a listing</a>
           <button type="button" class="btn btn--ghost" id="auth-btn" hidden>
             Sign in
@@ -47,10 +47,9 @@
     <div id="login-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title" hidden>
       <div class="modal__backdrop" data-close-modal></div>
       <div class="modal__panel">
-        <h2 id="login-title">Sign in</h2>
-        <p class="muted small">
-          MVP sign-in: your profile is stored for this browser session. Use the
-          same name &amp; email later to reconnect to your listings.
+        <h2 id="login-title">Log in</h2>
+        <p class="muted small" id="login-subtitle">
+          Use the same name and email as before to reconnect to your listings.
         </p>
         <form id="login-form" class="stack">
           <label>
