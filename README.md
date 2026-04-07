@@ -1,6 +1,6 @@
-## InterHungary Marketplace
+## Nuvelo Marketplace
 
-InterHungary is a cross-platform marketplace for internationals and Hungarians to trade **rentals, jobs, services, and goods** in one trusted place.  
+Nuvelo is a cross-platform marketplace for internationals and Hungarians to trade **rentals, jobs, services, and goods** in one trusted place.  
 The goal is to make it easy to discover and offer opportunities across language and cultural barriers in Hungary.
 
 ---
@@ -85,7 +85,7 @@ Make sure the mobile app’s API base URL matches your running backend (for exam
 #### Backend on Render
 
 - The `render.yaml` file contains the configuration to deploy the backend to Render.
-- Once deployed, note the **public base URL** of the API, for example `https://interhungary-backend.onrender.com`.
+- Once deployed, note the **public base URL** of the API, for example `https://nuvelo-backend.onrender.com`.
 
 #### Configure mobile app for production
 
@@ -116,7 +116,7 @@ If you’re interested in using or contributing, please treat this as **early-st
 
 ### Roadmap ideas
 
-Some of the directions considered for InterHungary:
+Some of the directions considered for Nuvelo:
 
 - User authentication & profiles (multi-language support).
 - Search and filtering across categories (rentals, jobs, services, goods).

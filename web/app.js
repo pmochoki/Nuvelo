@@ -1,11 +1,11 @@
-/** Public API (Render). Override in console: window.__INTERHUNGARY_API__ = "https://…" */
-const RENDER_API_DEFAULT = "https://interhungary-backend.onrender.com";
+/** Public API (Render). Override in console: window.__NUVELO_API__ = "https://…" */
+const RENDER_API_DEFAULT = "https://nuvelo-backend.onrender.com";
 
 const API_BASE = (() => {
   if (typeof window === "undefined") {
     return RENDER_API_DEFAULT;
   }
-  const injected = window.__INTERHUNGARY_API__;
+  const injected = window.__NUVELO_API__;
   if (injected) {
     return String(injected).replace(/\/$/, "");
   }
@@ -24,7 +24,7 @@ const API_BASE = (() => {
   return RENDER_API_DEFAULT;
 })();
 
-const STORAGE_KEY = "ih_user_profile";
+const STORAGE_KEY = "nuvelo_user_profile";
 
 const appEl = document.getElementById("app");
 const authBtn = document.getElementById("auth-btn");
@@ -358,7 +358,7 @@ const renderDetail = async (id) => {
         throw new Error(err.error || "Could not start conversation.");
       }
       msg.textContent =
-        "Conversation started. Open the InterHungary app to continue messaging.";
+        "Conversation started. Open the Nuvelo app to continue messaging.";
     } catch (e) {
       msg.textContent = e.message || "Something went wrong.";
     }

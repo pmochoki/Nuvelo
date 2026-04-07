@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: interhungary-backend
+    name: nuvelo-backend
     runtime: node
     rootDir: backend
     plan: free

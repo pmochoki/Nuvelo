@@ -5,11 +5,11 @@
 From the project root, run in **Terminal** (you’ll be asked for your Mac password once):
 
 ```bash
-cd "/Users/mokoro/Library/Mobile Documents/com~apple~CloudDocs/InterHungary /InterHungary-src"
+cd ~/Nuvelo
 bash scripts/ios-setup-and-run.sh
 ```
 
-The script will: install Homebrew (if needed) → install Flutter → point Xcode command-line tools to Xcode → run `flutter doctor` → run the InterHungary app. When it asks for your password, type it and press Enter.
+The script will: install Homebrew (if needed) → install Flutter → point Xcode command-line tools to Xcode → run `flutter doctor` → run the Nuvelo app. When it asks for your password, type it and press Enter.
 
 ---
 
@@ -40,7 +40,7 @@ flutter doctor
 ```
 Fix any issues it reports (e.g. "Accept Xcode license", "Install CocoaPods").
 
-## 3. Run the InterHungary app on iOS
+## 3. Run the Nuvelo app on iOS
 
 From the project root:
 

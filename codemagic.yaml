@@ -8,11 +8,11 @@ workflows:
       xcode: latest
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.example.interhungaryMarketplace
+        bundle_identifier: com.example.nuveloMarketplace
       groups:
         - appstore_credentials
       vars:
-        BUNDLE_ID: com.example.interhungaryMarketplace
+        BUNDLE_ID: com.example.nuveloMarketplace
         XCODE_WORKSPACE: "ios/Runner.xcworkspace"
         XCODE_SCHEME: "Runner"
     scripts:

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# InterHungary iOS setup: Homebrew → Flutter → Xcode path → run app
+# Nuvelo iOS setup: Homebrew → Flutter → Xcode path → run app
 # Run this in Terminal (you may be asked for your Mac password once).
 
 set -e
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 MOBILE_DIR="$PROJECT_ROOT/mobile"
 
-echo "=== InterHungary iOS setup ==="
+echo "=== Nuvelo iOS setup ==="
 echo "Project: $PROJECT_ROOT"
 echo ""
 
@@ -55,7 +55,7 @@ flutter doctor -v
 
 # 5. Run the app
 echo ""
-echo ">>> Getting dependencies and running InterHungary app..."
+echo ">>> Getting dependencies and running Nuvelo app..."
 cd "$MOBILE_DIR"
 flutter pub get
 flutter run

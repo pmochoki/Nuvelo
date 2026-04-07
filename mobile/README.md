@@ -1,4 +1,4 @@
-# interhungary_marketplace
+# nuvelo_marketplace
 
 A new Flutter project.
 

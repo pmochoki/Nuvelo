@@ -6,7 +6,7 @@ import "models.dart";
 
 const bool useLocalApi = false;
 const String localBaseUrl = "http://10.0.2.2:4000";
-const String renderBaseUrl = "https://interhungary-backend.onrender.com";
+const String renderBaseUrl = "https://nuvelo-backend.onrender.com";
 
 class ApiService {
   const ApiService();

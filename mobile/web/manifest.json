@@ -1,6 +1,6 @@
 {
-    "name": "interhungary_marketplace",
-    "short_name": "interhungary_marketplace",
+    "name": "nuvelo_marketplace",
+    "short_name": "nuvelo_marketplace",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

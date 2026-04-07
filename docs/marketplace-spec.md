@@ -1,4 +1,4 @@
-# InterHungary — Multi-Vertical Marketplace
+# Nuvelo — Multi-Vertical Marketplace
 
 ## Goal
 
@@ -111,9 +111,9 @@ Launch a bold, fast **multi-vertical marketplace** spanning clothes, housing, jo
 
 - Seed sample data per vertical: e.g. 5 clothes sellers, 3 housing listings, 5 job posts, 3 events
 - Demo:
-    - Buyer: buyer@interhungary.test / Password123
-    - Vendor: vendor@interhungary.test / Password123 (approved)
-    - Admin: admin@interhungary.test / Password123
+    - Buyer: buyer@nuvelo.test / Password123
+    - Vendor: vendor@nuvelo.test / Password123 (approved)
+    - Admin: admin@nuvelo.test / Password123
 
 ## Optional Feature Flags
 

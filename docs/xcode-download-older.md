@@ -60,7 +60,7 @@ Avoid versions that require **macOS Sonoma 14.x** or **Sequoia 15.x** (e.g. Xcod
    ```
    (Enter your Mac password when asked.)
 
-After that, run the InterHungary setup script again so it can use this Xcode.
+After that, run the Nuvelo setup script again so it can use this Xcode.
 
 ## Reference
 

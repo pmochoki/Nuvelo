@@ -14,11 +14,11 @@
 Open **Terminal** and run:
 
 ```bash
-cd "/Users/mokoro/Library/Mobile Documents/com~apple~CloudDocs/InterHungary /InterHungary-src"
+cd ~/Nuvelo
 git push origin main
 ```
 
-- If it asks for **username**: your GitHub username (e.g. `phoeni8x`).
+- If it asks for **username**: your GitHub username (e.g. `pmochoki`).
 - If it asks for **password**: use a **Personal Access Token**, not your GitHub password.  
   Create one: GitHub → **Settings** → **Developer settings** → **Personal access tokens** → **Tokens (classic)** → **Generate new token**. Give it `repo` scope, copy it, and paste it when Git asks for password.
 
@@ -32,12 +32,12 @@ ls -la ~/.ssh/id_*.pub
 ssh-keygen -t ed25519 -C "your_email@example.com" -f ~/.ssh/id_ed25519 -N ""
 
 # Use SSH remote instead of HTTPS
-git remote set-url origin git@github.com:phoeni8x/InterHungary.git
+git remote set-url origin git@github.com:pmochoki/Nuvelo.git
 git push origin main
 ```
 
 After a successful push, your latest commit will be on:  
-**https://github.com/phoeni8x/InterHungary**
+**https://github.com/pmochoki/Nuvelo**
 
 ---
 
@@ -45,7 +45,7 @@ After a successful push, your latest commit will be on:
 
 | Part        | How it deploys | Where you see it |
 |------------|----------------|-------------------|
-| **Backend** | If the repo is connected to **Render**, Render usually auto-deploys on push to `main`. Check [Render dashboard](https://dashboard.render.com/web/srv-d5q8jh7gi27c73f6jp3g). | API: `https://interhungary-backend.onrender.com` (or your Render URL). |
+| **Backend** | If the repo is connected to **Render**, Render usually auto-deploys on push to `main`. Check [Render dashboard](https://dashboard.render.com/web/srv-d5q8jh7gi27c73f6jp3g). | API: `https://nuvelo-backend.onrender.com` (or your Render URL). |
 | **Mobile app** | No automatic web deploy in this repo. You can: (1) run locally, (2) use **Codemagic** (see `codemagic.yaml`) to build iOS/Android, (3) build and upload to App Store / Play Store yourself. | See “How to see the app” below. |
 | **Admin UI** | Static HTML; not deployed by this repo. You can host `admin-ui/` on any static host (e.g. GitHub Pages, Netlify) or open `admin-ui/index.html` locally. | Locally: open `admin-ui/index.html` in a browser. |
 
@@ -58,16 +58,16 @@ So: **push = code on GitHub**. Backend “deploy” = Render (if connected). Mob
 ### Option A: In the browser (no Xcode needed)
 
 ```bash
-cd "/Users/mokoro/Library/Mobile Documents/com~apple~CloudDocs/InterHungary /InterHungary-src/mobile"
+cd ~/Nuvelo/mobile
 flutter run -d chrome
 ```
 
-Chrome will open with the InterHungary app (Jiji-style UI). This is the **customer app** in the browser.
+Chrome will open with the Nuvelo app (Jiji-style UI). This is the **customer app** in the browser.
 
 ### Option B: On iOS simulator (after Xcode is set up)
 
 ```bash
-cd "/Users/mokoro/Library/Mobile Documents/com~apple~CloudDocs/InterHungary /InterHungary-src/mobile"
+cd ~/Nuvelo/mobile
 flutter run
 ```
 
@@ -78,7 +78,7 @@ Choose **iOS** when Flutter asks. Or run the setup script once (see `docs/WHEN-X
 Connect the phone, enable Developer Mode, then:
 
 ```bash
-cd ".../InterHungary-src/mobile"
+cd ~/Nuvelo/mobile
 flutter run
 ```
 
@@ -87,7 +87,7 @@ Select your iPhone from the device list.
 ### Option D: Backend only (API)
 
 - If Render is connected and has auto-deployed: open  
-  `https://interhungary-backend.onrender.com/health`  
+  `https://nuvelo-backend.onrender.com/health`  
   (or your Render service URL) in a browser to confirm the API is up.
 - The mobile app (Chrome or device) already points at this backend when not using local API.
 
@@ -97,7 +97,7 @@ Select your iPhone from the device list.
 
 | Goal              | Command / action |
 |-------------------|------------------|
-| Push latest code  | `git push origin main` (in Terminal, in `InterHungary-src`) |
-| See app in browser | `cd .../InterHungary-src/mobile && flutter run -d chrome` |
+| Push latest code  | `git push origin main` (in Terminal, in `Nuvelo`) |
+| See app in browser | `cd ~/Nuvelo/mobile && flutter run -d chrome` |
 | See backend       | Open Render service URL (e.g. `.../health`) or use the app (it calls the API) |
 | Deploy backend    | Rely on Render auto-deploy on push, or trigger a deploy from the Render dashboard |

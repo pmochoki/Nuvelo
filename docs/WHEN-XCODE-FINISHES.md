@@ -44,12 +44,12 @@ If you see "A brew install cocoapods process has already locked", wait a few min
 
 ---
 
-## 5. Run the InterHungary app again
+## 5. Run the Nuvelo app again
 
 In Terminal:
 
 ```bash
-cd "/Users/mokoro/Library/Mobile Documents/com~apple~CloudDocs/InterHungary /InterHungary-src/mobile"
+cd ~/Nuvelo/mobile
 flutter run
 ```
 
@@ -66,7 +66,7 @@ To run the API on your Mac (for the admin dashboard or local testing):
 1. Install Node.js: `brew install node`
 2. Start the backend:
    ```bash
-   cd "/Users/mokoro/Library/Mobile Documents/com~apple~CloudDocs/InterHungary /InterHungary-src/backend"
+   cd ~/Nuvelo/backend
    npm install
    npm run start
    ```

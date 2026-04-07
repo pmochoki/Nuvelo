@@ -1,4 +1,4 @@
-package com.example.interhungary_marketplace
+package com.example.nuvelo_marketplace
 
 import io.flutter.embedding.android.FlutterActivity
 
