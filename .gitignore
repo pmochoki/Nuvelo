@@ -27,3 +27,4 @@ ios/Flutter/
 
 # Logs
 *.log
+.vercel
