@@ -28,7 +28,14 @@ const enrichListing = (listing) => ({
   ...listing,
   sellerName: findUser(listing.userId)?.name || "Seller"
 });
-const allowedRoles = ["customer", "seller", "agent", "landlord"];
+const allowedRoles = [
+  "buyer",
+  "tenant",
+  "customer",
+  "seller",
+  "agent",
+  "landlord"
+];
 const isValidRole = (role) => allowedRoles.includes(role);
 const allowedReportTypes = ["listing", "user", "message"];
 

@@ -168,10 +168,14 @@ class NuveloApp extends StatelessWidget {
   }
 }
 
-enum UserRole { customer, seller, agent, landlord }
+enum UserRole { buyer, tenant, customer, seller, agent, landlord }
 
 String roleLabel(UserRole role) {
   switch (role) {
+    case UserRole.buyer:
+      return "Buyer";
+    case UserRole.tenant:
+      return "Tenant";
     case UserRole.customer:
       return "Customer";
     case UserRole.seller:
@@ -185,6 +189,10 @@ String roleLabel(UserRole role) {
 
 String roleId(UserRole role) {
   switch (role) {
+    case UserRole.buyer:
+      return "buyer";
+    case UserRole.tenant:
+      return "tenant";
     case UserRole.customer:
       return "customer";
     case UserRole.seller:
@@ -198,6 +206,10 @@ String roleId(UserRole role) {
 
 UserRole roleFromId(String role) {
   switch (role) {
+    case "buyer":
+      return UserRole.buyer;
+    case "tenant":
+      return UserRole.tenant;
     case "seller":
       return UserRole.seller;
     case "agent":
@@ -272,10 +284,10 @@ class _AppRootState extends State<AppRoot> {
   ) async {
     final trimmedContact = contact?.trim();
     final isEmail = trimmedContact != null && trimmedContact.contains("@");
-    // Jiji-style: single account; backend gets default "customer" role (user can buy & sell)
+    // Jiji-style: single account; default role buyer (distinct from tenant on web)
     final profile = await _api.login(
       name: name,
-      role: "customer",
+      role: "buyer",
       email: isEmail ? trimmedContact : null,
       phone: !isEmail ? trimmedContact : null,
       otp: otp?.trim().isEmpty == true ? null : otp?.trim(),

@@ -3,7 +3,7 @@
 ## User
 - id
 - name
-- role (customer/seller/agent/landlord)
+- role (buyer/tenant/customer/seller/agent/landlord; `customer` is legacy)
 - email
 - phone
 - emailVerified
