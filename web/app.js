@@ -194,9 +194,14 @@ const categoryName = (id) =>
 
 const renderLanding = () => {
   appEl.innerHTML = `
-    <section class="landing" aria-labelledby="landing-title">
-      <div class="landing__mark" aria-hidden="true">N</div>
-      <h1 id="landing-title" class="landing__title">Nuvelo</h1>
+    <section class="landing" aria-label="Nuvelo">
+      <img
+        class="landing__logo"
+        src="./nuvelo-logo.svg"
+        width="500"
+        height="220"
+        alt="Nuvelo — Nice vibes only"
+      />
       <p class="landing__tagline">
         Rentals, jobs, services &amp; goods — for Hungary’s international community.
       </p>
