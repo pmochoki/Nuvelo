@@ -19,7 +19,7 @@
   </head>
   <body>
     <header class="site-header">
-      <div class="site-header__inner">
+      <div class="site-header__inner site-header__top">
         <a class="brand" href="#/">
           <img
             class="brand__logo"
@@ -30,27 +30,61 @@
           />
         </a>
         <nav class="site-nav" aria-label="Main">
-          <a href="#/browse">Browse</a>
-          <a href="#/post">Post a listing</a>
+          <a class="site-nav__link site-nav__link--muted" href="#/browse">All ads</a>
+          <a class="btn btn--primary btn--sell" href="#/post">Sell</a>
           <button type="button" class="btn btn--ghost" id="auth-btn" hidden>
             Sign in
           </button>
           <span class="user-chip" id="user-chip" hidden></span>
         </nav>
       </div>
+      <div class="site-header__search-row" id="header-search-wrap" hidden>
+        <form id="header-search-form" class="header-search" autocomplete="off">
+          <input
+            class="header-search__input header-search__q"
+            name="q"
+            type="search"
+            placeholder="I am looking for…"
+            aria-label="Search keywords"
+          />
+          <input
+            class="header-search__input header-search__loc"
+            name="loc"
+            type="text"
+            placeholder="Whole Hungary"
+            aria-label="Location"
+          />
+          <button type="submit" class="btn btn--primary header-search__submit">Search</button>
+        </form>
+      </div>
     </header>
 
     <main id="app" class="main" aria-live="polite"></main>
 
     <footer class="site-footer">
-      <p>
-        Rentals, jobs, services &amp; goods — built for Hungary’s international
-        community. App coming to the App Store; same account works on web and
-        mobile.
-      </p>
-      <p class="muted">
-        <a href="https://nuvelo-backend.onrender.com/admin/">Moderation dashboard</a>
-      </p>
+      <div class="site-footer__grid">
+        <div class="site-footer__col">
+          <h3 class="site-footer__heading">Nuvelo</h3>
+          <p class="site-footer__text">
+            Rentals, jobs, services &amp; goods for Hungary’s international community.
+          </p>
+        </div>
+        <div class="site-footer__col">
+          <h3 class="site-footer__heading">Support</h3>
+          <a href="#/browse">Browse ads</a>
+          <a href="#/post">Post an ad</a>
+          <a href="#/">Home</a>
+        </div>
+        <div class="site-footer__col">
+          <h3 class="site-footer__heading">Safety</h3>
+          <p class="site-footer__text muted">Meet in public places. Never pay in advance.</p>
+        </div>
+        <div class="site-footer__col">
+          <h3 class="site-footer__heading">Moderation</h3>
+          <a href="https://nuvelo-backend.onrender.com/admin/">Admin dashboard</a>
+        </div>
+      </div>
+      <p class="site-footer__copy muted">© Nuvelo · Same account on web &amp; app</p>
     </footer>
 
     <div id="login-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title" hidden>

@@ -213,6 +213,34 @@ const setHash = (path) => {
 const categoryName = (id) =>
   categoriesCache.find((c) => c.id === id)?.name || id;
 
+const categoryIcon = (id) => {
+  const map = {
+    rentals: "🏠",
+    jobs: "💼",
+    clothes: "👕",
+    services: "🛠️",
+    electronics: "📱",
+    vehicles: "🚗",
+    "real-estate": "🏢"
+  };
+  return map[id] || "📦";
+};
+
+const listingImageUrl = (listing) => {
+  const u = listing.images?.[0];
+  if (typeof u === "string" && /^https?:\/\//i.test(u)) {
+    return u;
+  }
+  return "";
+};
+
+const syncHeaderChrome = (route) => {
+  const wrap = document.getElementById("header-search-wrap");
+  if (wrap) {
+    wrap.hidden = route.view === "landing";
+  }
+};
+
 const renderLanding = () => {
   appEl.innerHTML = `
     <section class="landing" aria-label="Nuvelo">
@@ -261,6 +289,12 @@ const renderList = async () => {
     location: params.get("loc") || ""
   };
 
+  const hf = document.getElementById("header-search-form");
+  if (hf?.elements?.q && hf?.elements?.loc) {
+    hf.elements.q.value = filters.query;
+    hf.elements.loc.value = filters.location;
+  }
+
   let listings = [];
   let error = null;
   try {
@@ -269,90 +303,74 @@ const renderList = async () => {
     error = e.message;
   }
 
+  const catChips = [
+    `<button type="button" class="cat-chip${!filters.categoryId ? " cat-chip--active" : ""}" data-cat=""><span class="cat-chip__emoji" aria-hidden="true">✨</span><span class="cat-chip__label">All</span></button>`,
+    ...categoriesCache.map((c) => {
+      const active = c.id === filters.categoryId ? " cat-chip--active" : "";
+      return `<button type="button" class="cat-chip${active}" data-cat="${esc(c.id)}"><span class="cat-chip__emoji" aria-hidden="true">${categoryIcon(c.id)}</span><span class="cat-chip__label">${esc(c.name)}</span></button>`;
+    })
+  ].join("");
+
+  const feedTitle = filters.location
+    ? `Ads in ${esc(filters.location)}`
+    : "Popular in Hungary";
+
   appEl.innerHTML = `
-    <section class="hero">
-      <h1>Find your next home, job, or deal</h1>
-      <p>
-        One marketplace for rentals, jobs, services, and goods — tailored for
-        people living and working across Hungary.
-      </p>
-    </section>
-    ${error ? `<div class="banner-error">${esc(error)}</div>` : ""}
-    <form class="filters" id="filter-form" method="get" action="">
-      <label>
-        Search
-        <input name="q" value="${esc(filters.query)}" placeholder="Keywords…" />
-      </label>
-      <label>
-        Category
-        <select name="cat">
-          <option value="">All categories</option>
-          ${categoriesCache
-            .map(
-              (c) =>
-                `<option value="${esc(c.id)}" ${c.id === filters.categoryId ? "selected" : ""}>${esc(c.name)}</option>`
-            )
-            .join("")}
-        </select>
-      </label>
-      <label>
-        Location
-        <input name="loc" value="${esc(filters.location)}" placeholder="City or region" />
-      </label>
-      <label style="align-self: end">
-        <span class="muted small">&nbsp;</span>
-        <button type="submit" class="btn btn--primary" style="width:100%">Apply</button>
-      </label>
-    </form>
-    <div class="card-grid" id="listing-cards"></div>
+    <div class="feed-layout">
+      <div class="category-rail-wrap">
+        <div class="category-rail" id="category-rail" role="tablist" aria-label="Categories">
+          ${catChips}
+        </div>
+      </div>
+      <div class="feed-head">
+        <h1 class="feed-head__title">${feedTitle}</h1>
+        <p class="feed-head__sub muted">Free classifieds · rentals, jobs, services &amp; more</p>
+      </div>
+      ${error ? `<div class="banner-error">${esc(error)}</div>` : ""}
+      <div class="ad-grid" id="listing-cards"></div>
+    </div>
   `;
 
   const grid = document.getElementById("listing-cards");
-  const form = document.getElementById("filter-form");
-  form?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const fd = new FormData(form);
-    const q = new URLSearchParams();
-    const qq = String(fd.get("q") || "").trim();
-    const cat = String(fd.get("cat") || "").trim();
-    const loc = String(fd.get("loc") || "").trim();
-    if (qq) {
-      q.set("q", qq);
-    }
-    if (cat) {
-      q.set("cat", cat);
-    }
-    if (loc) {
-      q.set("loc", loc);
-    }
-    const qs = q.toString();
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash || "#/browse"}`
-    );
-    render();
-  });
-
   if (!listings.length) {
-    grid.innerHTML = `<div class="empty-state">No listings match your filters yet.</div>`;
+    grid.innerHTML = `<div class="empty-state">No ads match your filters yet. Try another category or search.</div>`;
     return;
   }
 
   listings.forEach((listing) => {
+    const thumb = listingImageUrl(listing);
+    const imgBlock = thumb
+      ? `<img class="ad-card__img" src="${esc(thumb)}" alt="" loading="lazy" decoding="async" />`
+      : `<div class="ad-card__img ad-card__img--ph" aria-hidden="true"></div>`;
+    const priceLine =
+      listing.price != null
+        ? `${esc(listing.currency || "HUF")} ${esc(String(listing.price))}`
+        : "Ask for price";
+
     const card = document.createElement("article");
-    card.className = "card";
+    card.className = "ad-card";
+    card.tabIndex = 0;
+    card.setAttribute("role", "link");
+    card.setAttribute(
+      "aria-label",
+      `${listing.title}, ${priceLine}, ${listing.location}`
+    );
     card.innerHTML = `
-      <p class="pill">${esc(categoryName(listing.categoryId))}</p>
-      <h2 class="card__title">${esc(listing.title)}</h2>
-      <p class="card__meta">${esc(listing.location)} · ${esc(listing.sellerName || "Seller")}</p>
-      <p class="price-tag">${esc(listing.price != null ? `${listing.currency || "HUF"} ${listing.price}` : "Contact for price")}</p>
-      <div class="button-row">
-        <button type="button" class="btn btn--primary" data-id="${esc(listing.id)}">View</button>
+      <div class="ad-card__media">${imgBlock}</div>
+      <div class="ad-card__body">
+        <p class="ad-card__price">${priceLine}</p>
+        <h2 class="ad-card__title">${esc(listing.title)}</h2>
+        <p class="ad-card__meta">${esc(listing.location)} · ${esc(listing.sellerName || "Seller")}</p>
+        <span class="ad-card__cat">${esc(categoryName(listing.categoryId))}</span>
       </div>
     `;
-    card.querySelector("button")?.addEventListener("click", () => {
-      setHash(`/listing/${listing.id}`);
+    const go = () => setHash(`/listing/${listing.id}`);
+    card.addEventListener("click", go);
+    card.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault();
+        go();
+      }
     });
     grid.appendChild(card);
   });
@@ -387,9 +405,15 @@ const renderDetail = async (id) => {
         .join("")}</ul>`
     : "";
 
+  const heroImg = listingImageUrl(listing);
+  const heroBlock = heroImg
+    ? `<div class="detail-hero"><img class="detail-hero__img" src="${esc(heroImg)}" alt="" /></div>`
+    : "";
+
   appEl.innerHTML = `
-    <article class="detail">
-      <p><a href="#/browse">← All listings</a></p>
+    <article class="detail detail--jiji">
+      <p class="detail-back"><a href="#/browse">← All ads</a></p>
+      ${heroBlock}
       <p class="pill">${esc(categoryName(listing.categoryId))}</p>
       <h1>${esc(listing.title)}</h1>
       <p class="lead">${esc(listing.location)} · ${esc(listing.sellerName || "Seller")}</p>
@@ -507,11 +531,13 @@ const renderPost = async () => {
   const user = getUser();
   if (!user) {
     appEl.innerHTML = `
-      <section class="hero">
-        <h1>Post a listing</h1>
-        <p>Sign in to create a listing. Your post will be reviewed before it appears in the feed.</p>
-      </section>
-      <button type="button" class="btn btn--primary" id="post-signin">Sign in to continue</button>
+      <div class="post-shell">
+        <header class="post-shell__head">
+          <h1 class="post-shell__title">Post an ad</h1>
+          <p class="post-shell__lead muted">Sign in to publish. Your ad is reviewed before it appears.</p>
+        </header>
+      <button type="button" class="btn btn--primary btn--lg" id="post-signin">Sign in to continue</button>
+      </div>
     `;
     document.getElementById("post-signin")?.addEventListener("click", openModal);
     return;
@@ -521,11 +547,12 @@ const renderPost = async () => {
   const defaultCat = categoriesCache[0]?.id || "clothes";
 
   appEl.innerHTML = `
-    <section class="hero">
-      <h1>Create a listing</h1>
-      <p>Listings need a title, description (20+ characters), at least one image URL, and category-specific details when required.</p>
-    </section>
-    <form id="post-form" class="stack" style="max-width:560px">
+    <div class="post-shell">
+      <header class="post-shell__head">
+        <h1 class="post-shell__title">Post an ad</h1>
+        <p class="post-shell__lead muted">Free listing — reviewed before it goes live.</p>
+      </header>
+    <form id="post-form" class="stack post-shell__form">
       <label>
         Title (5+ characters)
         <input name="title" required minlength="5" placeholder="City center studio near metro" />
@@ -572,6 +599,7 @@ const renderPost = async () => {
       </div>
       <p class="muted small" id="post-msg"></p>
     </form>
+    </div>
   `;
 
   const catSelect = document.getElementById("post-category");
@@ -631,6 +659,7 @@ const render = async () => {
     return;
   }
   document.body.classList.toggle("is-landing", route.view === "landing");
+  syncHeaderChrome(route);
   if (route.view === "landing") {
     renderLanding();
     return;
@@ -646,6 +675,53 @@ const render = async () => {
   }
   await renderList();
 };
+
+document.body.addEventListener("click", (e) => {
+  const btn = e.target.closest("#category-rail [data-cat]");
+  if (!btn) {
+    return;
+  }
+  const catVal = btn.getAttribute("data-cat") ?? "";
+  const next = new URLSearchParams(window.location.search);
+  if (catVal) {
+    next.set("cat", catVal);
+  } else {
+    next.delete("cat");
+  }
+  const qs = next.toString();
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
+  );
+  render();
+});
+
+document.getElementById("header-search-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const form = e.target;
+  const fd = new FormData(form);
+  const next = new URLSearchParams(window.location.search);
+  const qq = String(fd.get("q") || "").trim();
+  const loc = String(fd.get("loc") || "").trim();
+  if (qq) {
+    next.set("q", qq);
+  } else {
+    next.delete("q");
+  }
+  if (loc) {
+    next.set("loc", loc);
+  } else {
+    next.delete("loc");
+  }
+  const qs = next.toString();
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
+  );
+  render();
+});
 
 window.addEventListener("hashchange", render);
 updateAuthUi();
