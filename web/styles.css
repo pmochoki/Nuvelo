@@ -1,16 +1,24 @@
 :root {
-  --green: #1db954;
-  --green-dark: #16a34a;
-  --navy: #0a0f1e;
-  --navy-card: #111827;
-  --navy-border: #2d3748;
-  --text: #f9fafb;
-  --text-secondary: #9ca3af;
-  --text-muted: #6b7280;
-  --gold: #f59e0b;
-  --danger: #ef4444;
+  /* Purple–orange–white theme */
+  --purple-deep: #0d0a1e;
+  --purple-surface: #13102a;
+  --purple-card: #1a1432;
+  --purple-border: #3d3558;
+  --purple: #7c3aed;
+  --purple-light: #a78bfa;
+  --orange: #f97316;
+  --orange-dark: #ea580c;
+  --white: #ffffff;
+  --text: #fafafa;
+  --text-secondary: #c9b8f3;
+  --text-muted: #9485b8;
+  --danger: #f87171;
   --radius: 12px;
   --font: "DM Sans", system-ui, sans-serif;
+  /* legacy aliases */
+  --navy: var(--purple-deep);
+  --navy-card: var(--purple-card);
+  --navy-border: var(--purple-border);
 }
 
 *,
@@ -27,17 +35,23 @@ body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--font);
-  background: var(--navy);
+  background: radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      rgba(124, 58, 237, 0.22),
+      transparent 55%
+    ),
+    var(--purple-deep);
   color: var(--text);
   line-height: 1.5;
 }
 
 a {
-  color: var(--green);
+  color: var(--purple-light);
   text-decoration: none;
 }
 
 a:hover {
+  color: var(--orange);
   text-decoration: underline;
 }
 
@@ -50,8 +64,8 @@ a:hover {
 }
 
 .site-header {
-  border-bottom: 1px solid var(--navy-border);
-  background: rgba(10, 15, 30, 0.92);
+  border-bottom: 1px solid var(--purple-border);
+  background: rgba(13, 10, 30, 0.92);
   backdrop-filter: blur(8px);
   position: sticky;
   top: 0;
@@ -103,7 +117,7 @@ a:hover {
 }
 
 .site-nav a:hover {
-  color: var(--text);
+  color: var(--orange);
 }
 
 .user-chip {
@@ -178,15 +192,15 @@ textarea {
   font: inherit;
   padding: 0.55rem 0.65rem;
   border-radius: 8px;
-  border: 1px solid var(--navy-border);
-  background: var(--navy);
+  border: 1px solid var(--purple-border);
+  background: var(--purple-surface);
   color: var(--text);
 }
 
 input:focus,
 select:focus,
 textarea:focus {
-  outline: 2px solid var(--green);
+  outline: 2px solid var(--purple-light);
   outline-offset: 0;
 }
 
@@ -225,7 +239,7 @@ textarea {
 }
 
 .card:hover {
-  border-color: var(--green-dark);
+  border-color: var(--purple-light);
 }
 
 .card__title {
@@ -240,7 +254,7 @@ textarea {
 }
 
 .price-tag {
-  color: var(--gold);
+  color: var(--orange);
   font-weight: 600;
 }
 
@@ -254,12 +268,14 @@ textarea {
 }
 
 .btn--primary {
-  background: var(--green);
-  color: #fff;
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+  color: var(--white);
+  box-shadow: 0 4px 20px rgba(249, 115, 22, 0.35);
 }
 
 .btn--primary:hover {
-  background: var(--green-dark);
+  filter: brightness(1.08);
+  box-shadow: 0 6px 24px rgba(249, 115, 22, 0.45);
 }
 
 .btn--ghost {
@@ -269,8 +285,8 @@ textarea {
 }
 
 .btn--ghost:hover {
-  border-color: var(--green);
-  color: var(--green);
+  border-color: var(--purple-light);
+  color: var(--purple-light);
 }
 
 .button-row {
@@ -349,7 +365,11 @@ textarea {
 }
 
 .site-footer a {
-  color: var(--text-secondary);
+  color: var(--purple-light);
+}
+
+.site-footer a:hover {
+  color: var(--orange);
 }
 
 .empty-state {
@@ -464,12 +484,14 @@ textarea {
 
 .btn--outline {
   background: transparent;
-  border: 2px solid var(--green);
-  color: var(--green);
+  border: 2px solid var(--purple-light);
+  color: var(--white);
 }
 
 .btn--outline:hover {
-  background: rgba(29, 185, 84, 0.12);
+  background: rgba(167, 139, 250, 0.12);
+  border-color: var(--orange);
+  color: var(--orange);
 }
 
 .btn--link {
@@ -483,5 +505,5 @@ textarea {
 }
 
 .btn--link:hover {
-  color: var(--green);
+  color: var(--orange);
 }
