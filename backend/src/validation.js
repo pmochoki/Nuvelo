@@ -69,6 +69,13 @@ const validateListing = (listing) => {
   if (hasBannedWords(listing.title) || hasBannedWords(listing.description)) {
     errors.push("Listing contains banned words.");
   }
+  const p = listing.price;
+  if (p != null && p !== "") {
+    const n = Number(p);
+    if (!Number.isFinite(n) || n < 0) {
+      errors.push("Price must be empty or a non-negative number.");
+    }
+  }
   errors.push(
     ...validateCategoryFields(listing.categoryId, listing.categoryFields)
   );

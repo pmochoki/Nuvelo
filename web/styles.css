@@ -178,6 +178,11 @@ body.loc-modal-open {
   overflow: hidden;
 }
 
+/* [hidden] must win over author display (otherwise dialog stays in a11y tree) */
+.loc-modal[hidden] {
+  display: none !important;
+}
+
 .loc-modal {
   position: fixed;
   inset: 0;

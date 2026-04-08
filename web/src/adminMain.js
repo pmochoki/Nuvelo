@@ -70,6 +70,7 @@ async function renderDashboard() {
       <div class="admin-toolbar">
         <button type="button" id="admin-refresh">Refresh</button>
         <a href="/" style="margin-left:12px;color:var(--orange);align-self:center">← Marketplace</a>
+        <a href="${API_URL}/health" target="_blank" rel="noopener noreferrer" style="margin-left:12px;align-self:center;font-size:0.85rem">API health</a>
       </div>
       <section>
         <h2>Snapshot</h2>

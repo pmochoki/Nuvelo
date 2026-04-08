@@ -519,6 +519,7 @@ const closeLocationPanel = (root) => {
     root._locModalCloseT = setTimeout(() => {
       modal.setAttribute("hidden", "");
       modal.setAttribute("aria-hidden", "true");
+      modal.setAttribute("inert", "");
       if (search) {
         search.value = "";
       }
@@ -548,6 +549,7 @@ const openLocationPanel = (root) => {
   if (modal) {
     clearTimeout(root._locModalCloseT);
     modal.removeAttribute("hidden");
+    modal.removeAttribute("inert");
     modal.setAttribute("aria-hidden", "false");
     if (search) {
       search.value = "";
@@ -682,7 +684,7 @@ const buildLocationComboboxHtml = ({
   return `<div class="${wc}loc-dd" data-loc-combobox data-loc-mode="${esc(mode)}">
   <input type="hidden" name="${esc(fieldName)}" data-loc-hidden value="${esc(apiVal)}"${req} />
   <button type="button" class="${btnClass}" data-loc-btn aria-haspopup="dialog" aria-expanded="false">${esc(btnText)}</button>
-  <div class="loc-modal" data-loc-modal hidden aria-hidden="true">
+  <div class="loc-modal" data-loc-modal hidden aria-hidden="true" inert>
     <div class="loc-modal__backdrop" data-loc-close tabindex="-1"></div>
     <div class="loc-modal__dialog" role="dialog" aria-modal="true" aria-label="Choose location">
       <div class="loc-modal__head">
@@ -847,9 +849,13 @@ const filterByTimePref = (listings, t) => {
   });
 };
 
-const formatAdCount = (n) => {
+/** Category / filter counts from live listing data — neutral label when empty. */
+const formatListingCountLabel = (n) => {
   const x = Number(n) || 0;
-  return `${new Intl.NumberFormat("en-US").format(x)} ads`;
+  if (x <= 0) {
+    return "Browse";
+  }
+  return `${new Intl.NumberFormat("en-US").format(x)} listings`;
 };
 
 const apiCategoryIdForSlug = (slug) => CATEGORY_SLUGS[slug] || slug;
@@ -865,10 +871,9 @@ const categoryDisplayName = (apiId) => {
 
 const formatStaticCategoryCount = (catRow, nFromListings) => {
   if (catRow.count != null) {
-    return formatAdCount(catRow.count);
+    return formatListingCountLabel(catRow.count);
   }
-  const n = Number(nFromListings) || 0;
-  return n > 0 ? formatAdCount(n) : "Ads";
+  return formatListingCountLabel(nFromListings);
 };
 
 const excerptOneLine = (text, max = 72) => {
@@ -1020,6 +1025,25 @@ const countByCategory = (listings) => {
   return m;
 };
 
+/** Card/detail price line — never show negative HUF. */
+const formatDisplayPrice = (listing) => {
+  if (listing.categoryId === DONATIONS_CATEGORY_ID) {
+    return null;
+  }
+  const p = listing.price;
+  if (p == null) {
+    return "Contact for price";
+  }
+  const n = Number(p);
+  if (!Number.isFinite(n) || n < 0) {
+    return "Contact for price";
+  }
+  if (n === 0) {
+    return "Free";
+  }
+  return `${listing.currency || "HUF"} ${n}`;
+};
+
 const buildListingCardEl = (listing, opts = {}) => {
   const {
     viewMode = "grid",
@@ -1030,10 +1054,7 @@ const buildListingCardEl = (listing, opts = {}) => {
   const cf = listing.categoryFields || {};
   const isDonation = listing.categoryId === DONATIONS_CATEGORY_ID;
   const claimed = isDonation && Boolean(cf.claimed);
-  const priceLine =
-    listing.price != null
-      ? `${listing.currency || "HUF"} ${listing.price}`
-      : "Ask for price";
+  const priceLine = formatDisplayPrice(listing) ?? "Contact for price";
   const tl = [];
   if (listing.featured || listing.isFeatured) {
     tl.push(`<span class="lc__pill lc__pill--feat">FEATURED</span>`);
@@ -1207,9 +1228,9 @@ const renderLanding = async () => {
           <div class="jiji-promo-strip" aria-label="Promotions">
             <a href="#/post" class="jiji-promo-card jiji-promo-card--a">Post your first ad</a>
             <a href="#/browse" class="jiji-promo-card jiji-promo-card--b">How to buy safely</a>
-            <span class="jiji-promo-card jiji-promo-card--c">Verified sellers</span>
-            <span class="jiji-promo-card jiji-promo-card--d">How to sell</span>
-            <span class="jiji-promo-card jiji-promo-card--e">Safety tips</span>
+            <a href="#/about" class="jiji-promo-card jiji-promo-card--c">Verified sellers</a>
+            <a href="#/faq" class="jiji-promo-card jiji-promo-card--d">How to sell</a>
+            <a href="#/safety" class="jiji-promo-card jiji-promo-card--e">Safety tips</a>
           </div>
           <div class="jiji-pills" id="home-pills">${pills}</div>
           <section class="jiji-trending" aria-label="Trending ads">
@@ -1378,7 +1399,7 @@ const renderList = async () => {
       <div class="filter-section">
         <h3>Categories</h3>
         <p class="muted small" style="margin:0 0 0.5rem"><strong>${filters.categoryId ? esc(categoryDisplayName(filters.categoryId)) : "All categories"}</strong></p>
-        <a href="#/browse" class="small">All in category · ${esc(formatAdCount(subCount))}</a>
+        <a href="#/browse" class="small">All in category · ${esc(formatListingCountLabel(subCount))}</a>
       </div>
       <div class="filter-section">
         <h3>Location</h3>
@@ -1729,10 +1750,23 @@ const renderDetail = async (id) => {
   );
   const mainSrc = imgs[0] || "";
   const views = Number(listing.viewCount) || Number(listing.views) || 0;
-  const priceStr =
-    listing.price != null
-      ? `${esc(listing.currency || "HUF")} ${esc(String(listing.price))}`
-      : "Contact for price";
+  const priceStr = (() => {
+    if (isDonation) {
+      return "";
+    }
+    const p = listing.price;
+    if (p == null) {
+      return "Contact for price";
+    }
+    const n = Number(p);
+    if (!Number.isFinite(n) || n < 0) {
+      return "Contact for price";
+    }
+    if (n === 0) {
+      return "Free";
+    }
+    return `${esc(listing.currency || "HUF")} ${esc(String(n))}`;
+  })();
   const posted = formatPostedTime(listing.createdAt);
   const bcTitle = excerptOneLine(listing.title, 40);
   const descRaw = String(listing.description || "");
@@ -2385,6 +2419,10 @@ const renderPost = async () => {
         <header class="post-shell__head">
           <h1 class="post-shell__title">Post an ad</h1>
           <p class="post-shell__lead muted">Sign in to publish. Your ad is reviewed before it appears.</p>
+          <p class="post-shell__hint muted small" style="margin-top:0.75rem;max-width:36rem;line-height:1.5">
+            To post a new ad — rentals, jobs, goods, services, donations, and more — please sign in or create a free account.
+            After you sign in you can choose a category, add photos, and set your price and location.
+          </p>
         </header>
       <button type="button" class="btn btn--primary btn--lg" id="post-signin">Sign in to continue</button>
       </div>
@@ -2593,6 +2631,21 @@ const renderPost = async () => {
       .filter(Boolean);
     const isEvent = categoryId === EVENTS_CATEGORY;
     const isDonationPost = categoryId === DONATIONS_CATEGORY_ID;
+    if (isEvent && String(fd.get("eventPriceType") || "free") === "paid") {
+      const ep = Number(fd.get("eventPrice") ?? 0);
+      if (!Number.isFinite(ep) || ep < 0) {
+        throw new Error("Event price must be zero or a positive number.");
+      }
+    }
+    if (!isDonationPost && !isEvent) {
+      const rawP = fd.get("price");
+      if (rawP !== null && String(rawP).trim() !== "") {
+        const pn = Number(rawP);
+        if (!Number.isFinite(pn) || pn < 0) {
+          throw new Error("Price must be empty, zero, or a positive number.");
+        }
+      }
+    }
     const condRaw = String(fd.get("condition") || "other");
     const condApi = isDonationPost
       ? String(fd.get("donationCondition") || "good")
@@ -2605,7 +2658,16 @@ const renderPost = async () => {
       title: String(fd.get("title") || "").trim(),
       description: String(fd.get("description") || "").trim(),
       categoryId,
-      price: isDonationPost ? 0 : fd.get("price") ? Number(fd.get("price")) : null,
+      price: isDonationPost
+        ? 0
+        : (() => {
+            const raw = fd.get("price");
+            if (raw === null || String(raw).trim() === "") {
+              return null;
+            }
+            const n = Number(raw);
+            return Number.isFinite(n) && n >= 0 ? n : null;
+          })(),
       currency: "HUF",
       location: String(fd.get("location") || "").trim(),
       images: imagesRaw,

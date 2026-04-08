@@ -76,6 +76,18 @@ async function apiFetch(path, options = {}) {
   return payload;
 }
 
+/** Reject invalid / negative prices from API; null means unspecified. */
+function sanitizeListingPrice(raw) {
+  if (raw == null || raw === "") {
+    return null;
+  }
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 0) {
+    return null;
+  }
+  return n;
+}
+
 export function normalizeListingRow(row) {
   if (!row) {
     return null;
@@ -86,7 +98,7 @@ export function normalizeListingRow(row) {
     categoryId: row.categoryId,
     title: row.title,
     description: row.description,
-    price: row.price != null ? Number(row.price) : null,
+    price: sanitizeListingPrice(row.price),
     currency: row.currency || "HUF",
     condition: row.condition,
     location: row.location,
@@ -177,12 +189,22 @@ export async function createListing(formPayload, userId) {
   const images = (formPayload.images || []).filter(
     (u) => typeof u === "string" && /^https?:\/\//i.test(u)
   );
+  let priceVal = null;
+  if (isDonation) {
+    priceVal = 0;
+  } else if (formPayload.price != null && formPayload.price !== "") {
+    const n = Number(formPayload.price);
+    if (!Number.isFinite(n) || n < 0) {
+      throw new Error("Price must be zero or a positive number.");
+    }
+    priceVal = n;
+  }
   const row = {
     userId,
     title: formPayload.title,
     description: formPayload.description,
     categoryId: formPayload.categoryId,
-    price: isDonation ? 0 : formPayload.price,
+    price: priceVal,
     currency: "HUF",
     condition: cond,
     location: formPayload.location,

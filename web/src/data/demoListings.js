@@ -140,7 +140,7 @@ const buildListing = (idx, city, template) => {
     categoryId: template.categoryId,
     title: `${template.title} — ${city.label}`,
     description: `${template.description} Location: ${city.label}.`,
-    price: template.price + ((idx % 7) - 3) * 3500,
+    price: Math.max(0, template.price + ((idx % 7) - 3) * 3500),
     currency: "HUF",
     condition: template.condition,
     location: city.label,
