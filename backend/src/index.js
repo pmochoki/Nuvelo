@@ -15,7 +15,19 @@ const {
 const { validateListing, validateMessage } = require("./validation");
 
 const app = express();
-app.use(cors());
+app.set("trust proxy", 1);
+
+const corsOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
+  : null;
+
+app.use(
+  cors(
+    corsOrigins && corsOrigins.length
+      ? { origin: corsOrigins }
+      : { origin: true }
+  )
+);
 app.use(express.json());
 
 const generateId = (prefix) =>

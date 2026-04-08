@@ -1,3 +1,6 @@
+# Blueprint: link repo, ensure Web Service root directory is `backend`.
+# Live check: GET https://<your-service>.onrender.com/health → {"status":"ok"}
+# If curl shows `x-render-routing: no-server`, the service is missing or suspended — resume/create it in the Render dashboard.
 services:
   - type: web
     name: nuvelo-backend

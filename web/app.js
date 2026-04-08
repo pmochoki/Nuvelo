@@ -24,6 +24,39 @@ const API_BASE = (() => {
   return RENDER_API_DEFAULT;
 })();
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Maps browser network failures (e.g. TypeError: Failed to fetch) to a clear message. */
+const friendlyNetworkError = (err) => {
+  const name = err && err.name;
+  const msg = String((err && err.message) || "");
+  if (
+    name === "TypeError" ||
+    /failed to fetch/i.test(msg) ||
+    /networkerror/i.test(msg) ||
+    /load failed/i.test(msg)
+  ) {
+    return "Could not connect to the server. Check your connection, or wait a minute and try again (the API may be waking up).";
+  }
+  return msg || "Something went wrong. Please try again.";
+};
+
+/** Helps with cold starts on free hosting (e.g. Render spin-up). */
+const fetchWithRetry = async (url, init = {}, attempts = 2) => {
+  let lastErr;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fetch(url, init);
+    } catch (err) {
+      lastErr = err;
+      if (i < attempts - 1) {
+        await sleep(800 * (i + 1));
+      }
+    }
+  }
+  throw lastErr;
+};
+
 const STORAGE_KEY = "nuvelo_user_profile";
 
 const appEl = document.getElementById("app");
@@ -65,6 +98,7 @@ const updateAuthUi = () => {
 const openModal = (mode = "login") => {
   const titleEl = document.getElementById("login-title");
   const subEl = document.getElementById("login-subtitle");
+  const errEl = document.getElementById("login-error");
   if (titleEl) {
     titleEl.textContent = mode === "signup" ? "Sign up" : "Log in";
   }
@@ -73,6 +107,10 @@ const openModal = (mode = "login") => {
       mode === "signup"
         ? "Create your Nuvelo profile to post listings and message sellers."
         : "Use the same name and email as before to reconnect to your listings.";
+  }
+  if (errEl) {
+    errEl.textContent = "";
+    errEl.hidden = true;
   }
   loginModal.hidden = false;
   loginModal.querySelector("input[name='name']")?.focus();
@@ -115,26 +153,58 @@ loginForm?.addEventListener("keydown", (e) => {
 
 loginForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
+  const errEl = document.getElementById("login-error");
+  const submitBtn = loginForm.querySelector("button[type='submit']");
+  if (errEl) {
+    errEl.textContent = "";
+    errEl.hidden = true;
+  }
   const fd = new FormData(loginForm);
   const name = String(fd.get("name") || "").trim();
   const role = String(fd.get("role") || "").trim();
   const email = String(fd.get("email") || "").trim() || null;
   const phone = String(fd.get("phone") || "").trim() || null;
-  const res = await fetch(`${API_BASE}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name, role, email, phone })
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    window.alert(err.error || "Sign-in failed.");
-    return;
+  if (submitBtn) {
+    submitBtn.disabled = true;
   }
-  const profile = await res.json();
-  setUser(profile);
-  updateAuthUi();
-  closeModal();
-  setHash("/browse");
+  try {
+    const res = await fetchWithRetry(
+      `${API_BASE}/auth/login`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, role, email, phone })
+      },
+      2
+    );
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      const text =
+        err.error ||
+        (res.status === 404 || res.status === 502
+          ? "Sign-in service is unavailable. Please try again later."
+          : "Could not sign in. Please try again.");
+      if (errEl) {
+        errEl.textContent = text;
+        errEl.hidden = false;
+      }
+      return;
+    }
+    const profile = await res.json();
+    setUser(profile);
+    updateAuthUi();
+    closeModal();
+    setHash("/browse");
+  } catch (err) {
+    if (errEl) {
+      errEl.textContent = friendlyNetworkError(err);
+      errEl.hidden = false;
+    }
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+    }
+  }
 });
 
 const esc = (s) => {
@@ -147,15 +217,20 @@ const fetchCategories = async () => {
   if (categoriesCache.length) {
     return categoriesCache;
   }
-  const res = await fetch(`${API_BASE}/categories`);
+  let res;
+  try {
+    res = await fetchWithRetry(`${API_BASE}/categories`, {}, 2);
+  } catch (err) {
+    throw new Error(friendlyNetworkError(err));
+  }
   if (!res.ok) {
-    throw new Error("Could not load categories.");
+    throw new Error("Could not load categories. The server may be busy or updating.");
   }
   categoriesCache = await res.json();
   return categoriesCache;
 };
 
-const fetchListings = (params) => {
+const fetchListings = async (params) => {
   const q = new URLSearchParams();
   if (params.query) {
     q.set("query", params.query);
@@ -176,12 +251,16 @@ const fetchListings = (params) => {
   if (viewer?.id) {
     q.set("viewerId", viewer.id);
   }
-  return fetch(`${API_BASE}/listings?${q.toString()}`).then((r) => {
-    if (!r.ok) {
-      throw new Error("Could not load listings.");
-    }
-    return r.json();
-  });
+  let res;
+  try {
+    res = await fetchWithRetry(`${API_BASE}/listings?${q.toString()}`, {}, 2);
+  } catch (err) {
+    throw new Error(friendlyNetworkError(err));
+  }
+  if (!res.ok) {
+    throw new Error("Could not load listings. The server may be busy or updating.");
+  }
+  return res.json();
 };
 
 const PAGE_SIZE = 12;
@@ -269,18 +348,26 @@ const browseCacheKey = (f) =>
     maxp: f.maxPrice
   });
 
-const fetchListing = (id) =>
-  fetch(
-    `${API_BASE}/listings/${encodeURIComponent(id)}${getUser()?.id ? `?viewerId=${encodeURIComponent(getUser().id)}` : ""}`
-  ).then((r) => {
-    if (r.status === 404) {
-      return null;
-    }
-    if (!r.ok) {
-      throw new Error("Could not load listing.");
-    }
-    return r.json();
-  });
+const fetchListing = async (id) => {
+  const q = getUser()?.id ? `?viewerId=${encodeURIComponent(getUser().id)}` : "";
+  let res;
+  try {
+    res = await fetchWithRetry(
+      `${API_BASE}/listings/${encodeURIComponent(id)}${q}`,
+      {},
+      2
+    );
+  } catch (err) {
+    throw new Error(friendlyNetworkError(err));
+  }
+  if (res.status === 404) {
+    return null;
+  }
+  if (!res.ok) {
+    throw new Error("Could not load listing.");
+  }
+  return res.json();
+};
 
 const parseHash = () => {
   const raw = window.location.hash.replace(/^#\!?/, "") || "/";
@@ -379,7 +466,12 @@ const renderLanding = () => {
 };
 
 const renderList = async () => {
-  await fetchCategories().catch(() => {});
+  let categoriesWarning = null;
+  try {
+    await fetchCategories();
+  } catch (e) {
+    categoriesWarning = e.message || friendlyNetworkError(e);
+  }
   const filters = parseBrowseParams();
   const fetchFilters = {
     query: filters.query,
@@ -406,7 +498,7 @@ const renderList = async () => {
       browseListingsCache = { key: cacheKey, data: listings };
     }
   } catch (e) {
-    error = e.message;
+    error = e.message || friendlyNetworkError(e);
     browseListingsCache = { key: "", data: [] };
   }
 
@@ -449,7 +541,8 @@ const renderList = async () => {
         <h1 class="feed-head__title">${feedTitle}</h1>
         <p class="feed-head__sub muted">Free classifieds · rentals, jobs, services &amp; more</p>
       </div>
-      ${error ? `<div class="banner-error">${esc(error)}</div>` : ""}
+      ${categoriesWarning && !error ? `<div class="banner-warn" role="status">${esc(categoriesWarning)} Category filters may be limited until this loads.</div>` : ""}
+      ${error ? `<div class="banner-error" role="alert">${esc(error)}</div>` : ""}
       <div class="browse-layout">
         <aside class="browse-sidebar" aria-label="Filters">
           <form id="sidebar-filter-form" class="filter-panel">
@@ -590,10 +683,10 @@ const renderDetail = async (id) => {
   try {
     listing = await fetchListing(id);
   } catch (e) {
-    error = e.message;
+    error = e.message || friendlyNetworkError(e);
   }
   if (error) {
-    appEl.innerHTML = `<div class="banner-error">${esc(error)}</div>
+    appEl.innerHTML = `<div class="banner-error" role="alert">${esc(error)}</div>
       <p><a href="#/browse">← Back to listings</a></p>`;
     return;
   }
@@ -649,15 +742,19 @@ const renderDetail = async (id) => {
       return;
     }
     try {
-      const res = await fetch(`${API_BASE}/conversations`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          listingId: listing.id,
-          buyerId: user.id,
-          sellerId: listing.userId
-        })
-      });
+      const res = await fetchWithRetry(
+        `${API_BASE}/conversations`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            listingId: listing.id,
+            buyerId: user.id,
+            sellerId: listing.userId
+          })
+        },
+        2
+      );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || "Could not start conversation.");
@@ -665,7 +762,7 @@ const renderDetail = async (id) => {
       msg.textContent =
         "Conversation started. Open the Nuvelo app to continue messaging.";
     } catch (e) {
-      msg.textContent = e.message || "Something went wrong.";
+      msg.textContent = friendlyNetworkError(e);
     }
   });
 };
@@ -838,23 +935,31 @@ const renderPost = async () => {
     };
     const msg = document.getElementById("post-msg");
     msg.textContent = "";
-    const res = await fetch(`${API_BASE}/listings`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
-      const text = Array.isArray(body.errors)
-        ? body.errors.join(" ")
-        : body.error || "Could not create listing.";
-      msg.textContent = text;
-      return;
+    try {
+      const res = await fetchWithRetry(
+        `${API_BASE}/listings`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        },
+        2
+      );
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        const text = Array.isArray(body.errors)
+          ? body.errors.join(" ")
+          : body.error || "Could not create listing.";
+        msg.textContent = text;
+        return;
+      }
+      const created = await res.json();
+      msg.textContent =
+        "Listing submitted as pending moderation. Thank you!";
+      setTimeout(() => setHash(`/listing/${created.id}`), 800);
+    } catch (err) {
+      msg.textContent = friendlyNetworkError(err);
     }
-    const created = await res.json();
-    msg.textContent =
-      "Listing submitted as pending moderation. Thank you!";
-    setTimeout(() => setHash(`/listing/${created.id}`), 800);
   });
 };
 
@@ -887,7 +992,12 @@ const render = async () => {
     renderLanding();
     return;
   }
-  appEl.innerHTML = `<p class="muted">Loading…</p>`;
+  appEl.innerHTML = `
+    <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
+      <span class="page-loading__spinner" aria-hidden="true"></span>
+      <span class="page-loading__text">Loading…</span>
+    </div>
+  `;
   if (route.view === "detail") {
     await renderDetail(route.id);
     return;

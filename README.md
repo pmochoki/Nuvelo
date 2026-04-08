@@ -86,6 +86,9 @@ Make sure the mobile app’s API base URL matches your running backend (for exam
 
 - The `render.yaml` file contains the configuration to deploy the backend to Render.
 - Once deployed, note the **public base URL** of the API, for example `https://nuvelo-backend.onrender.com`.
+- **Health check:** open `https://<your-service>.onrender.com/health` — you should see `{"status":"ok"}`. The service is **Node/Express** (not Django); routes include `/categories`, `/listings`, `/auth/login`, `/admin/` (static admin UI).
+- **If every path returns plain `Not Found` and response headers include `x-render-routing: no-server`:** Render has no running web process for that hostname (service deleted, never created, or suspended). Fix this in the [Render dashboard](https://dashboard.render.com): create or resume a **Web Service** with **Root directory** `backend`, **Build** `npm install`, **Start** `npm run start`, and health check path `/health`.
+- Optional: set env var `CORS_ORIGINS` to a comma-separated list (e.g. `https://nuvelo.one,https://my-app.vercel.app`) to restrict CORS; if unset, the API reflects the request origin (`origin: true`).
 
 #### Configure mobile app for production
 
