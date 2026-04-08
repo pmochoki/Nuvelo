@@ -22,7 +22,7 @@ The goal is to make it easy to discover and offer opportunities across language 
 - **Backend**: Node.js (TypeScript/JavaScript)
 - **Public web**: HTML/CSS/JS (`web/`, served at `/` by the backend)
 - **Admin UI**: HTML/CSS/JS (framework‑minimal, served at `/admin`)
-- **Infrastructure**: Render (backend), Codemagic (CI/CD for mobile)
+- **Infrastructure**: **Vercel** (public website from `web/`), **Render** (Node API backend), Codemagic (CI/CD for mobile)
 
 Repository layout:
 
@@ -81,6 +81,8 @@ Make sure the mobile app’s API base URL matches your running backend (for exam
 ---
 
 ### Deployment
+
+**Typical setup:** the marketplace **pages** load from **Vercel** (e.g. `*.vercel.app` or a custom domain like `nuvelo.one`). The browser then calls the **API** at **`https://nuvelo-backend.onrender.com`** (see `web/app.js` → `API_BASE`). So you use **both**: Vercel for static hosting, Render for the backend—unless you change the API URL or host the API elsewhere.
 
 #### Backend on Render
 
