@@ -9,6 +9,7 @@ import {
   loginUser,
   setDonationClaimed
 } from "./lib/listingsApi.js";
+import { supabase, isSupabaseConfigured, getAuthRedirectUrl } from "./lib/supabaseClient.js";
 import {
   DONATIONS_CATEGORY_ID,
   DONATION_SUBCATEGORIES,
@@ -43,6 +44,8 @@ const EVENTS_ANON_KEY = "nuvelo_events_anon";
 const EVENTS_CATEGORY = "events";
 
 let cachedUser = null;
+/** Set after sending phone OTP until verified or modal reset. */
+let phoneOtpPending = null;
 const VIEW_MODE_KEY = "nuvelo_list_view";
 const CATEGORY_SLUGS = {
   events: "events",
@@ -90,6 +93,110 @@ const writeStoredUser = (user) => {
   }
 };
 
+function showLoginError(msg) {
+  const errEl = document.getElementById("login-error");
+  const okEl = document.getElementById("login-success");
+  if (okEl) {
+    okEl.hidden = true;
+    okEl.textContent = "";
+  }
+  if (errEl) {
+    if (!msg) {
+      errEl.textContent = "";
+      errEl.hidden = true;
+    } else {
+      errEl.textContent = msg;
+      errEl.hidden = false;
+    }
+  }
+}
+
+function showLoginSuccess(msg) {
+  const errEl = document.getElementById("login-error");
+  const okEl = document.getElementById("login-success");
+  if (errEl) {
+    errEl.hidden = true;
+    errEl.textContent = "";
+  }
+  if (okEl) {
+    if (!msg) {
+      okEl.textContent = "";
+      okEl.hidden = true;
+    } else {
+      okEl.textContent = msg;
+      okEl.hidden = false;
+    }
+  }
+}
+
+function resetAuthModalMessages() {
+  showLoginError("");
+  showLoginSuccess("");
+  phoneOtpPending = null;
+  const pv = document.getElementById("auth-phone-verify");
+  if (pv) {
+    pv.hidden = true;
+  }
+  const otp = document.getElementById("auth-phone-otp-input");
+  if (otp) {
+    otp.value = "";
+  }
+}
+
+function applySupabaseSession(session) {
+  if (!session?.user) {
+    cachedUser = null;
+    writeStoredUser(null);
+    return;
+  }
+  const u = session.user;
+  const meta = u.user_metadata || {};
+  cachedUser = {
+    id: u.id,
+    name:
+      meta.name ||
+      meta.full_name ||
+      meta.display_name ||
+      (u.email && u.email.split("@")[0]) ||
+      "Member",
+    role: meta.role || "buyer",
+    email: u.email || "",
+    phone: u.phone || ""
+  };
+  writeStoredUser(cachedUser);
+}
+
+async function initAuth() {
+  if (!isSupabaseConfigured || !supabase) {
+    syncAuthFromStoredUser();
+    return;
+  }
+  const {
+    data: { session },
+    error
+  } = await supabase.auth.getSession();
+  if (error) {
+    console.error(error);
+  }
+  applySupabaseSession(session ?? null);
+  updateAuthUi();
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    applySupabaseSession(session ?? null);
+    updateAuthUi();
+    if (event === "SIGNED_IN") {
+      resetAuthModalMessages();
+      closeModal();
+      void render().catch((e) => console.error(e));
+    }
+    if (event === "SIGNED_OUT") {
+      cachedUser = null;
+      writeStoredUser(null);
+      void render().catch((e) => console.error(e));
+    }
+  });
+}
+
 const syncAuthFromStoredUser = () => {
   cachedUser = readStoredUser();
   updateAuthUi();
@@ -122,6 +229,14 @@ userChip?.addEventListener("click", async () => {
   if (!getUser()) {
     return;
   }
+  try {
+    if (supabase) {
+      await supabase.auth.signOut();
+      return;
+    }
+  } catch (e) {
+    console.error(e);
+  }
   cachedUser = null;
   writeStoredUser(null);
   updateAuthUi();
@@ -131,6 +246,7 @@ userChip?.addEventListener("click", async () => {
 let authModalMode = "login";
 
 const openModal = (mode = "login") => {
+  resetAuthModalMessages();
   authModalMode = mode;
   const titleEl = document.getElementById("login-title");
   const subEl = document.getElementById("login-subtitle");
@@ -169,6 +285,7 @@ const openModal = (mode = "login") => {
 
 const closeModal = () => {
   loginModal.hidden = true;
+  resetAuthModalMessages();
 };
 
 loginModal?.addEventListener("click", (e) => {
@@ -191,11 +308,41 @@ document.getElementById("drawer-register")?.addEventListener("click", () => {
 });
 
 document.getElementById("auth-google-stub")?.addEventListener("click", async () => {
-  window.alert("Social login is not enabled yet. Use name + role + email/phone below.");
+  if (!supabase) {
+    showLoginError(
+      "Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable Google sign-in."
+    );
+    return;
+  }
+  showLoginError("");
+  showLoginSuccess("");
+  const redirectTo = getAuthRedirectUrl();
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo }
+  });
+  if (error) {
+    showLoginError(error.message || "Google sign-in failed.");
+  }
 });
 
 document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
-  window.alert("Social login is not enabled yet. Use name + role + email/phone below.");
+  if (!supabase) {
+    showLoginError(
+      "Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable Facebook sign-in."
+    );
+    return;
+  }
+  showLoginError("");
+  showLoginSuccess("");
+  const redirectTo = getAuthRedirectUrl();
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "facebook",
+    options: { redirectTo }
+  });
+  if (error) {
+    showLoginError(error.message || "Facebook sign-in failed.");
+  }
 });
 
 document.getElementById("auth-show-email-form")?.addEventListener("click", () => {
@@ -266,24 +413,66 @@ loginForm?.addEventListener("keydown", (e) => {
 
 loginForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
-  const errEl = document.getElementById("login-error");
-  const submitBtn = loginForm.querySelector("button[type='submit']");
-  if (errEl) {
-    errEl.textContent = "";
-    errEl.hidden = true;
-  }
+  const submitBtn = document.getElementById("login-form-submit") || loginForm.querySelector("button[type='submit']");
+  showLoginError("");
+  showLoginSuccess("");
   const fd = new FormData(loginForm);
   const name = String(fd.get("name") || "").trim();
   const role = String(fd.get("role") || "").trim();
   const email = String(fd.get("email") || "").trim() || "";
   const phone = String(fd.get("phone") || "").trim() || "";
+
   if (!email && !phone) {
-    if (errEl) {
-      errEl.textContent = "Enter an email or phone number to receive a sign-in link or code.";
-      errEl.hidden = false;
+    showLoginError("Enter an email (magic link) or phone (SMS code) to continue.");
+    return;
+  }
+
+  if (supabase) {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
+    try {
+      const redirectTo = getAuthRedirectUrl();
+      const meta = { name, role, full_name: name, display_name: name };
+
+      if (email) {
+        const { error } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: redirectTo,
+            data: meta
+          }
+        });
+        if (error) {
+          showLoginError(error.message || "Could not send email link.");
+          return;
+        }
+        showLoginSuccess("Check your email — we sent you a sign-in link.");
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({
+        phone,
+        options: { data: meta }
+      });
+      if (error) {
+        showLoginError(error.message || "Could not send SMS.");
+        return;
+      }
+      phoneOtpPending = phone;
+      const pv = document.getElementById("auth-phone-verify");
+      if (pv) {
+        pv.hidden = false;
+      }
+      showLoginSuccess("Enter the code we sent to your phone.");
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
     }
     return;
   }
+
   if (submitBtn) {
     submitBtn.disabled = true;
   }
@@ -296,13 +485,42 @@ loginForm?.addEventListener("submit", async (e) => {
     await render().catch((e) => console.error(e));
   } catch (err) {
     console.error(err);
-    if (errEl) {
-      errEl.textContent = friendlyNetworkError(err);
-      errEl.hidden = false;
-    }
+    showLoginError(friendlyNetworkError(err));
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
+    }
+  }
+});
+
+document.getElementById("auth-phone-verify-btn")?.addEventListener("click", async () => {
+  if (!supabase || !phoneOtpPending) {
+    showLoginError("Request an SMS code first.");
+    return;
+  }
+  const token = String(document.getElementById("auth-phone-otp-input")?.value || "").trim();
+  if (!token) {
+    showLoginError("Enter the code from your SMS.");
+    return;
+  }
+  const btn = document.getElementById("auth-phone-verify-btn");
+  if (btn) {
+    btn.disabled = true;
+  }
+  try {
+    const { error } = await supabase.auth.verifyOtp({
+      phone: phoneOtpPending,
+      token,
+      type: "sms"
+    });
+    if (error) {
+      showLoginError(error.message || "Invalid code.");
+      return;
+    }
+    showLoginSuccess("Signed in successfully.");
+  } finally {
+    if (btn) {
+      btn.disabled = false;
     }
   }
 });
@@ -2924,5 +3142,7 @@ syncLocationCombobox(
   new URLSearchParams(window.location.search).get("loc") || ""
 );
 
-syncAuthFromStoredUser();
-void render().catch((e) => console.error(e));
+void (async () => {
+  await initAuth();
+  await render().catch((e) => console.error(e));
+})();

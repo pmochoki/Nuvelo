@@ -1052,6 +1052,26 @@ textarea {
   display: none !important;
 }
 
+.login-success {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  color: #bbf7d0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.login-success[hidden] {
+  display: none !important;
+}
+
+.auth-phone-verify label {
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
 .page-loading {
   display: flex;
   align-items: center;
