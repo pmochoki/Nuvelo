@@ -18,71 +18,97 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header class="site-header">
-      <div class="nav-shell">
-        <div class="nav-bar">
-          <button
-            type="button"
-            class="nav-burger"
-            id="nav-burger"
-            aria-label="Open menu"
-            aria-expanded="false"
-            aria-controls="nav-drawer"
-          >
-            <span class="nav-burger__line"></span>
-            <span class="nav-burger__line"></span>
-            <span class="nav-burger__line"></span>
-          </button>
-          <a class="brand brand--nav" href="#/">
-            <img
-              class="brand__logo"
-              src="./nuvelo-logo.svg"
-              width="500"
-              height="220"
-              alt="Nuvelo"
+    <header class="site-header jiji-header">
+      <div class="jiji-header__inner">
+        <button
+          type="button"
+          class="nav-burger jiji-header__burger"
+          id="nav-burger"
+          aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="nav-drawer"
+        >
+          <span class="nav-burger__line"></span>
+          <span class="nav-burger__line"></span>
+          <span class="nav-burger__line"></span>
+        </button>
+        <a class="brand brand--nav jiji-header__brand" href="#/">
+          <img
+            class="brand__logo"
+            src="./nuvelo-logo.svg"
+            width="500"
+            height="220"
+            alt="Nuvelo"
+          />
+        </a>
+        <p class="jiji-header__tagline" aria-hidden="true">
+          Find your next home, job, or deal
+        </p>
+        <div class="jiji-header__search-host" id="header-search-wrap" hidden>
+          <form id="header-search-form" class="jiji-header__search-form" autocomplete="off">
+            <input
+              class="jiji-header__search-input jiji-header__search-q"
+              name="q"
+              type="search"
+              placeholder="Search for anything…"
+              aria-label="Search keywords"
             />
-          </a>
-          <div class="nav-search-host" id="header-search-wrap" hidden>
-            <form id="header-search-form" class="nav-search-form" autocomplete="off">
-              <input
-                class="nav-search-form__input nav-search-form__q"
-                name="q"
-                type="search"
-                placeholder="Search for anything…"
-                aria-label="Search keywords"
-              />
-              <input
-                class="nav-search-form__input nav-search-form__loc"
-                name="loc"
-                type="text"
-                placeholder="Location"
-                aria-label="Location"
-              />
-              <button type="submit" class="btn btn--primary nav-search-form__submit">Search</button>
-            </form>
-          </div>
-          <div class="nav-actions" id="nav-actions">
-            <a class="btn btn--primary btn--pill btn--sell" href="#/post">Sell / Post ad</a>
-            <button type="button" class="nav-signin btn btn--ghost btn--signin" id="auth-btn">
-              Sign in
-            </button>
-            <span class="user-chip" id="user-chip" hidden></span>
-          </div>
+            <input
+              class="jiji-header__search-input jiji-header__search-loc"
+              name="loc"
+              type="text"
+              placeholder="Location"
+              aria-label="Location"
+            />
+            <button type="submit" class="btn btn--primary jiji-header__search-btn">Search</button>
+          </form>
         </div>
-        <div class="nav-drawer" id="nav-drawer" hidden aria-hidden="true">
-          <nav class="nav-drawer__inner" aria-label="Mobile">
-            <a href="#/browse">Browse ads</a>
-            <a href="#/post">Sell / Post ad</a>
-            <button type="button" class="nav-drawer__signin" id="drawer-signin">Sign in</button>
-          </nav>
+        <div class="jiji-header__actions" id="nav-actions">
+          <button type="button" class="jiji-header__text-link" id="auth-btn">Sign in</button>
+          <button type="button" class="jiji-header__text-link" id="auth-register-btn">
+            Registration
+          </button>
+          <a class="btn btn--primary btn--pill btn--sell jiji-header__sell" href="#/post">SELL</a>
+          <span class="user-chip jiji-header__chip" id="user-chip" hidden></span>
         </div>
+      </div>
+      <div class="nav-drawer" id="nav-drawer" hidden aria-hidden="true">
+        <nav class="nav-drawer__inner" aria-label="Mobile menu">
+          <a href="#/">Home</a>
+          <a href="#/browse">Browse ads</a>
+          <a href="#/post">Post an ad</a>
+          <button type="button" class="nav-drawer__signin" id="drawer-signin">Sign in</button>
+          <button type="button" class="nav-drawer__signin" id="drawer-register">
+            Registration
+          </button>
+        </nav>
       </div>
     </header>
 
-    <main id="app" class="main" aria-live="polite"></main>
+    <main id="app" class="main main--jiji" aria-live="polite"></main>
 
-    <footer class="site-footer">
-      <div class="site-footer__grid">
+    <div
+      id="filter-sheet"
+      class="filter-sheet"
+      hidden
+      aria-hidden="true"
+      role="dialog"
+      aria-label="Filters"
+    >
+      <div class="filter-sheet__backdrop" id="filter-sheet-backdrop" tabindex="-1"></div>
+      <div class="filter-sheet__panel">
+        <div class="filter-sheet__head">
+          <h2 class="filter-sheet__title">Filters</h2>
+          <button type="button" class="filter-sheet__close" id="filter-sheet-close" aria-label="Close">
+            ×
+          </button>
+        </div>
+        <div class="filter-sheet__body" id="filter-sheet-body"></div>
+      </div>
+    </div>
+
+    <footer class="site-footer site-footer--jiji">
+      <div class="site-footer__grid site-footer__grid--jiji">
         <div class="site-footer__col site-footer__col--brand">
           <img
             class="site-footer__logo"
@@ -94,34 +120,72 @@
           <p class="site-footer__text">
             Rentals, jobs, services &amp; goods for Hungary’s international community.
           </p>
+          <a href="#/">About Nuvelo</a>
+          <a href="#/browse">Browse marketplace</a>
+          <span class="site-footer__muted">Terms &amp; Conditions</span>
+          <span class="site-footer__muted">Privacy Policy</span>
+          <span class="site-footer__muted">Cookie Policy</span>
         </div>
         <div class="site-footer__col">
-          <h3 class="site-footer__heading">Links</h3>
-          <a href="#/browse">Browse ads</a>
-          <a href="#/post">Post an ad</a>
-          <a href="#/">Home</a>
+          <h3 class="site-footer__heading">Support</h3>
+          <a href="mailto:support@nuvelo.app">support@nuvelo.app</a>
+          <a href="#/browse">Safety tips</a>
+          <span class="site-footer__muted">Contact us</span>
+          <span class="site-footer__muted">FAQ</span>
         </div>
         <div class="site-footer__col">
-          <h3 class="site-footer__heading">Safety</h3>
-          <p class="site-footer__text muted">Meet in public places. Never pay in advance.</p>
+          <h3 class="site-footer__heading">Our apps</h3>
+          <p class="site-footer__text muted small">Nuvelo on iOS &amp; Android — same account as web.</p>
+          <span class="site-footer__badge-pill">App Store</span>
+          <span class="site-footer__badge-pill">Google Play</span>
         </div>
         <div class="site-footer__col">
-          <h3 class="site-footer__heading">Moderation</h3>
+          <h3 class="site-footer__heading">Follow us</h3>
+          <div class="site-footer__social">
+            <span class="site-footer__social-icon" aria-hidden="true">f</span>
+            <span class="site-footer__social-icon" aria-hidden="true">◎</span>
+            <span class="site-footer__social-icon" aria-hidden="true">▶</span>
+            <span class="site-footer__social-icon" aria-hidden="true">𝕏</span>
+          </div>
           <a href="https://nuvelo-backend.onrender.com/admin/">Admin dashboard</a>
         </div>
       </div>
-      <p class="site-footer__copy muted">© Nuvelo · Same account on web &amp; app</p>
+      <div class="site-footer__bar">
+        <p class="site-footer__copy muted">© 2026 Nuvelo · Same account on web &amp; app</p>
+      </div>
     </footer>
 
-    <div id="login-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="login-title" hidden>
+    <div
+      id="login-modal"
+      class="modal modal--jiji-auth"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="login-title"
+      hidden
+    >
       <div class="modal__backdrop" data-close-modal></div>
-      <div class="modal__panel">
-        <h2 id="login-title">Log in</h2>
+      <div class="modal__panel modal__panel--jiji">
+        <button type="button" class="modal__close-x" data-close-modal aria-label="Close">×</button>
+        <h2 id="login-title">Sign in</h2>
         <p class="muted small" id="login-subtitle">
           Use the same name and email as before to reconnect to your listings.
         </p>
         <p id="login-error" class="login-error" role="alert" hidden></p>
-        <form id="login-form" class="stack">
+
+        <div id="login-social-block" class="auth-social">
+          <button type="button" class="auth-social__btn auth-social__btn--google" id="auth-google-stub">
+            Continue with Google
+          </button>
+          <button type="button" class="auth-social__btn auth-social__btn--facebook" id="auth-fb-stub">
+            Continue with Facebook
+          </button>
+          <p class="auth-or"><span>or</span></p>
+          <button type="button" class="btn btn--outline auth-email-toggle" id="auth-show-email-form">
+            Register via email or phone
+          </button>
+        </div>
+
+        <form id="login-form" class="stack auth-email-form">
           <label>
             Display name
             <input name="name" required minlength="2" autocomplete="name" placeholder="Maria Kovacs" />
@@ -144,11 +208,18 @@
             Phone (optional)
             <input name="phone" autocomplete="tel" placeholder="+36 …" />
           </label>
-          <div class="button-row">
-            <button type="button" class="btn btn--ghost" data-close-modal>Cancel</button>
-            <button type="submit" class="btn btn--primary">Continue</button>
-          </div>
+          <button type="submit" class="btn btn--primary auth-submit-full">Continue</button>
+          <button type="button" class="btn btn--ghost auth-submit-full" data-close-modal>Cancel</button>
         </form>
+
+        <p class="auth-switch small muted" id="auth-switch-line">
+          <button type="button" class="btn btn--link auth-inline-link" id="auth-switch-mode">
+            Already have an account? Sign in
+          </button>
+        </p>
+        <p class="auth-legal small muted">
+          By continuing you agree to our Terms &amp; Privacy Policy.
+        </p>
       </div>
     </div>
 
