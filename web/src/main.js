@@ -1,33 +1,12 @@
-import { CATEGORIES } from "./src/data/categories.js";
-import { HUNGARIAN_LOCATIONS } from "./src/data/hungarianLocations.js";
-
-/** Public API (Render). Override in console: window.__NUVELO_API__ = "https://…" */
-const RENDER_API_DEFAULT = "https://nuvelo-backend.onrender.com";
-
-const API_BASE = (() => {
-  if (typeof window === "undefined") {
-    return RENDER_API_DEFAULT;
-  }
-  const injected = window.__NUVELO_API__;
-  if (injected) {
-    return String(injected).replace(/\/$/, "");
-  }
-  const { hostname, origin } = window.location;
-  if (!hostname || origin === "null") {
-    return "http://localhost:4000";
-  }
-  if (hostname === "localhost" || hostname === "127.0.0.1") {
-    return origin;
-  }
-  // Backend serves both site + API on Render
-  if (hostname.endsWith(".onrender.com")) {
-    return origin;
-  }
-  // Site on Vercel (or any other static host) → API stays on Render
-  return RENDER_API_DEFAULT;
-})();
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+import { CATEGORIES } from "./data/categories.js";
+import { HUNGARIAN_LOCATIONS } from "./data/hungarianLocations.js";
+import "../styles.css";
+import { supabase } from "./lib/supabase.js";
+import {
+  fetchListingsFromSupabase,
+  fetchListingFromSupabase,
+  createListingInSupabase
+} from "./lib/listingsApi.js";
 
 /** Maps browser network failures (e.g. TypeError: Failed to fetch) to a clear message. */
 const friendlyNetworkError = (err) => {
@@ -39,32 +18,15 @@ const friendlyNetworkError = (err) => {
     /networkerror/i.test(msg) ||
     /load failed/i.test(msg)
   ) {
-    return "Could not connect to the server. Check your connection, or wait a minute and try again (the API may be waking up).";
+    return "Could not connect. Check your connection and try again.";
   }
   return msg || "Something went wrong. Please try again.";
 };
 
-/** Shown when listings cannot be loaded; never surface raw fetch() errors in the UI. */
-const LISTINGS_UNAVAILABLE_MSG =
-  "Listings are loading, please try again shortly.";
+/** Soft copy when listings are unavailable; never surface raw errors in the UI. */
+const LISTINGS_UNAVAILABLE_MSG = "Listings are loading, please try again shortly.";
 
-/** Helps with cold starts on free hosting (e.g. Render spin-up). */
-const fetchWithRetry = async (url, init = {}, attempts = 2) => {
-  let lastErr;
-  for (let i = 0; i < attempts; i++) {
-    try {
-      return await fetch(url, init);
-    } catch (err) {
-      lastErr = err;
-      if (i < attempts - 1) {
-        await sleep(800 * (i + 1));
-      }
-    }
-  }
-  throw lastErr;
-};
-
-const STORAGE_KEY = "nuvelo_user_profile";
+let cachedUser = null;
 const VIEW_MODE_KEY = "nuvelo_list_view";
 const CATEGORY_SLUGS = {
   rentals: "rentals",
@@ -85,20 +47,36 @@ const userChip = document.getElementById("user-chip");
 const loginModal = document.getElementById("login-modal");
 const loginForm = document.getElementById("login-form");
 
-const getUser = () => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-};
+const getUser = () => cachedUser;
 
-const setUser = (profile) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
+const syncAuthFromSession = async (session) => {
+  if (!session?.user) {
+    cachedUser = null;
+    updateAuthUi();
+    return;
+  }
+  const u = session.user;
+  let name = u.user_metadata?.display_name || u.email?.split("@")[0] || "User";
+  let role = u.user_metadata?.role || "buyer";
+  let phone = u.user_metadata?.phone || "";
+  const { data: prof } = await supabase
+    .from("profiles")
+    .select("display_name, role, phone")
+    .eq("id", u.id)
+    .maybeSingle();
+  if (prof) {
+    if (prof.display_name) {
+      name = prof.display_name;
+    }
+    if (prof.role) {
+      role = prof.role;
+    }
+    if (prof.phone) {
+      phone = prof.phone;
+    }
+  }
+  cachedUser = { id: u.id, name, role, email: u.email || "", phone };
+  updateAuthUi();
 };
 
 const updateAuthUi = () => {
@@ -111,14 +89,27 @@ const updateAuthUi = () => {
     }
     userChip.hidden = false;
     userChip.textContent = `${user.name} · ${user.role}`;
+    userChip.title = "Click to sign out";
+    userChip.style.cursor = "pointer";
   } else {
     authBtn.hidden = false;
     if (regBtn) {
       regBtn.hidden = false;
     }
     userChip.hidden = true;
+    userChip.removeAttribute("title");
+    userChip.style.cursor = "";
   }
 };
+
+userChip?.addEventListener("click", async () => {
+  if (!getUser()) {
+    return;
+  }
+  await supabase.auth.signOut();
+  cachedUser = null;
+  updateAuthUi();
+});
 
 let authModalMode = "login";
 
@@ -182,12 +173,26 @@ document.getElementById("drawer-register")?.addEventListener("click", () => {
   openModal("signup");
 });
 
-document.getElementById("auth-google-stub")?.addEventListener("click", () => {
-  window.alert("Google sign-in is not connected yet. Use email or phone below.");
+document.getElementById("auth-google-stub")?.addEventListener("click", async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo: window.location.origin }
+  });
+  if (error) {
+    console.error(error);
+    window.alert(error.message || "Google sign-in failed.");
+  }
 });
 
-document.getElementById("auth-fb-stub")?.addEventListener("click", () => {
-  window.alert("Facebook sign-in is not connected yet. Use email or phone below.");
+document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "facebook",
+    options: { redirectTo: window.location.origin }
+  });
+  if (error) {
+    console.error(error);
+    window.alert(error.message || "Facebook sign-in failed.");
+  }
 });
 
 document.getElementById("auth-show-email-form")?.addEventListener("click", () => {
@@ -267,40 +272,59 @@ loginForm?.addEventListener("submit", async (e) => {
   const fd = new FormData(loginForm);
   const name = String(fd.get("name") || "").trim();
   const role = String(fd.get("role") || "").trim();
-  const email = String(fd.get("email") || "").trim() || null;
-  const phone = String(fd.get("phone") || "").trim() || null;
+  const email = String(fd.get("email") || "").trim() || "";
+  const phone = String(fd.get("phone") || "").trim() || "";
+  if (!email && !phone) {
+    if (errEl) {
+      errEl.textContent = "Enter an email or phone number to receive a sign-in link or code.";
+      errEl.hidden = false;
+    }
+    return;
+  }
   if (submitBtn) {
     submitBtn.disabled = true;
   }
   try {
-    const res = await fetchWithRetry(
-      `${API_BASE}/auth/login`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, role, email, phone })
-      },
-      2
-    );
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      const text =
-        err.error ||
-        (res.status === 404 || res.status === 502
-          ? "Sign-in service is unavailable. Please try again later."
-          : "Could not sign in. Please try again.");
+    if (email) {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            display_name: name,
+            role,
+            phone: phone || undefined
+          }
+        }
+      });
+      if (error) {
+        throw error;
+      }
       if (errEl) {
-        errEl.textContent = text;
+        errEl.textContent =
+          "Check your email for a sign-in link. After you confirm, refresh this page if you are not signed in automatically.";
         errEl.hidden = false;
       }
-      return;
+    } else {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone,
+        options: {
+          data: {
+            display_name: name,
+            role
+          }
+        }
+      });
+      if (error) {
+        throw error;
+      }
+      if (errEl) {
+        errEl.textContent = "Check your phone for the verification code from Supabase.";
+        errEl.hidden = false;
+      }
     }
-    const profile = await res.json();
-    setUser(profile);
-    updateAuthUi();
-    closeModal();
-    setHash("/browse");
   } catch (err) {
+    console.error(err);
     if (errEl) {
       errEl.textContent = friendlyNetworkError(err);
       errEl.hidden = false;
@@ -674,36 +698,14 @@ const buildLocationComboboxHtml = ({
 };
 
 const fetchListings = async (params) => {
-  const q = new URLSearchParams();
-  if (params.query) {
-    q.set("query", params.query);
-  }
-  if (params.categoryId) {
-    q.set("categoryId", params.categoryId);
-  }
-  if (params.location) {
-    q.set("location", params.location);
-  }
-  if (params.minPrice != null && params.minPrice !== "" && !Number.isNaN(Number(params.minPrice))) {
-    q.set("minPrice", String(params.minPrice));
-  }
-  if (params.maxPrice != null && params.maxPrice !== "" && !Number.isNaN(Number(params.maxPrice))) {
-    q.set("maxPrice", String(params.maxPrice));
-  }
-  const viewer = getUser();
-  if (viewer?.id) {
-    q.set("viewerId", viewer.id);
-  }
-  let res;
   try {
-    res = await fetchWithRetry(`${API_BASE}/listings?${q.toString()}`, {}, 2);
+    return await fetchListingsFromSupabase(params);
   } catch (err) {
-    throw new Error(friendlyNetworkError(err));
+    console.error(err);
+    throw new Error(
+      err?.message || "Could not load listings. Check Supabase configuration and try again."
+    );
   }
-  if (!res.ok) {
-    throw new Error("Could not load listings. The server may be busy or updating.");
-  }
-  return res.json();
 };
 
 const PAGE_SIZE = 12;
@@ -764,11 +766,17 @@ const sortListings = (listings, sortKey) => {
   } else if (sortKey === "price_desc") {
     copy.sort((a, b) => (b.price ?? -Infinity) - (a.price ?? -Infinity));
   } else if (sortKey === "popular" || sortKey === "recommended") {
-    copy.sort(
-      (a, b) =>
+    copy.sort((a, b) => {
+      const fb = b.isFeatured || b.featured ? 1 : 0;
+      const fa = a.isFeatured || a.featured ? 1 : 0;
+      if (fb !== fa) {
+        return fb - fa;
+      }
+      return (
         (Number(b.viewCount) || Number(b.views) || 0) -
         (Number(a.viewCount) || Number(a.views) || 0)
-    );
+      );
+    });
   } else {
     copy.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
   }
@@ -914,24 +922,12 @@ const browseCacheKey = (f) =>
   });
 
 const fetchListing = async (id) => {
-  const q = getUser()?.id ? `?viewerId=${encodeURIComponent(getUser().id)}` : "";
-  let res;
   try {
-    res = await fetchWithRetry(
-      `${API_BASE}/listings/${encodeURIComponent(id)}${q}`,
-      {},
-      2
-    );
+    return await fetchListingFromSupabase(id);
   } catch (err) {
-    throw new Error(friendlyNetworkError(err));
+    console.error(err);
+    throw new Error(err?.message || "Could not load listing.");
   }
-  if (res.status === 404) {
-    return null;
-  }
-  if (!res.ok) {
-    throw new Error("Could not load listing.");
-  }
-  return res.json();
 };
 
 const parseHash = () => {
@@ -1055,12 +1051,11 @@ const buildListingCardEl = (listing, opts = {}) => {
 
 const renderLanding = async () => {
   let listings = [];
-  let listingsFetchFailed = false;
   try {
     listings = await fetchListings({});
-  } catch {
+  } catch (err) {
+    console.error(err);
     listings = [];
-    listingsFetchFailed = true;
   }
   const counts = countByCategory(listings);
   const viewMode = getListViewMode();
@@ -1136,11 +1131,6 @@ const renderLanding = async () => {
                 <button type="button" id="home-view-list" aria-pressed="${viewMode === "list"}" title="List">☰</button>
               </div>
             </div>
-            ${
-              listingsFetchFailed
-                ? `<p class="muted small browse-listings-soft-msg" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`
-                : ""
-            }
             <div class="ad-grid--lc" id="home-listing-grid" data-view="${viewMode}"></div>
           </section>
         </div>
@@ -1149,11 +1139,15 @@ const renderLanding = async () => {
   `;
 
   const grid = document.getElementById("home-listing-grid");
-  trending.forEach((listing, i) => {
-    grid.appendChild(
-      buildListingCardEl(listing, { viewMode, markPopular: true, idx: i })
-    );
-  });
+  if (!listings.length) {
+    grid.innerHTML = `<div class="listings-empty muted" role="status">No listings yet. Be the first to post!</div>`;
+  } else {
+    trending.forEach((listing, i) => {
+      grid.appendChild(
+        buildListingCardEl(listing, { viewMode, markPopular: true, idx: i })
+      );
+    });
+  }
 
   const heroLocRoot = document.querySelector("#home-hero-form [data-loc-combobox]");
   initLocationCombobox(heroLocRoot);
@@ -1217,7 +1211,7 @@ const renderList = async () => {
 
   const cacheKey = browseCacheKey(fetchFilters);
   let listings = [];
-  let error = null;
+  let listingsLoadFailed = false;
   try {
     if (browseListingsCache.key === cacheKey) {
       listings = browseListingsCache.data;
@@ -1226,17 +1220,18 @@ const renderList = async () => {
       browseListingsCache = { key: cacheKey, data: listings };
     }
   } catch (e) {
-    error = friendlyNetworkError(e);
+    console.error(e);
+    listingsLoadFailed = true;
     browseListingsCache = { key: "", data: [] };
   }
 
-  let afterBand = error ? [] : filterByPriceBand(listings, filters.priceBand);
-  afterBand = error ? [] : filterBySellerPref(afterBand, filters.sellerFilter);
-  const afterCondition = error
+  let afterBand = listingsLoadFailed ? [] : filterByPriceBand(listings, filters.priceBand);
+  afterBand = listingsLoadFailed ? [] : filterBySellerPref(afterBand, filters.sellerFilter);
+  const afterCondition = listingsLoadFailed
     ? []
     : filterByCondition(afterBand, filters.conditionNew, filters.conditionUsed);
-  const afterTime = error ? [] : filterByTimePref(afterCondition, filters.timeFilter);
-  const sorted = error ? [] : sortListings(afterTime, filters.sort);
+  const afterTime = listingsLoadFailed ? [] : filterByTimePref(afterCondition, filters.timeFilter);
+  const sorted = listingsLoadFailed ? [] : sortListings(afterTime, filters.sort);
   const totalCount = sorted.length;
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const curPage = Math.min(Math.max(1, filters.page), totalPages);
@@ -1354,7 +1349,7 @@ const renderList = async () => {
   };
 
   let pagHtml = "";
-  if (totalPages > 1 && !error) {
+  if (totalPages > 1 && !listingsLoadFailed) {
     let start = Math.max(1, curPage - 2);
     let end = Math.min(totalPages, curPage + 2);
     if (curPage <= 3) {
@@ -1386,7 +1381,7 @@ const renderList = async () => {
       </div>
       <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="browse-filter-open">Filters</button>
       ${
-        error
+        listingsLoadFailed
           ? `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`
           : ""
       }
@@ -1486,8 +1481,13 @@ const renderList = async () => {
     render();
   });
 
-  if (!pageSlice.length && !error) {
+  if (!pageSlice.length && !listingsLoadFailed) {
     grid.innerHTML = `<div class="empty-state">No ads match your filters yet.</div>`;
+    return;
+  }
+
+  if (listingsLoadFailed) {
+    grid.innerHTML = "";
     return;
   }
 
@@ -1569,14 +1569,15 @@ function closeFilterSheet() {
 
 const renderDetail = async (id) => {
   let listing = null;
-  let error = null;
+  let loadFailed = false;
   try {
     listing = await fetchListing(id);
   } catch (e) {
-    error = friendlyNetworkError(e);
+    console.error(e);
+    loadFailed = true;
   }
-  if (error) {
-    appEl.innerHTML = `<div class="banner-error" role="alert">${esc(error)}</div>
+  if (loadFailed) {
+    appEl.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>
       <p><a href="#/browse">← Back to listings</a></p>`;
     return;
   }
@@ -1731,29 +1732,8 @@ const renderDetail = async (id) => {
       msg.textContent = "This is your listing.";
       return;
     }
-    try {
-      const res = await fetchWithRetry(
-        `${API_BASE}/conversations`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            listingId: listing.id,
-            buyerId: user.id,
-            sellerId: listing.userId
-          })
-        },
-        2
-      );
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || "Could not start conversation.");
-      }
-      msg.textContent =
-        "Conversation started. Open the Nuvelo app to continue messaging.";
-    } catch (e) {
-      msg.textContent = friendlyNetworkError(e);
-    }
+    msg.textContent =
+      "In-app messaging is not wired to Supabase yet. Use Show contact or add a messages table and RLS in your project.";
   });
 };
 
@@ -1957,29 +1937,13 @@ const renderPost = async () => {
     const msg = document.getElementById("post-msg");
     msg.textContent = "";
     try {
-      const res = await fetchWithRetry(
-        `${API_BASE}/listings`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        },
-        2
-      );
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        const text = Array.isArray(body.errors)
-          ? body.errors.join(" ")
-          : body.error || "Could not create listing.";
-        msg.textContent = text;
-        return;
-      }
-      const created = await res.json();
-      msg.textContent =
-        "Listing submitted as pending moderation. Thank you!";
+      const created = await createListingInSupabase(payload, user.id);
+      msg.textContent = "Your listing is live. Redirecting…";
       setTimeout(() => setHash(`/listing/${created.id}`), 800);
     } catch (err) {
-      msg.textContent = friendlyNetworkError(err);
+      console.error(err);
+      msg.textContent =
+        err?.message || "Could not create listing. Sign in and check Supabase RLS and table setup.";
     }
   });
 };
@@ -2155,5 +2119,14 @@ syncLocationCombobox(
   new URLSearchParams(window.location.search).get("loc") || ""
 );
 
-updateAuthUi();
-render();
+supabase.auth.onAuthStateChange((_event, session) => {
+  void syncAuthFromSession(session);
+});
+
+void (async () => {
+  const {
+    data: { session }
+  } = await supabase.auth.getSession();
+  await syncAuthFromSession(session);
+  render();
+})();
