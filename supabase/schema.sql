@@ -5,7 +5,7 @@
 create table public.profiles (
   id uuid references auth.users(id) on delete cascade primary key,
   display_name text,
-  role text check (role in ('buyer','tenant','seller','agent','landlord')) default 'buyer',
+  role text check (role in ('buyer','tenant','seller','agent','landlord','admin')) default 'buyer',
   phone text,
   avatar_url text,
   created_at timestamptz default now()
@@ -82,6 +82,39 @@ create policy "Users can update own listings"
 
 create policy "Users can delete own listings"
   on public.listings for delete using (auth.uid() = user_id);
+
+create policy "Admins read all listings"
+  on public.listings for select
+  using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.role = 'admin'
+    )
+  );
+
+create policy "Admins update any listing"
+  on public.listings for update
+  using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.role = 'admin'
+    )
+  )
+  with check (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.role = 'admin'
+    )
+  );
+
+create policy "Admins delete any listing"
+  on public.listings for delete
+  using (
+    exists (
+      select 1 from public.profiles p
+      where p.id = auth.uid() and p.role = 'admin'
+    )
+  );
 
 create or replace function public.handle_updated_at()
 returns trigger

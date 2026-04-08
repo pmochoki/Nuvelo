@@ -1,4 +1,8 @@
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 /** Vite injects the entry script in <head>; modules are deferred but resolving #app at top-level is safer after <body> exists. */
 function moveModuleScriptToBody() {
@@ -27,6 +31,12 @@ export default defineConfig({
   plugins: [moveModuleScriptToBody()],
   build: {
     outDir: "dist",
-    emptyOutDir: true
+    emptyOutDir: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, "index.html"),
+        admin: resolve(__dirname, "admin.html")
+      }
+    }
   }
 });
