@@ -6,8 +6,18 @@ import {
   fetchListings as apiFetchListings,
   fetchListing as apiFetchListing,
   createListing,
-  loginUser
+  loginUser,
+  setDonationClaimed
 } from "./lib/listingsApi.js";
+import {
+  DONATIONS_CATEGORY_ID,
+  DONATION_SUBCATEGORIES,
+  DONATION_CONDITIONS,
+  DONATION_COLLECTION_METHODS,
+  donationSubCategoryLabel,
+  donationConditionLabel,
+  donationCollectionMeta
+} from "./data/donationConstants.js";
 
 /** Maps browser network failures (e.g. TypeError: Failed to fetch) to a clear message. */
 const friendlyNetworkError = (err) => {
@@ -36,6 +46,7 @@ let cachedUser = null;
 const VIEW_MODE_KEY = "nuvelo_list_view";
 const CATEGORY_SLUGS = {
   events: "events",
+  donations: "donations",
   rentals: "rentals",
   jobs: "jobs",
   services: "services",
@@ -1010,6 +1021,9 @@ const buildListingCardEl = (listing, opts = {}) => {
     idx = 0
   } = opts;
   const thumb = listingImageUrl(listing);
+  const cf = listing.categoryFields || {};
+  const isDonation = listing.categoryId === DONATIONS_CATEGORY_ID;
+  const claimed = isDonation && Boolean(cf.claimed);
   const priceLine =
     listing.price != null
       ? `${listing.currency || "HUF"} ${listing.price}`
@@ -1037,8 +1051,29 @@ const buildListingCardEl = (listing, opts = {}) => {
       ? `<span class="lc__seller-ico" title="Verified">★</span>`
       : "";
 
+  const condLine = isDonation
+    ? `${donationConditionLabel(cf.donationCondition)} condition`
+    : conditionLabel(listing.condition);
+  const collMeta = isDonation ? donationCollectionMeta(cf.collectionMethod) : null;
+  const collLine =
+    isDonation && collMeta
+      ? `<span class="lc__coll" title="${esc(collMeta.label)}">${collMeta.icon} ${esc(collMeta.short)}</span>`
+      : "";
+
+  const priceHtml = isDonation
+    ? `<p class="lc__price lc__price--donation"><span class="lc__free">FREE</span></p>`
+    : `<p class="lc__price">${esc(priceLine)}</p>`;
+
+  const claimOverlay = claimed
+    ? `<div class="lc__claimed-overlay" aria-hidden="true"><span>CLAIMED</span></div>`
+    : "";
+
+  const ctaRow = isDonation
+    ? `<p class="lc__cta"><button type="button" class="lc__claim-btn" data-donation-cta>${claimed ? "View listing" : "I want this"}</button></p>`
+    : "";
+
   const card = document.createElement("article");
-  card.className = `lc lc--${viewMode === "list" ? "list" : "grid"}`;
+  card.className = `lc lc--${viewMode === "list" ? "list" : "grid"}${isDonation ? " lc--donation" : ""}${claimed ? " lc--claimed" : ""}`;
   card.tabIndex = 0;
   card.setAttribute("role", "link");
   card.addEventListener("click", () => setHash(`/listing/${listing.id}`));
@@ -1054,19 +1089,31 @@ const buildListingCardEl = (listing, opts = {}) => {
       <div class="lc__badges-tl">${tl.join("")}</div>
       ${tr}
       ${imgHtml}
+      ${claimOverlay}
       ${sellerIco}
     </div>
     <div class="lc__body">
-      <p class="lc__price">${esc(priceLine)}</p>
+      ${priceHtml}
       <h3 class="lc__title">${esc(listing.title)}</h3>
       <p class="lc__excerpt">${esc(excerpt)}</p>
-      <span class="lc__cond">${esc(conditionLabel(listing.condition))}</span>
-      <div class="lc__foot">
+      <span class="lc__cond">${esc(condLine)}</span>
+      ${
+        isDonation
+          ? `<div class="lc__donation-row"><span>📍 ${esc(loc)}</span>${collLine}</div>
+             <div class="lc__foot lc__foot--donation"><span>${esc(posted || "")}</span></div>${ctaRow}`
+          : `<div class="lc__foot">
         <span>📍 ${esc(loc)}</span>
         <span>${esc(posted || "")}</span>
-      </div>
+      </div>`
+      }
     </div>
   `;
+
+  card.querySelector("[data-donation-cta]")?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    setHash(`/listing/${listing.id}`);
+  });
+
   return card;
 };
 
@@ -1637,13 +1684,39 @@ const renderDetail = async (id) => {
   }
 
   const fields = listing.categoryFields || {};
-  const fieldRows = Object.keys(fields).length
-    ? `<ul class="field-list">${Object.entries(fields)
-        .map(
-          ([k, v]) =>
-            `<li><span>${esc(k)}</span><span>${esc(String(v))}</span></li>`
-        )
-        .join("")}</ul>`
+  const isDonation = listing.categoryId === DONATIONS_CATEGORY_ID;
+  const cf = fields;
+  const claimed = isDonation && Boolean(cf.claimed);
+  const fieldRows =
+    !isDonation && Object.keys(fields).length
+      ? `<ul class="field-list">${Object.entries(fields)
+          .map(
+            ([k, v]) =>
+              `<li><span>${esc(k)}</span><span>${esc(String(v))}</span></li>`
+          )
+          .join("")}</ul>`
+      : "";
+
+  const coll = isDonation ? donationCollectionMeta(cf.collectionMethod) : null;
+  const collLine = coll
+    ? `${coll.label}${
+        cf.deliveryKm != null && cf.collectionMethod === "local_delivery"
+          ? ` (within ${cf.deliveryKm} km)`
+          : ""
+      }`
+    : "";
+
+  const donationDetailsSection = isDonation
+    ? `<section>
+        <h2 class="site-footer__heading" style="margin-top:1rem">Donation details</h2>
+        <ul class="field-list">
+          <li><span>Sub-category</span><span>${esc(donationSubCategoryLabel(cf.donationSubCategory))}</span></li>
+          <li><span>Condition</span><span>${esc(donationConditionLabel(cf.donationCondition))}</span></li>
+          <li><span>Collection</span><span>${esc(collLine)}</span></li>
+          <li><span>Area / city</span><span>${esc(listing.location || "")}</span></li>
+          <li><span>Quantity</span><span>${esc(String(cf.quantity ?? 1))}</span></li>
+        </ul>
+      </section>`
     : "";
 
   const imgs = (listing.images || []).filter(
@@ -1661,42 +1734,23 @@ const renderDetail = async (id) => {
   const descLong = descRaw.length > 320;
   const catBrowseHref = `${window.location.pathname}?cat=${encodeURIComponent(listing.categoryId)}#/browse`;
 
-  appEl.innerHTML = `
-    <nav class="breadcrumb-jiji" aria-label="Breadcrumb">
-      <a href="#/browse">All ads</a> ›
-      <a href="${catBrowseHref}">${esc(categoryDisplayName(listing.categoryId))}</a> ›
-      <span class="muted">${esc(bcTitle)}</span>
-    </nav>
-    <div class="detail-jiji-wrap">
-      <div class="detail-jiji-main">
-        <div class="detail-gallery">
-          <div class="detail-gallery__main">
-            ${mainSrc ? `<img id="detail-main-img" src="${esc(mainSrc)}" alt="" />` : `<div class="detail-hero__img" style="min-height:200px;background:var(--purple-surface)"></div>`}
-            ${imgs.length ? `<span class="detail-gallery__count" id="detail-img-count">1 / ${imgs.length}</span>` : ""}
-          </div>
-          ${
-            imgs.length > 1
-              ? `<div class="detail-gallery__thumbs" id="detail-thumbs">${imgs
-                  .map(
-                    (u, i) =>
-                      `<button type="button" class="${i === 0 ? "is-active" : ""}" data-idx="${i}" aria-label="Photo ${i + 1}"><img src="${esc(u)}" alt="" /></button>`
-                  )
-                  .join("")}</div>`
-              : ""
-          }
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin:0.75rem 0">
-          <span class="pill">${esc(conditionLabel(listing.condition))}</span>
-          <span class="pill">${esc(categoryDisplayName(listing.categoryId))}</span>
-        </div>
-        <h1 style="margin:0 0 0.5rem;font-size:1.5rem">${esc(listing.title)}</h1>
-        <section>
-          <h2 class="site-footer__heading" style="margin-top:1rem">Description</h2>
-          <p class="desc-long ${descLong ? "is-collapsed" : ""}" id="detail-desc">${esc(listing.description)}</p>
-          ${descLong ? `<button type="button" class="btn btn--link" id="detail-desc-more">Show more</button>` : ""}
-        </section>
-        ${fieldRows ? `<section><h2 class="site-footer__heading" style="margin-top:1rem">Details</h2>${fieldRows}</section>` : ""}
-        <section class="detail-safety">
+  const pillsRow = isDonation
+    ? `<span class="pill pill--free">FREE</span><span class="pill">${esc(
+        donationConditionLabel(cf.donationCondition)
+      )}</span><span class="pill">${esc(donationSubCategoryLabel(cf.donationSubCategory))}</span>`
+    : `<span class="pill">${esc(conditionLabel(listing.condition))}</span>
+          <span class="pill">${esc(categoryDisplayName(listing.categoryId))}</span>`;
+
+  const galleryClaim = isDonation && claimed
+    ? `<div class="detail-claimed-ribbon" aria-hidden="true">CLAIMED</div>`
+    : "";
+
+  const safetySection = isDonation
+    ? `<section class="detail-donation-safety">
+          <strong>Safety reminder</strong>
+          <p>Always meet in a public place. Nuvelo does not verify donors.</p>
+        </section>`
+    : `<section class="detail-safety">
           <strong>Safety tips</strong>
           <ul>
             <li>Avoid sending prepayments</li>
@@ -1704,10 +1758,39 @@ const renderDetail = async (id) => {
             <li>Inspect before paying</li>
             <li>Check all documents</li>
           </ul>
-        </section>
-        <p class="small" style="margin-top:1rem"><a href="#/post" class="btn btn--link">Post ad like this</a></p>
-      </div>
-      <aside class="detail-jiji-aside">
+        </section>`;
+
+  const userNow = getUser();
+  const isOwner = Boolean(userNow && userNow.id === listing.userId);
+
+  const asideBlock = isDonation
+    ? `<aside class="detail-jiji-aside">
+        <div class="detail-aside-card detail-aside-card--donation">
+          <p class="price-big price-big--free">FREE</p>
+          <p class="muted small" style="margin:0">📍 ${esc(listing.location || "")}</p>
+          <p class="muted small" style="margin:0.25rem 0">${esc(posted)}</p>
+          <p class="muted small">${views ? `${esc(String(views))} views` : ""}</p>
+          <p class="muted small" style="margin:0.5rem 0 0">${coll ? `${coll.icon} ${esc(collLine)}` : ""}</p>
+          <hr style="border:0;border-top:1px solid var(--purple-border);margin:1rem 0" />
+          <p style="margin:0;font-weight:700">${esc(listing.sellerName || "Donor")}</p>
+          <p class="muted small">Donor · Member since ${esc(cf.sellerMemberSince || "—")}</p>
+          <p class="muted small">Contact preference: ${esc(cf.contactPreference || "message via app")}</p>
+          ${
+            !isOwner
+              ? `<button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-donation-claim" ${
+                  claimed ? "disabled" : ""
+                }>${claimed ? "Claimed" : "I want this"}</button>`
+              : ""
+          }
+          ${
+            isOwner
+              ? `<button type="button" class="btn btn--outline" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-owner-claimed">${claimed ? "Mark as available" : "Mark as claimed"}</button>`
+              : ""
+          }
+          <button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-report">Report listing</button>
+        </div>
+      </aside>`
+    : `<aside class="detail-jiji-aside">
         <div class="detail-aside-card">
           ${listing.sellerVerified || listing.enterprise ? `<p class="pill" style="margin:0 0 0.5rem">ENTERPRISE</p>` : ""}
           <p class="price-big">${priceStr}</p>
@@ -1730,7 +1813,48 @@ const renderDetail = async (id) => {
             <span class="site-footer__social-icon" title="Share">✉</span>
           </div>
         </div>
-      </aside>
+      </aside>`;
+
+  appEl.innerHTML = `
+    <nav class="breadcrumb-jiji" aria-label="Breadcrumb">
+      <a href="#/browse">All ads</a> ›
+      <a href="${catBrowseHref}">${esc(categoryDisplayName(listing.categoryId))}</a> ›
+      <span class="muted">${esc(bcTitle)}</span>
+    </nav>
+    <div class="detail-jiji-wrap">
+      <div class="detail-jiji-main">
+        <div class="detail-gallery ${isDonation ? "detail-gallery--donation" : ""}">
+          <div class="detail-gallery__main ${claimed && isDonation ? "detail-gallery__main--claimed" : ""}">
+            ${galleryClaim}
+            ${mainSrc ? `<img id="detail-main-img" src="${esc(mainSrc)}" alt="" />` : `<div class="detail-hero__img" style="min-height:200px;background:var(--purple-surface)"></div>`}
+            ${imgs.length ? `<span class="detail-gallery__count" id="detail-img-count">1 / ${imgs.length}</span>` : ""}
+          </div>
+          ${
+            imgs.length > 1
+              ? `<div class="detail-gallery__thumbs" id="detail-thumbs">${imgs
+                  .map(
+                    (u, i) =>
+                      `<button type="button" class="${i === 0 ? "is-active" : ""}" data-idx="${i}" aria-label="Photo ${i + 1}"><img src="${esc(u)}" alt="" /></button>`
+                  )
+                  .join("")}</div>`
+              : ""
+          }
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin:0.75rem 0">
+          ${pillsRow}
+        </div>
+        <h1 style="margin:0 0 0.5rem;font-size:1.5rem">${esc(listing.title)}</h1>
+        <section>
+          <h2 class="site-footer__heading" style="margin-top:1rem">Description</h2>
+          <p class="desc-long ${descLong ? "is-collapsed" : ""}" id="detail-desc">${esc(listing.description)}</p>
+          ${descLong ? `<button type="button" class="btn btn--link" id="detail-desc-more">Show more</button>` : ""}
+        </section>
+        ${donationDetailsSection}
+        ${fieldRows ? `<section><h2 class="site-footer__heading" style="margin-top:1rem">Details</h2>${fieldRows}</section>` : ""}
+        ${safetySection}
+        <p class="small" style="margin-top:1rem"><a href="#/post" class="btn btn--link">Post ad like this</a></p>
+      </div>
+      ${asideBlock}
     </div>
     <p class="muted small" id="detail-contact-msg" style="margin-top:0.75rem"></p>
   `;
@@ -1784,6 +1908,31 @@ const renderDetail = async (id) => {
     }
     msg.textContent =
       "In-app messaging is not wired yet. Use Show contact for now.";
+  });
+
+  document.getElementById("detail-donation-claim")?.addEventListener("click", async () => {
+    const user = getUser();
+    const msg = document.getElementById("detail-contact-msg");
+    if (!user) {
+      msg.textContent = "Sign in first to message the donor.";
+      openModal("login");
+      return;
+    }
+    if (user.id === listing.userId) {
+      msg.textContent = "This is your listing.";
+      return;
+    }
+    msg.textContent =
+      "Your interest has been noted. In-app messaging will connect you to the donor when it is available.";
+  });
+
+  document.getElementById("detail-owner-claimed")?.addEventListener("click", () => {
+    setDonationClaimed(listing.id, !claimed);
+    render();
+  });
+
+  document.getElementById("detail-report")?.addEventListener("click", () => {
+    window.alert("Thanks. This listing has been flagged for moderator review.");
   });
 };
 
@@ -2204,6 +2353,17 @@ const buildCategoryFields = (categoryId, fd) => {
     out.contractType = String(fd.get("cf_contractType") || "").trim();
   } else if (categoryId === "services") {
     out.serviceType = String(fd.get("cf_serviceType") || "").trim();
+  } else if (categoryId === DONATIONS_CATEGORY_ID) {
+    out.donationSubCategory = String(fd.get("donationSubCategory") || "").trim();
+    out.donationCondition = String(fd.get("donationCondition") || "good").trim();
+    out.collectionMethod = String(fd.get("donationCollectionMethod") || "pickup").trim();
+    const km = fd.get("donationDeliveryKm");
+    out.deliveryKm =
+      out.collectionMethod === "local_delivery" && km ? Number(km) : null;
+    out.contactPreference = String(fd.get("donationContact") || "message via app").trim();
+    out.quantity = fd.get("donationQuantity") ? Number(fd.get("donationQuantity")) : 1;
+    out.claimed = false;
+    out.sellerMemberSince = String(new Date().getFullYear());
   }
   return out;
 };
@@ -2228,7 +2388,9 @@ const renderPost = async () => {
     return;
   }
 
-  const defaultCat = apiCategoryIdForSlug(ADS_CATEGORIES[0].slug);
+  const defaultCat = apiCategoryIdForSlug(
+    ADS_CATEGORIES.find((c) => c.slug === "rentals")?.slug || ADS_CATEGORIES[0].slug
+  );
   const postLocDefault =
     HUNGARIAN_LOCATIONS.find((r) => r.value === "budapest")?.label || "Budapest";
   const postCategories = CATEGORIES.map((c) =>
@@ -2294,6 +2456,49 @@ const renderPost = async () => {
         </label>
         <label>Tags (comma separated) <input name="eventTags" type="text" placeholder="English-speaking, beginners welcome" /></label>
       </div>
+      <div id="donation-fields" hidden>
+        <label>
+          Donation sub-category
+          <select name="donationSubCategory" required>
+            ${DONATION_SUBCATEGORIES.map(
+              (s) => `<option value="${esc(s.key)}">${esc(s.label)}</option>`
+            ).join("")}
+          </select>
+        </label>
+        <fieldset class="filter-panel__fieldset" style="border:1px solid var(--purple-border);border-radius:8px;padding:0.75rem">
+          <legend class="filter-panel__label">Condition</legend>
+          ${DONATION_CONDITIONS.map(
+            (c, i) =>
+              `<label class="filter-panel__check"><input type="radio" name="donationCondition" value="${esc(c.key)}" ${
+                i === 2 ? "checked" : ""
+              } /> ${esc(c.label)}</label>`
+          ).join("")}
+        </fieldset>
+        <label>
+          Collection method
+          <select name="donationCollectionMethod" id="donation-collection-method">
+            ${DONATION_COLLECTION_METHODS.map(
+              (m) => `<option value="${esc(m.key)}">${esc(m.label)}</option>`
+            ).join("")}
+          </select>
+        </label>
+        <label id="donation-deliveryKm-wrap" hidden>
+          Delivery radius (km)
+          <input name="donationDeliveryKm" type="number" min="1" max="200" step="1" placeholder="e.g. 10" />
+        </label>
+        <label>
+          Contact preference
+          <select name="donationContact">
+            <option value="message via app">Message via app</option>
+            <option value="show email">Show email</option>
+            <option value="show phone">Show phone</option>
+          </select>
+        </label>
+        <label>
+          Quantity (if multiple of the same item)
+          <input name="donationQuantity" type="number" min="1" step="1" value="1" />
+        </label>
+      </div>
       <label>
         Title (5+ characters)
         <input name="title" required minlength="5" placeholder="City center studio near metro" />
@@ -2302,13 +2507,13 @@ const renderPost = async () => {
         Description (20+ characters)
         <textarea name="description" required minlength="20" rows="5" placeholder="Describe what you are offering…"></textarea>
       </label>
-      <fieldset class="filter-panel__fieldset" style="border:1px solid var(--purple-border);border-radius:8px;padding:0.75rem">
+      <fieldset class="filter-panel__fieldset" id="post-condition-fieldset" style="border:1px solid var(--purple-border);border-radius:8px;padding:0.75rem">
         <legend class="filter-panel__label">Condition</legend>
         <label class="filter-panel__check"><input type="radio" name="condition" value="new" /> Brand New</label>
         <label class="filter-panel__check"><input type="radio" name="condition" value="used" /> Used</label>
         <label class="filter-panel__check"><input type="radio" name="condition" value="other" checked /> Other</label>
       </fieldset>
-      <label>
+      <label id="post-price-label">
         Price (HUF, optional)
         <span class="filter-chip-row" style="margin:0.25rem 0 0"><span class="filter-chip">HUF</span></span>
         <input name="price" type="number" min="0" step="1" placeholder="Leave empty if negotiable" />
@@ -2345,14 +2550,19 @@ const renderPost = async () => {
   const catFields = document.getElementById("post-cat-fields");
   const subSel = document.getElementById("post-subcategory");
   const eventFields = document.getElementById("event-fields");
-  const conditionFs = document.querySelector("#post-form fieldset");
+  const donationFields = document.getElementById("donation-fields");
+  const postPriceLabel = document.getElementById("post-price-label");
+  const conditionFs = document.getElementById("post-condition-fieldset");
   catSelect?.addEventListener("change", () => {
     const isEvent = catSelect.value === EVENTS_CATEGORY;
+    const isDonationPost = catSelect.value === DONATIONS_CATEGORY_ID;
     eventFields.hidden = !isEvent;
-    catFields.hidden = isEvent;
-    subSel.closest("label").hidden = isEvent;
-    conditionFs.hidden = isEvent;
-    if (!isEvent) {
+    if (donationFields) donationFields.hidden = !isDonationPost;
+    catFields.hidden = isEvent || isDonationPost;
+    subSel.closest("label").hidden = isEvent || isDonationPost;
+    if (conditionFs) conditionFs.hidden = isEvent || isDonationPost;
+    if (postPriceLabel) postPriceLabel.hidden = isDonationPost;
+    if (!isEvent && !isDonationPost) {
       catFields.innerHTML = categoryFieldHtml(catSelect.value);
       if (subSel) {
         subSel.value = catSelect.value;
@@ -2360,6 +2570,12 @@ const renderPost = async () => {
     }
   });
   catSelect?.dispatchEvent(new Event("change"));
+
+  document.getElementById("donation-collection-method")?.addEventListener("change", (e) => {
+    const wrap = document.getElementById("donation-deliveryKm-wrap");
+    if (wrap) wrap.hidden = e.target.value !== "local_delivery";
+  });
+  document.getElementById("donation-collection-method")?.dispatchEvent(new Event("change"));
 
   document.getElementById("post-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2371,14 +2587,20 @@ const renderPost = async () => {
       .map((s) => s.trim())
       .filter(Boolean);
     const isEvent = categoryId === EVENTS_CATEGORY;
+    const isDonationPost = categoryId === DONATIONS_CATEGORY_ID;
     const condRaw = String(fd.get("condition") || "other");
-    const condApi =
-      condRaw === "new" ? "new" : condRaw === "used" ? "used" : "good";
+    const condApi = isDonationPost
+      ? String(fd.get("donationCondition") || "good")
+      : condRaw === "new"
+        ? "new"
+        : condRaw === "used"
+          ? "used"
+          : "good";
     const payload = {
       title: String(fd.get("title") || "").trim(),
       description: String(fd.get("description") || "").trim(),
       categoryId,
-      price: fd.get("price") ? Number(fd.get("price")) : null,
+      price: isDonationPost ? 0 : fd.get("price") ? Number(fd.get("price")) : null,
       currency: "HUF",
       location: String(fd.get("location") || "").trim(),
       images: imagesRaw,

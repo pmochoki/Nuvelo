@@ -1,4 +1,44 @@
 import { getDemoListingById, mergeListingsWithDemos } from "../data/demoListings.js";
+import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
+
+const DONATIONS_CLAIMED_KEY = "nuvelo_donations_claimed";
+
+function readDonationClaimedStore() {
+  try {
+    const raw = localStorage.getItem(DONATIONS_CLAIMED_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function applyDonationClaimed(listing) {
+  if (!listing || listing.categoryId !== DONATIONS_CATEGORY_ID) {
+    return listing;
+  }
+  const store = readDonationClaimedStore();
+  const fromStore = store[listing.id];
+  const claimed =
+    typeof fromStore === "boolean" ? fromStore : Boolean(listing.categoryFields?.claimed);
+  return {
+    ...listing,
+    categoryFields: {
+      ...listing.categoryFields,
+      claimed
+    }
+  };
+}
+
+/** Persisted claimed state for donor flow (demo + API listings). */
+export function setDonationClaimed(listingId, claimed) {
+  const store = readDonationClaimedStore();
+  store[listingId] = Boolean(claimed);
+  try {
+    localStorage.setItem(DONATIONS_CLAIMED_KEY, JSON.stringify(store));
+  } catch {
+    /* ignore */
+  }
+}
 
 const DEFAULT_API_URL = "https://nuvelo-backend.onrender.com";
 const API_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/+$/, "");
@@ -40,7 +80,7 @@ export function normalizeListingRow(row) {
   if (!row) {
     return null;
   }
-  return {
+  const base = {
     id: row.id,
     userId: row.userId,
     categoryId: row.categoryId,
@@ -62,9 +102,10 @@ export function normalizeListingRow(row) {
     viewCount: Number(row.viewCount) || 0,
     views: Number(row.viewCount) || 0,
     sellerName: row.sellerName || "Seller",
-    sellerVerified: false,
-    enterprise: false
+    sellerVerified: Boolean(row.sellerVerified),
+    enterprise: Boolean(row.enterprise)
   };
+  return applyDonationClaimed(base);
 }
 
 export async function fetchListings(params = {}) {
@@ -99,7 +140,7 @@ export async function fetchListings(params = {}) {
   if (!demosEnabled()) {
     return real;
   }
-  return mergeListingsWithDemos(real, params);
+  return mergeListingsWithDemos(real, params).map((x) => normalizeListingRow(x));
 }
 
 export async function fetchListing(id) {
@@ -117,13 +158,16 @@ export async function fetchListing(id) {
   if (!demosEnabled()) {
     return null;
   }
-  return getDemoListingById(id);
+  const demo = getDemoListingById(id);
+  return demo ? normalizeListingRow(demo) : null;
 }
 
 export async function createListing(formPayload, userId) {
+  const isDonation = formPayload.categoryId === DONATIONS_CATEGORY_ID;
   const rawCond = String(formPayload.condition || "other");
-  const cond =
-    rawCond === "new"
+  const cond = isDonation
+    ? "other"
+    : rawCond === "new"
       ? "new"
       : rawCond === "used"
         ? "used"
@@ -138,8 +182,8 @@ export async function createListing(formPayload, userId) {
     title: formPayload.title,
     description: formPayload.description,
     categoryId: formPayload.categoryId,
-    price: formPayload.price,
-    currency: formPayload.currency || "HUF",
+    price: isDonation ? 0 : formPayload.price,
+    currency: "HUF",
     condition: cond,
     location: formPayload.location,
     images,

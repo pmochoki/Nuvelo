@@ -1,4 +1,5 @@
 import { HUNGARIAN_LOCATIONS } from "./hungarianLocations.js";
+import { DEMO_DONATION_LISTINGS } from "./demoDonations.js";
 
 /**
  * Static demo listings for UI/integration tests.
@@ -157,11 +158,13 @@ const buildListing = (idx, city, template) => {
   };
 };
 
-export const DEMO_LISTINGS = locations.flatMap((city, i) => {
+const DEMO_LISTINGS_BASE = locations.flatMap((city, i) => {
   const t1 = DEMO_TEMPLATES[(i * 2) % DEMO_TEMPLATES.length];
   const t2 = DEMO_TEMPLATES[(i * 2 + 1) % DEMO_TEMPLATES.length];
   return [buildListing(i * 2, city, t1), buildListing(i * 2 + 1, city, t2)];
 });
+
+export const DEMO_LISTINGS = [...DEMO_LISTINGS_BASE, ...DEMO_DONATION_LISTINGS];
 
 const byId = new Map(DEMO_LISTINGS.map((l) => [l.id, l]));
 

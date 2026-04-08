@@ -1,5 +1,6 @@
 export const CATEGORIES = [
   { slug: "events", label: "Events", icon: "🎉", count: null },
+  { slug: "donations", label: "🤲 Donations", icon: "🤲", count: null },
   { slug: "rentals", label: "Rentals", icon: "🏠", count: null },
   { slug: "jobs", label: "Jobs", icon: "💼", count: null },
   { slug: "services", label: "Services", icon: "🔧", count: null },
