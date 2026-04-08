@@ -1,11 +1,11 @@
 import { CATEGORIES } from "./data/categories.js";
 import { HUNGARIAN_LOCATIONS } from "./data/hungarianLocations.js";
 import "../styles.css";
-import { supabase } from "./lib/supabase.js";
 import {
-  fetchListingsFromSupabase,
-  fetchListingFromSupabase,
-  createListingInSupabase
+  fetchListings as apiFetchListings,
+  fetchListing as apiFetchListing,
+  createListing,
+  loginUser
 } from "./lib/listingsApi.js";
 
 /** Maps browser network failures (e.g. TypeError: Failed to fetch) to a clear message. */
@@ -25,6 +25,7 @@ const friendlyNetworkError = (err) => {
 
 /** Soft copy when listings are unavailable; never surface raw errors in the UI. */
 const LISTINGS_UNAVAILABLE_MSG = "Listings are loading, please try again shortly.";
+const USER_STORE_KEY = "nuvelo_user";
 
 let cachedUser = null;
 const VIEW_MODE_KEY = "nuvelo_list_view";
@@ -49,39 +50,29 @@ const loginForm = document.getElementById("login-form");
 
 const getUser = () => cachedUser;
 
-const syncAuthFromSession = async (session) => {
-  if (!session?.user) {
-    cachedUser = null;
-    updateAuthUi();
-    return;
-  }
-  const u = session.user;
-  let name = u.user_metadata?.display_name || u.email?.split("@")[0] || "User";
-  let role = u.user_metadata?.role || "buyer";
-  let phone = u.user_metadata?.phone || "";
+const readStoredUser = () => {
   try {
-    const { data: prof, error } = await supabase
-      .from("profiles")
-      .select("display_name, role, phone")
-      .eq("id", u.id)
-      .maybeSingle();
-    if (error) {
-      console.error(error);
-    } else if (prof) {
-      if (prof.display_name) {
-        name = prof.display_name;
-      }
-      if (prof.role) {
-        role = prof.role;
-      }
-      if (prof.phone) {
-        phone = prof.phone;
-      }
-    }
-  } catch (e) {
-    console.error(e);
+    const raw = localStorage.getItem(USER_STORE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
   }
-  cachedUser = { id: u.id, name, role, email: u.email || "", phone };
+};
+
+const writeStoredUser = (user) => {
+  try {
+    if (user) {
+      localStorage.setItem(USER_STORE_KEY, JSON.stringify(user));
+    } else {
+      localStorage.removeItem(USER_STORE_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
+};
+
+const syncAuthFromStoredUser = () => {
+  cachedUser = readStoredUser();
   updateAuthUi();
 };
 
@@ -112,9 +103,10 @@ userChip?.addEventListener("click", async () => {
   if (!getUser()) {
     return;
   }
-  await supabase.auth.signOut();
   cachedUser = null;
+  writeStoredUser(null);
   updateAuthUi();
+  await render().catch((e) => console.error(e));
 });
 
 let authModalMode = "login";
@@ -180,25 +172,11 @@ document.getElementById("drawer-register")?.addEventListener("click", () => {
 });
 
 document.getElementById("auth-google-stub")?.addEventListener("click", async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: { redirectTo: window.location.origin }
-  });
-  if (error) {
-    console.error(error);
-    window.alert(error.message || "Google sign-in failed.");
-  }
+  window.alert("Social login is not enabled yet. Use name + role + email/phone below.");
 });
 
 document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "facebook",
-    options: { redirectTo: window.location.origin }
-  });
-  if (error) {
-    console.error(error);
-    window.alert(error.message || "Facebook sign-in failed.");
-  }
+  window.alert("Social login is not enabled yet. Use name + role + email/phone below.");
 });
 
 document.getElementById("auth-show-email-form")?.addEventListener("click", () => {
@@ -291,44 +269,12 @@ loginForm?.addEventListener("submit", async (e) => {
     submitBtn.disabled = true;
   }
   try {
-    if (email) {
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            display_name: name,
-            role,
-            phone: phone || undefined
-          }
-        }
-      });
-      if (error) {
-        throw error;
-      }
-      if (errEl) {
-        errEl.textContent =
-          "Check your email for a sign-in link. After you confirm, refresh this page if you are not signed in automatically.";
-        errEl.hidden = false;
-      }
-    } else {
-      const { error } = await supabase.auth.signInWithOtp({
-        phone,
-        options: {
-          data: {
-            display_name: name,
-            role
-          }
-        }
-      });
-      if (error) {
-        throw error;
-      }
-      if (errEl) {
-        errEl.textContent = "Check your phone for the verification code from Supabase.";
-        errEl.hidden = false;
-      }
-    }
+    const user = await loginUser({ name, role, email, phone });
+    cachedUser = user;
+    writeStoredUser(user);
+    updateAuthUi();
+    closeModal();
+    await render().catch((e) => console.error(e));
   } catch (err) {
     console.error(err);
     if (errEl) {
@@ -705,12 +651,10 @@ const buildLocationComboboxHtml = ({
 
 const fetchListings = async (params) => {
   try {
-    return await fetchListingsFromSupabase(params);
+    return await apiFetchListings(params);
   } catch (err) {
     console.error(err);
-    throw new Error(
-      err?.message || "Could not load listings. Check Supabase configuration and try again."
-    );
+    throw new Error(err?.message || "Could not load listings. Check API configuration and try again.");
   }
 };
 
@@ -929,7 +873,7 @@ const browseCacheKey = (f) =>
 
 const fetchListing = async (id) => {
   try {
-    return await fetchListingFromSupabase(id);
+    return await apiFetchListing(id);
   } catch (err) {
     console.error(err);
     throw new Error(err?.message || "Could not load listing.");
@@ -1751,7 +1695,7 @@ const renderDetail = async (id) => {
       return;
     }
     msg.textContent =
-      "In-app messaging is not wired to Supabase yet. Use Show contact or add a messages table and RLS in your project.";
+      "In-app messaging is not wired yet. Use Show contact for now.";
   });
 };
 
@@ -1959,13 +1903,12 @@ const renderPost = async () => {
     const msg = document.getElementById("post-msg");
     msg.textContent = "";
     try {
-      const created = await createListingInSupabase(payload, user.id);
+      const created = await createListing(payload, user.id);
       msg.textContent = "Your listing is live. Redirecting…";
       setTimeout(() => setHash(`/listing/${created.id}`), 800);
     } catch (err) {
       console.error(err);
-      msg.textContent =
-        err?.message || "Could not create listing. Sign in and check Supabase RLS and table setup.";
+      msg.textContent = err?.message || "Could not create listing. Check your API connection and try again.";
     }
   });
 };
@@ -1991,29 +1934,46 @@ const render = async () => {
   const route = parseHash();
   document.body.classList.toggle("is-landing", route.view === "landing");
   syncHeaderChrome(route);
-  if (route.view === "landing") {
-    await renderLanding();
-    return;
-  }
   const appEl = mainShell();
   if (!appEl) {
     return;
   }
-  appEl.innerHTML = `
-    <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
-      <span class="page-loading__spinner" aria-hidden="true"></span>
-      <span class="page-loading__text">Loading…</span>
-    </div>
-  `;
-  if (route.view === "detail") {
-    await renderDetail(route.id);
-    return;
+  try {
+    if (route.view === "landing") {
+      appEl.innerHTML = `
+        <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
+          <span class="page-loading__spinner" aria-hidden="true"></span>
+          <span class="page-loading__text">Loading…</span>
+        </div>
+      `;
+      await renderLanding();
+      return;
+    }
+    appEl.innerHTML = `
+      <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
+        <span class="page-loading__spinner" aria-hidden="true"></span>
+        <span class="page-loading__text">Loading…</span>
+      </div>
+    `;
+    if (route.view === "detail") {
+      await renderDetail(route.id);
+      return;
+    }
+    if (route.view === "post") {
+      await renderPost();
+      return;
+    }
+    await renderList();
+  } catch (err) {
+    console.error(err);
+    appEl.innerHTML = `
+      <section class="stack">
+        <h2>We could not load this page.</h2>
+        <p class="muted">${esc(friendlyNetworkError(err))}</p>
+        <p><a href="#/">Go to home</a> · <a href="#/browse">Browse listings</a></p>
+      </section>
+    `;
   }
-  if (route.view === "post") {
-    await renderPost();
-    return;
-  }
-  await renderList();
 };
 
 navBurgerEl()?.addEventListener("click", () => {
@@ -2145,28 +2105,5 @@ syncLocationCombobox(
   new URLSearchParams(window.location.search).get("loc") || ""
 );
 
-supabase.auth.onAuthStateChange((_event, session) => {
-  void (async () => {
-    try {
-      await syncAuthFromSession(session);
-    } catch (e) {
-      console.error(e);
-    }
-    await render().catch((e) => console.error(e));
-  })();
-});
-
+syncAuthFromStoredUser();
 void render().catch((e) => console.error(e));
-
-void (async () => {
-  try {
-    const { data, error } = await supabase.auth.getSession();
-    if (error) {
-      console.error(error);
-    }
-    await syncAuthFromSession(data?.session ?? null);
-  } catch (e) {
-    console.error(e);
-  }
-  await render();
-})().catch((e) => console.error(e));

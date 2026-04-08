@@ -1,28 +1,49 @@
-import { supabase } from "./supabase.js";
-import {
-  getDemoListingById,
-  mergeListingsWithDemos
-} from "../data/demoListings.js";
+import { getDemoListingById, mergeListingsWithDemos } from "../data/demoListings.js";
+
+const DEFAULT_API_URL = "https://nuvelo-backend.onrender.com";
+const API_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/+$/, "");
 
 /** Set VITE_DEMO_LISTINGS=false in Vercel to hide sample ads in production. */
 function demosEnabled() {
   return import.meta.env.VITE_DEMO_LISTINGS !== "false";
 }
 
-/** Escape % and _ for PostgREST ilike patterns */
-function escapeIlike(s) {
-  return String(s).replace(/\\/g, "\\\\").replace(/%/g, "\\%").replace(/_/g, "\\_");
+async function apiFetch(path, options = {}) {
+  const url = `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(options.headers || {})
+    }
+  });
+  const text = await res.text();
+  let payload = null;
+  if (text) {
+    try {
+      payload = JSON.parse(text);
+    } catch {
+      payload = text;
+    }
+  }
+  if (!res.ok) {
+    const msg =
+      payload?.error ||
+      (Array.isArray(payload?.errors) ? payload.errors.join(", ") : "") ||
+      `Request failed (${res.status})`;
+    throw new Error(msg);
+  }
+  return payload;
 }
 
 export function normalizeListingRow(row) {
   if (!row) {
     return null;
   }
-  const prof = row.profiles || {};
   return {
     id: row.id,
-    userId: row.user_id,
-    categoryId: row.category,
+    userId: row.userId,
+    categoryId: row.categoryId,
     title: row.title,
     description: row.description,
     price: row.price != null ? Number(row.price) : null,
@@ -30,59 +51,44 @@ export function normalizeListingRow(row) {
     condition: row.condition,
     location: row.location,
     images: Array.isArray(row.images) ? row.images : [],
-    categoryFields: row.category_fields && typeof row.category_fields === "object" ? row.category_fields : {},
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-    featured: Boolean(row.is_featured),
-    isFeatured: Boolean(row.is_featured),
-    viewCount: Number(row.view_count) || 0,
-    views: Number(row.view_count) || 0,
-    sellerName: prof.display_name || "Seller",
+    categoryFields:
+      row.categoryFields && typeof row.categoryFields === "object"
+        ? row.categoryFields
+        : {},
+    createdAt: row.createdAt,
+    updatedAt: row.updatedAt || row.createdAt,
+    featured: Boolean(row.featured),
+    isFeatured: Boolean(row.featured),
+    viewCount: Number(row.viewCount) || 0,
+    views: Number(row.viewCount) || 0,
+    sellerName: row.sellerName || "Seller",
     sellerVerified: false,
     enterprise: false
   };
 }
 
-export async function fetchListingsFromSupabase(params = {}) {
+export async function fetchListings(params = {}) {
   const { query: keyword, categoryId, location, minPrice, maxPrice } = params;
-
+  const qs = new URLSearchParams();
+  if (keyword) {
+    qs.set("query", String(keyword).trim());
+  }
+  if (categoryId) {
+    qs.set("categoryId", String(categoryId));
+  }
+  if (location) {
+    qs.set("location", String(location).trim());
+  }
+  if (minPrice != null && minPrice !== "" && !Number.isNaN(Number(minPrice))) {
+    qs.set("minPrice", String(Number(minPrice)));
+  }
+  if (maxPrice != null && maxPrice !== "" && !Number.isNaN(Number(maxPrice))) {
+    qs.set("maxPrice", String(Number(maxPrice)));
+  }
   let real = [];
   try {
-    let query = supabase
-      .from("listings")
-      .select(
-        `
-        *,
-        profiles (display_name, avatar_url, role, phone)
-      `
-      )
-      .eq("is_active", true)
-      .order("created_at", { ascending: false });
-
-    if (categoryId) {
-      query = query.eq("category", categoryId);
-    }
-    const loc = String(location || "").trim();
-    if (loc) {
-      query = query.ilike("location", `%${escapeIlike(loc)}%`);
-    }
-    const kw = String(keyword || "").trim();
-    if (kw) {
-      const k = escapeIlike(kw);
-      query = query.or(`title.ilike.%${k}%,description.ilike.%${k}%`);
-    }
-    if (minPrice != null && minPrice !== "" && !Number.isNaN(Number(minPrice))) {
-      query = query.gte("price", Number(minPrice));
-    }
-    if (maxPrice != null && maxPrice !== "" && !Number.isNaN(Number(maxPrice))) {
-      query = query.lte("price", Number(maxPrice));
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      throw error;
-    }
-    real = (data || []).map(normalizeListingRow);
+    const data = await apiFetch(`/listings${qs.toString() ? `?${qs}` : ""}`);
+    real = (Array.isArray(data) ? data : []).map(normalizeListingRow);
   } catch (e) {
     console.error(e);
     if (!demosEnabled()) {
@@ -96,23 +102,9 @@ export async function fetchListingsFromSupabase(params = {}) {
   return mergeListingsWithDemos(real, params);
 }
 
-export async function fetchListingFromSupabase(id) {
+export async function fetchListing(id) {
   try {
-    const { data, error } = await supabase
-      .from("listings")
-      .select(
-        `
-        *,
-        profiles (display_name, avatar_url, role, phone)
-      `
-      )
-      .eq("id", id)
-      .eq("is_active", true)
-      .maybeSingle();
-
-    if (error) {
-      throw error;
-    }
+    const data = await apiFetch(`/listings/${encodeURIComponent(id)}`);
     if (data) {
       return normalizeListingRow(data);
     }
@@ -128,28 +120,48 @@ export async function fetchListingFromSupabase(id) {
   return getDemoListingById(id);
 }
 
-export async function createListingInSupabase(formPayload, userId) {
+export async function createListing(formPayload, userId) {
   const rawCond = String(formPayload.condition || "other");
   const cond =
-    rawCond === "new" ? "new" : rawCond === "used" ? "used" : rawCond === "good" ? "other" : "other";
-  const images = (formPayload.images || []).filter((u) => typeof u === "string" && /^https?:\/\//i.test(u));
+    rawCond === "new"
+      ? "new"
+      : rawCond === "used"
+        ? "used"
+        : rawCond === "good"
+          ? "other"
+          : "other";
+  const images = (formPayload.images || []).filter(
+    (u) => typeof u === "string" && /^https?:\/\//i.test(u)
+  );
   const row = {
-    user_id: userId,
+    userId,
     title: formPayload.title,
     description: formPayload.description,
-    category: formPayload.categoryId,
+    categoryId: formPayload.categoryId,
     price: formPayload.price,
     currency: formPayload.currency || "HUF",
     condition: cond,
     location: formPayload.location,
     images,
-    category_fields: formPayload.categoryFields || {},
-    is_active: true,
-    is_featured: false
+    categoryFields: formPayload.categoryFields || {}
   };
-  const { data, error } = await supabase.from("listings").insert(row).select().single();
-  if (error) {
-    throw error;
-  }
+  const data = await apiFetch("/listings", {
+    method: "POST",
+    body: JSON.stringify(row)
+  });
   return normalizeListingRow(data);
+}
+
+export async function loginUser({ name, role, email, phone }) {
+  const data = await apiFetch("/auth/login", {
+    method: "POST",
+    body: JSON.stringify({ name, role, email, phone })
+  });
+  return {
+    id: data.id,
+    name: data.name || "User",
+    role: data.role || role || "buyer",
+    email: data.email || email || "",
+    phone: data.phone || phone || ""
+  };
 }
