@@ -1,3 +1,5 @@
+import { CATEGORIES } from "./src/data/categories.js";
+
 /** Public API (Render). Override in console: window.__NUVELO_API__ = "https://…" */
 const RENDER_API_DEFAULT = "https://nuvelo-backend.onrender.com";
 
@@ -68,6 +70,7 @@ const CATEGORY_SLUGS = {
   electronics: "electronics",
   furniture: "electronics",
   fashion: "clothes",
+  "babies-kids": "clothes",
   other: "real-estate"
 };
 
@@ -76,8 +79,6 @@ const authBtn = document.getElementById("auth-btn");
 const userChip = document.getElementById("user-chip");
 const loginModal = document.getElementById("login-modal");
 const loginForm = document.getElementById("login-form");
-
-let categoriesCache = [];
 
 const getUser = () => {
   try {
@@ -312,23 +313,6 @@ const esc = (s) => {
   return d.innerHTML;
 };
 
-const fetchCategories = async () => {
-  if (categoriesCache.length) {
-    return categoriesCache;
-  }
-  let res;
-  try {
-    res = await fetchWithRetry(`${API_BASE}/categories`, {}, 2);
-  } catch (err) {
-    throw new Error(friendlyNetworkError(err));
-  }
-  if (!res.ok) {
-    throw new Error("Could not load categories. The server may be busy or updating.");
-  }
-  categoriesCache = await res.json();
-  return categoriesCache;
-};
-
 const fetchListings = async (params) => {
   const q = new URLSearchParams();
   if (params.query) {
@@ -484,6 +468,25 @@ const formatAdCount = (n) => {
   return `${new Intl.NumberFormat("en-US").format(x)} ads`;
 };
 
+const apiCategoryIdForSlug = (slug) => CATEGORY_SLUGS[slug] || slug;
+
+const categoryDisplayName = (apiId) => {
+  if (apiId == null || apiId === "") {
+    return "";
+  }
+  const id = String(apiId);
+  const row = CATEGORIES.find((c) => apiCategoryIdForSlug(c.slug) === id);
+  return row ? row.label : id;
+};
+
+const formatStaticCategoryCount = (catRow, nFromListings) => {
+  if (catRow.count != null) {
+    return formatAdCount(catRow.count);
+  }
+  const n = Number(nFromListings) || 0;
+  return n > 0 ? formatAdCount(n) : "Ads";
+};
+
 const excerptOneLine = (text, max = 72) => {
   const t = String(text || "").replace(/\s+/g, " ").trim();
   return t.length > max ? `${t.slice(0, max)}…` : t;
@@ -595,25 +598,6 @@ const setHash = (path) => {
   window.location.hash = path.startsWith("#") ? path : `#${path}`;
 };
 
-const categoryName = (id) =>
-  categoriesCache.find((c) => c.id === id)?.name || id;
-
-const categoryIcon = (id) => {
-  const map = {
-    rentals: "🏠",
-    jobs: "💼",
-    clothes: "👕",
-    fashion: "👕",
-    services: "🛠️",
-    electronics: "📱",
-    vehicles: "🚗",
-    furniture: "🛋️",
-    other: "📦",
-    "real-estate": "🏢"
-  };
-  return map[id] || "📦";
-};
-
 const listingImageUrl = (listing) => {
   const u = listing.images?.[0];
   if (typeof u === "string" && /^https?:\/\//i.test(u)) {
@@ -632,18 +616,6 @@ const syncHeaderChrome = (route) => {
     }
   }
 };
-
-const HOME_CATEGORY_ORDER = [
-  { slug: "rentals", label: "Rentals" },
-  { slug: "jobs", label: "Jobs" },
-  { slug: "services", label: "Services" },
-  { slug: "goods", label: "Goods / Items" },
-  { slug: "vehicles", label: "Vehicles" },
-  { slug: "electronics", label: "Electronics" },
-  { slug: "furniture", label: "Furniture" },
-  { slug: "fashion", label: "Fashion" },
-  { slug: "other", label: "Other" }
-];
 
 const countByCategory = (listings) => {
   const m = {};
@@ -723,12 +695,6 @@ const buildListingCardEl = (listing, opts = {}) => {
 
 const renderLanding = async () => {
   let listings = [];
-  let catErr = null;
-  try {
-    await fetchCategories();
-  } catch (e) {
-    catErr = e.message;
-  }
   try {
     listings = await fetchListings({});
   } catch {
@@ -738,14 +704,15 @@ const renderLanding = async () => {
   const viewMode = getListViewMode();
   const trending = sortListings([...listings], "popular").slice(0, 24);
 
-  const catRows = HOME_CATEGORY_ORDER.map((row) => {
-    const catId = CATEGORY_SLUGS[row.slug] || row.slug;
+  const catRows = CATEGORIES.map((row) => {
+    const catId = apiCategoryIdForSlug(row.slug);
     const n = counts[catId] ?? 0;
+    const countLine = formatStaticCategoryCount(row, n);
     return `<a class="jiji-cat-row" href="#/category/${esc(row.slug)}">
-      <span class="jiji-cat-row__thumb" aria-hidden="true">${categoryIcon(catId)}</span>
+      <span class="jiji-cat-row__thumb" aria-hidden="true">${row.icon}</span>
       <span class="jiji-cat-row__mid">
         <span class="jiji-cat-row__name">${esc(row.label)}</span>
-        <span class="jiji-cat-row__count">${esc(formatAdCount(n))}</span>
+        <span class="jiji-cat-row__count">${esc(countLine)}</span>
       </span>
       <span class="jiji-cat-row__chev" aria-hidden="true">›</span>
     </a>`;
@@ -754,9 +721,9 @@ const renderLanding = async () => {
   const pills = [
     `<button type="button" class="jiji-pill" data-home-pill="post">Post ad</button>`,
     `<button type="button" class="jiji-pill jiji-pill--active" data-home-pill="trending">Trending</button>`,
-    ...HOME_CATEGORY_ORDER.map((row) => {
-      const catId = CATEGORY_SLUGS[row.slug] || row.slug;
-      return `<button type="button" class="jiji-pill" data-home-pill="cat" data-cat="${esc(catId)}"><span aria-hidden="true">${categoryIcon(catId)}</span> ${esc(row.label)}</button>`;
+    ...CATEGORIES.map((row) => {
+      const catId = apiCategoryIdForSlug(row.slug);
+      return `<button type="button" class="jiji-pill" data-home-pill="cat" data-cat="${esc(catId)}"><span aria-hidden="true">${row.icon}</span> ${esc(row.label)}</button>`;
     })
   ].join("");
 
@@ -784,7 +751,6 @@ const renderLanding = async () => {
           </form>
         </div>
       </section>
-      ${catErr ? `<div class="banner-warn" role="status">${esc(catErr)}</div>` : ""}
       <div class="jiji-home__cols">
         <aside class="jiji-home__sidebar" aria-label="Categories">
           <div class="jiji-cat-list">
@@ -864,12 +830,6 @@ const renderLanding = async () => {
 };
 
 const renderList = async () => {
-  let categoriesWarning = null;
-  try {
-    await fetchCategories();
-  } catch (e) {
-    categoriesWarning = e.message || friendlyNetworkError(e);
-  }
   const routeInfo = parseHash();
   const filters = parseBrowseParams();
   if (routeInfo.categorySlug) {
@@ -887,7 +847,7 @@ const renderList = async () => {
   if (hf?.elements?.q && hf?.elements?.loc) {
     hf.elements.q.value = filters.query;
     hf.elements.loc.value = filters.location;
-    const catLabel = filters.categoryId ? categoryName(filters.categoryId) : "All ads";
+    const catLabel = filters.categoryId ? categoryDisplayName(filters.categoryId) : "All ads";
     hf.elements.q.placeholder = `Search in ${catLabel}`;
   }
 
@@ -923,9 +883,10 @@ const renderList = async () => {
 
   const catChips = [
     `<button type="button" class="cat-chip${!filters.categoryId ? " cat-chip--active" : ""}" data-cat=""><span class="cat-chip__emoji" aria-hidden="true">✨</span><span class="cat-chip__label">All</span></button>`,
-    ...categoriesCache.map((c) => {
-      const active = c.id === filters.categoryId ? " cat-chip--active" : "";
-      return `<button type="button" class="cat-chip${active}" data-cat="${esc(c.id)}"><span class="cat-chip__emoji" aria-hidden="true">${categoryIcon(c.id)}</span><span class="cat-chip__label">${esc(c.name)}</span></button>`;
+    ...CATEGORIES.map((c) => {
+      const apiId = apiCategoryIdForSlug(c.slug);
+      const active = apiId === filters.categoryId ? " cat-chip--active" : "";
+      return `<button type="button" class="cat-chip${active}" data-cat="${esc(apiId)}"><span class="cat-chip__emoji" aria-hidden="true">${c.icon}</span><span class="cat-chip__label">${esc(c.label)}</span></button>`;
     })
   ].join("");
 
@@ -935,17 +896,17 @@ const renderList = async () => {
     : "";
 
   const feedTitle = filters.categoryId
-    ? `${esc(categoryName(filters.categoryId))} in Hungary`
+    ? `${esc(categoryDisplayName(filters.categoryId))} in Hungary`
     : filters.location
       ? `Ads in ${esc(filters.location)}`
       : "All ads in Hungary";
 
   const catOptions = [
     `<option value=""${!filters.categoryId ? " selected" : ""}>All categories</option>`,
-    ...categoriesCache.map(
-      (c) =>
-        `<option value="${esc(c.id)}"${c.id === filters.categoryId ? " selected" : ""}>${esc(c.name)}</option>`
-    )
+    ...CATEGORIES.map((c) => {
+      const apiId = apiCategoryIdForSlug(c.slug);
+      return `<option value="${esc(apiId)}"${apiId === filters.categoryId ? " selected" : ""}>${esc(c.label)}</option>`;
+    })
   ].join("");
 
   const sortSel = filters.sort;
@@ -958,7 +919,7 @@ const renderList = async () => {
     <div class="filter-panel filter-panel--jiji">
       <div class="filter-section">
         <h3>Categories</h3>
-        <p class="muted small" style="margin:0 0 0.5rem"><strong>${filters.categoryId ? esc(categoryName(filters.categoryId)) : "All categories"}</strong></p>
+        <p class="muted small" style="margin:0 0 0.5rem"><strong>${filters.categoryId ? esc(categoryDisplayName(filters.categoryId)) : "All categories"}</strong></p>
         <a href="#/browse" class="small">All in category · ${esc(formatAdCount(subCount))}</a>
       </div>
       <div class="filter-section">
@@ -1043,7 +1004,7 @@ const renderList = async () => {
     pagHtml += "</nav>";
   }
 
-  const bcCat = filters.categoryId ? ` › ${esc(categoryName(filters.categoryId))}` : "";
+  const bcCat = filters.categoryId ? ` › ${esc(categoryDisplayName(filters.categoryId))}` : "";
 
   appEl.innerHTML = `
     <div class="feed-layout feed-layout--browse">
@@ -1054,7 +1015,6 @@ const renderList = async () => {
         <div class="category-strip" id="category-rail" role="tablist">${catChips}</div>
       </div>
       <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="browse-filter-open">Filters</button>
-      ${categoriesWarning && !error ? `<div class="banner-warn" role="status">${esc(categoriesWarning)}</div>` : ""}
       ${error ? `<div class="banner-error" role="alert">${esc(error)}</div>` : ""}
       <div class="browse-layout browse-layout--jiji">
         <aside class="browse-sidebar browse-sidebar--desktop" aria-label="Filters">
@@ -1231,7 +1191,6 @@ function closeFilterSheet() {
 }
 
 const renderDetail = async (id) => {
-  await fetchCategories().catch(() => {});
   let listing = null;
   let error = null;
   try {
@@ -1277,7 +1236,7 @@ const renderDetail = async (id) => {
   appEl.innerHTML = `
     <nav class="breadcrumb-jiji" aria-label="Breadcrumb">
       <a href="#/browse">All ads</a> ›
-      <a href="${catBrowseHref}">${esc(categoryName(listing.categoryId))}</a> ›
+      <a href="${catBrowseHref}">${esc(categoryDisplayName(listing.categoryId))}</a> ›
       <span class="muted">${esc(bcTitle)}</span>
     </nav>
     <div class="detail-jiji-wrap">
@@ -1300,7 +1259,7 @@ const renderDetail = async (id) => {
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin:0.75rem 0">
           <span class="pill">${esc(conditionLabel(listing.condition))}</span>
-          <span class="pill">${esc(categoryName(listing.categoryId))}</span>
+          <span class="pill">${esc(categoryDisplayName(listing.categoryId))}</span>
         </div>
         <h1 style="margin:0 0 0.5rem;font-size:1.5rem">${esc(listing.title)}</h1>
         <section>
@@ -1501,11 +1460,11 @@ const renderPost = async () => {
     return;
   }
 
-  await fetchCategories().catch(() => {});
-  const defaultCat = categoriesCache[0]?.id || "clothes";
-  const subOpts = categoriesCache
-    .map((c) => `<option value="${esc(c.id)}">${esc(c.name)} — General</option>`)
-    .join("");
+  const defaultCat = apiCategoryIdForSlug(CATEGORIES[0].slug);
+  const subOpts = CATEGORIES.map(
+    (c) =>
+      `<option value="${esc(apiCategoryIdForSlug(c.slug))}">${esc(c.label)} — General</option>`
+  ).join("");
 
   appEl.innerHTML = `
     <div class="post-jiji post-shell">
@@ -1518,12 +1477,10 @@ const renderPost = async () => {
       <label>
         Category
         <select name="categoryId" id="post-category" required>
-          ${categoriesCache
-            .map(
-              (c) =>
-                `<option value="${esc(c.id)}" ${c.id === defaultCat ? "selected" : ""}>${esc(c.name)}</option>`
-            )
-            .join("")}
+          ${CATEGORIES.map((c) => {
+            const apiId = apiCategoryIdForSlug(c.slug);
+            return `<option value="${esc(apiId)}" ${apiId === defaultCat ? "selected" : ""}>${esc(c.label)}</option>`;
+          }).join("")}
         </select>
       </label>
       <label>

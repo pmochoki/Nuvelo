@@ -20,30 +20,34 @@
   <body>
     <header class="site-header jiji-header">
       <div class="jiji-header__inner">
-        <button
-          type="button"
-          class="nav-burger jiji-header__burger"
-          id="nav-burger"
-          aria-label="Open menu"
-          aria-expanded="false"
-          aria-controls="nav-drawer"
-        >
-          <span class="nav-burger__line"></span>
-          <span class="nav-burger__line"></span>
-          <span class="nav-burger__line"></span>
-        </button>
-        <a class="brand brand--nav jiji-header__brand" href="#/">
-          <img
-            class="brand__logo"
-            src="./nuvelo-logo.svg"
-            width="500"
-            height="220"
-            alt="Nuvelo"
-          />
-        </a>
-        <p class="jiji-header__tagline" aria-hidden="true">
-          Find your next home, job, or deal
-        </p>
+        <div class="jiji-header__lead">
+          <button
+            type="button"
+            class="nav-burger jiji-header__burger"
+            id="nav-burger"
+            aria-label="Open menu"
+            aria-expanded="false"
+            aria-controls="nav-drawer"
+          >
+            <span class="nav-burger__line"></span>
+            <span class="nav-burger__line"></span>
+            <span class="nav-burger__line"></span>
+          </button>
+          <div class="jiji-header__brand-stack">
+            <a class="brand brand--nav jiji-header__brand" href="#/">
+              <img
+                class="brand__logo"
+                src="./nuvelo-logo.svg"
+                width="500"
+                height="220"
+                alt="Nuvelo"
+              />
+            </a>
+            <p class="jiji-header__tagline" aria-hidden="true">
+              Find your next home, job, or deal
+            </p>
+          </div>
+        </div>
         <div class="jiji-header__search-host" id="header-search-wrap" hidden>
           <form id="header-search-form" class="jiji-header__search-form" autocomplete="off">
             <input
@@ -223,6 +227,6 @@
       </div>
     </div>
 
-    <script src="./app.js" defer></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>
