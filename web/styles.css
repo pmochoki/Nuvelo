@@ -144,6 +144,139 @@ a:hover {
   border-radius: 8px;
 }
 
+.jiji-header__search-form .loc-dd {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+
+.jiji-header__search-form .loc-dd__btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+  padding-right: 2rem;
+}
+
+.jiji-header__search-form .loc-dd__btn::after {
+  content: "▾";
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.loc-dd {
+  position: relative;
+  width: 100%;
+}
+
+.loc-dd__panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.35rem;
+  border-radius: 8px;
+  border: 1px solid var(--purple-border);
+  background: var(--white);
+  color: var(--purple-deep);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  max-height: min(280px, 50vh);
+}
+
+.loc-dd__search {
+  width: 100%;
+  min-height: 36px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid var(--purple-border);
+  font: inherit;
+  background: var(--purple-surface);
+  color: var(--text);
+}
+
+.loc-dd__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.loc-dd__opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 0.45rem 0.5rem;
+  font: inherit;
+  cursor: pointer;
+  color: inherit;
+  border-radius: 6px;
+}
+
+.loc-dd__opt:hover {
+  background: rgba(124, 58, 237, 0.12);
+}
+
+.filter-panel .loc-dd__panel {
+  background: var(--purple-card);
+  color: var(--text);
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.25);
+}
+
+.filter-panel .loc-dd__opt:hover {
+  background: rgba(167, 139, 250, 0.18);
+}
+
+.filter-sheet .loc-dd__panel {
+  z-index: 50;
+}
+
+.loc-dd__btn--field {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.45rem 2rem 0.45rem 0.65rem;
+  border-radius: 8px;
+  border: 1px solid var(--purple-border);
+  background: var(--purple-surface);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.loc-dd__btn--field::after {
+  content: "▾";
+  position: absolute;
+  right: 0.55rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.loc-dd--hero {
+  z-index: 2;
+}
+
+.loc-dd--hero .loc-dd__panel {
+  z-index: 50;
+  text-align: left;
+}
+
 .jiji-header__actions {
   display: flex;
   align-items: center;

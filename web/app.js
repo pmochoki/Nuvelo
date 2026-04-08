@@ -1,4 +1,5 @@
 import { CATEGORIES } from "./src/data/categories.js";
+import { HUNGARIAN_LOCATIONS } from "./src/data/hungarianLocations.js";
 
 /** Public API (Render). Override in console: window.__NUVELO_API__ = "https://…" */
 const RENDER_API_DEFAULT = "https://nuvelo-backend.onrender.com";
@@ -311,6 +312,232 @@ const esc = (s) => {
   const d = document.createElement("div");
   d.textContent = s ?? "";
   return d.innerHTML;
+};
+
+const findHungarianLocationRow = (stored) => {
+  if (stored == null || String(stored).trim() === "") {
+    return HUNGARIAN_LOCATIONS.find((r) => r.value === "all") || HUNGARIAN_LOCATIONS[0];
+  }
+  const t = String(stored).trim();
+  const tl = t.toLowerCase();
+  return (
+    HUNGARIAN_LOCATIONS.find((r) => r.label.toLowerCase() === tl) ||
+    HUNGARIAN_LOCATIONS.find((r) => r.value.toLowerCase() === tl) ||
+    null
+  );
+};
+
+const locationApiText = (stored) => {
+  const row = findHungarianLocationRow(stored);
+  if (row && row.value === "all") {
+    return "";
+  }
+  if (row) {
+    return row.label;
+  }
+  return String(stored || "").trim();
+};
+
+const locationButtonLabel = (stored) => {
+  const row = findHungarianLocationRow(stored);
+  if (!row || row.value === "all") {
+    return "All Hungary";
+  }
+  if (row) {
+    return row.label;
+  }
+  const t = String(stored || "").trim();
+  return t || "All Hungary";
+};
+
+const locationRowsForMode = (mode) =>
+  mode === "post"
+    ? HUNGARIAN_LOCATIONS.filter((r) => r.value !== "all")
+    : HUNGARIAN_LOCATIONS;
+
+const renderLocationListHtml = (root, searchQuery) => {
+  const list = root.querySelector("[data-loc-list]");
+  if (!list) {
+    return;
+  }
+  const mode = root.getAttribute("data-loc-mode") || "filter";
+  const q = String(searchQuery || "").trim().toLowerCase();
+  const rows = locationRowsForMode(mode);
+  const filtered = !q
+    ? rows
+    : rows.filter(
+        (r) =>
+          r.label.toLowerCase().includes(q) || r.value.toLowerCase().includes(q)
+      );
+  list.innerHTML = filtered
+    .map(
+      (r) =>
+        `<li role="none"><button type="button" role="option" class="loc-dd__opt" data-loc-opt data-loc-value="${esc(r.value)}" data-loc-label="${esc(r.label)}">${esc(r.label)}</button></li>`
+    )
+    .join("");
+};
+
+const closeLocationPanel = (root) => {
+  if (!root) {
+    return;
+  }
+  const panel = root.querySelector("[data-loc-panel]");
+  const btn = root.querySelector("[data-loc-btn]");
+  const search = root.querySelector("[data-loc-search]");
+  root.classList.remove("is-open");
+  if (panel) {
+    panel.hidden = true;
+  }
+  if (btn) {
+    btn.setAttribute("aria-expanded", "false");
+  }
+  if (search) {
+    search.value = "";
+  }
+};
+
+const openLocationPanel = (root) => {
+  if (!root) {
+    return;
+  }
+  document.querySelectorAll("[data-loc-combobox].is-open").forEach((el) => {
+    if (el !== root) {
+      closeLocationPanel(el);
+    }
+  });
+  const panel = root.querySelector("[data-loc-panel]");
+  const btn = root.querySelector("[data-loc-btn]");
+  const search = root.querySelector("[data-loc-search]");
+  root.classList.add("is-open");
+  if (panel) {
+    panel.hidden = false;
+  }
+  if (btn) {
+    btn.setAttribute("aria-expanded", "true");
+  }
+  renderLocationListHtml(root, "");
+  if (search) {
+    search.value = "";
+    search.focus();
+  }
+};
+
+const syncLocationCombobox = (root, storedRaw) => {
+  if (!root) {
+    return;
+  }
+  const hidden = root.querySelector("[data-loc-hidden]");
+  const btn = root.querySelector("[data-loc-btn]");
+  const api = locationApiText(storedRaw);
+  const label = locationButtonLabel(storedRaw);
+  if (hidden) {
+    hidden.value = api;
+  }
+  if (btn) {
+    btn.textContent = label;
+  }
+  closeLocationPanel(root);
+};
+
+const applyLocationSelection = (root, value, label) => {
+  const hidden = root.querySelector("[data-loc-hidden]");
+  const btn = root.querySelector("[data-loc-btn]");
+  if (value === "all") {
+    if (hidden) {
+      hidden.value = "";
+    }
+    if (btn) {
+      btn.textContent = "All Hungary";
+    }
+  } else {
+    if (hidden) {
+      hidden.value = label;
+    }
+    if (btn) {
+      btn.textContent = label;
+    }
+  }
+  closeLocationPanel(root);
+};
+
+let hungarianLocGlobalHandlersBound = false;
+
+const bindHungarianLocationGlobalHandlers = () => {
+  if (hungarianLocGlobalHandlersBound) {
+    return;
+  }
+  hungarianLocGlobalHandlersBound = true;
+  document.addEventListener("click", () => {
+    document.querySelectorAll("[data-loc-combobox].is-open").forEach((el) => {
+      closeLocationPanel(el);
+    });
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document.querySelectorAll("[data-loc-combobox].is-open").forEach((el) => {
+        closeLocationPanel(el);
+      });
+    }
+  });
+};
+
+const initLocationCombobox = (root) => {
+  if (!root || root.dataset.locInit) {
+    return;
+  }
+  bindHungarianLocationGlobalHandlers();
+  root.dataset.locInit = "1";
+  const btn = root.querySelector("[data-loc-btn]");
+  const search = root.querySelector("[data-loc-search]");
+  const list = root.querySelector("[data-loc-list]");
+
+  root.addEventListener("click", (e) => {
+    e.stopPropagation();
+  });
+
+  btn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    if (root.classList.contains("is-open")) {
+      closeLocationPanel(root);
+    } else {
+      openLocationPanel(root);
+    }
+  });
+
+  search?.addEventListener("input", () => {
+    renderLocationListHtml(root, search.value);
+  });
+
+  list?.addEventListener("click", (e) => {
+    const opt = e.target.closest("[data-loc-opt]");
+    if (!opt) {
+      return;
+    }
+    const value = opt.getAttribute("data-loc-value") || "";
+    const label = opt.getAttribute("data-loc-label") || "";
+    applyLocationSelection(root, value, label);
+  });
+};
+
+const buildLocationComboboxHtml = ({
+  fieldName,
+  storedRaw,
+  mode,
+  wrapClass = "",
+  btnClass = "loc-dd__btn"
+}) => {
+  const apiVal = locationApiText(storedRaw);
+  const btnText = locationButtonLabel(storedRaw);
+  const req = mode === "post" ? " required" : "";
+  const wc = wrapClass ? `${wrapClass} ` : "";
+  return `<div class="${wc}loc-dd" data-loc-combobox data-loc-mode="${esc(mode)}">
+  <input type="hidden" name="${esc(fieldName)}" data-loc-hidden value="${esc(apiVal)}"${req} />
+  <button type="button" class="${btnClass}" data-loc-btn aria-haspopup="listbox" aria-expanded="false">${esc(btnText)}</button>
+  <div class="loc-dd__panel" data-loc-panel hidden>
+    <input type="search" class="loc-dd__search" data-loc-search placeholder="Search cities…" autocomplete="off" aria-label="Search cities" />
+    <ul class="loc-dd__list" role="listbox" data-loc-list></ul>
+  </div>
+</div>`;
 };
 
 const fetchListings = async (params) => {
@@ -727,23 +954,22 @@ const renderLanding = async () => {
     })
   ].join("");
 
+  const urlLoc = new URLSearchParams(window.location.search).get("loc") || "";
+  const heroLocCombobox = buildLocationComboboxHtml({
+    fieldName: "loc",
+    storedRaw: urlLoc,
+    mode: "filter",
+    wrapClass: "jiji-hero__loc-wrap loc-dd--hero",
+    btnClass: "jiji-hero__loc-btn"
+  });
+
   appEl.innerHTML = `
     <div class="jiji-home">
       <section class="jiji-hero" aria-label="Search">
         <div class="jiji-hero__inner">
           <h1 class="jiji-hero__title">What are you looking for?</h1>
           <form id="home-hero-form" class="jiji-hero__search">
-            <div class="jiji-hero__loc-wrap">
-              <button type="button" class="jiji-hero__loc-btn" id="home-loc-label" aria-haspopup="listbox">All Hungary</button>
-              <select id="home-loc-select" class="jiji-hero__loc-select" name="loc_region" aria-label="Region">
-                <option value="">All Hungary</option>
-                <option value="Budapest">Budapest</option>
-                <option value="Debrecen">Debrecen</option>
-                <option value="Szeged">Szeged</option>
-                <option value="Győr">Győr</option>
-                <option value="Pécs">Pécs</option>
-              </select>
-            </div>
+            ${heroLocCombobox}
             <div class="jiji-hero__q-wrap">
               <input class="jiji-hero__q" name="q" type="search" placeholder="I am looking for…" />
             </div>
@@ -789,20 +1015,18 @@ const renderLanding = async () => {
     );
   });
 
-  const locSel = document.getElementById("home-loc-select");
-  const locLabel = document.getElementById("home-loc-label");
-  locSel?.addEventListener("change", () => {
-    if (locLabel) {
-      locLabel.textContent = locSel.value ? locSel.options[locSel.selectedIndex].text : "All Hungary";
-    }
-  });
-  locLabel?.addEventListener("click", () => locSel?.click());
+  const heroLocRoot = document.querySelector("#home-hero-form [data-loc-combobox]");
+  initLocationCombobox(heroLocRoot);
+  syncLocationCombobox(
+    document.querySelector("#header-search-form [data-loc-combobox]"),
+    urlLoc
+  );
 
   document.getElementById("home-hero-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
     const fd = new FormData(e.target);
     const q = String(fd.get("q") || "").trim();
-    const loc = String(locSel?.value || "").trim();
+    const loc = String(fd.get("loc") || "").trim();
     const next = new URLSearchParams();
     if (q) {
       next.set("q", q);
@@ -844,9 +1068,9 @@ const renderList = async () => {
   };
 
   const hf = document.getElementById("header-search-form");
-  if (hf?.elements?.q && hf?.elements?.loc) {
+  if (hf?.elements?.q) {
     hf.elements.q.value = filters.query;
-    hf.elements.loc.value = filters.location;
+    syncLocationCombobox(hf.querySelector("[data-loc-combobox]"), filters.location);
     const catLabel = filters.categoryId ? categoryDisplayName(filters.categoryId) : "All ads";
     hf.elements.q.placeholder = `Search in ${catLabel}`;
   }
@@ -927,7 +1151,13 @@ const renderList = async () => {
         ${locChip}
         <label class="filter-panel__field">
           <span class="filter-panel__label">City / region</span>
-          <input type="text" name="loc" placeholder="Type a city" value="${esc(filters.location)}" />
+          ${buildLocationComboboxHtml({
+            fieldName: "loc",
+            storedRaw: filters.location,
+            mode: "filter",
+            wrapClass: "",
+            btnClass: "loc-dd__btn loc-dd__btn--field"
+          })}
         </label>
       </div>
       <div class="filter-section">
@@ -1067,7 +1297,9 @@ const renderList = async () => {
   document.getElementById("browse-filter-open")?.addEventListener("click", () => {
     if (sheetBody) {
       sheetBody.innerHTML = `<form id="sidebar-filter-form-mobile" class="browse-filter-form">${filterFieldsHtml}</form>`;
-      wireBrowseFilterForm(document.getElementById("sidebar-filter-form-mobile"));
+      const mobForm = document.getElementById("sidebar-filter-form-mobile");
+      wireBrowseFilterForm(mobForm);
+      initLocationCombobox(mobForm?.querySelector("[data-loc-combobox]"));
     }
     if (sheet) {
       sheet.hidden = false;
@@ -1076,6 +1308,7 @@ const renderList = async () => {
   });
 
   wireBrowseFilterForm(document.getElementById("sidebar-filter-form"));
+  initLocationCombobox(document.querySelector("#sidebar-filter-form [data-loc-combobox]"));
 
   appEl.querySelectorAll(".browse-loc-clear-btn").forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -1461,10 +1694,19 @@ const renderPost = async () => {
   }
 
   const defaultCat = apiCategoryIdForSlug(CATEGORIES[0].slug);
+  const postLocDefault =
+    HUNGARIAN_LOCATIONS.find((r) => r.value === "budapest")?.label || "Budapest";
   const subOpts = CATEGORIES.map(
     (c) =>
       `<option value="${esc(apiCategoryIdForSlug(c.slug))}">${esc(c.label)} — General</option>`
   ).join("");
+  const postLocCombobox = buildLocationComboboxHtml({
+    fieldName: "location",
+    storedRaw: postLocDefault,
+    mode: "post",
+    wrapClass: "loc-dd--post",
+    btnClass: "loc-dd__btn loc-dd__btn--field"
+  });
 
   appEl.innerHTML = `
     <div class="post-jiji post-shell">
@@ -1508,7 +1750,7 @@ const renderPost = async () => {
       </label>
       <label>
         Location
-        <input name="location" required placeholder="Budapest" />
+        ${postLocCombobox}
       </label>
       <label>
         Contact name
@@ -1531,6 +1773,8 @@ const renderPost = async () => {
     </form>
     </div>
   `;
+
+  initLocationCombobox(document.querySelector("#post-form [data-loc-combobox]"));
 
   const catSelect = document.getElementById("post-category");
   const catFields = document.getElementById("post-cat-fields");
@@ -1758,6 +2002,14 @@ document.getElementById("header-search-form")?.addEventListener("submit", (e) =>
 window.addEventListener("hashchange", render);
 document.getElementById("filter-sheet-close")?.addEventListener("click", closeFilterSheet);
 document.getElementById("filter-sheet-backdrop")?.addEventListener("click", closeFilterSheet);
+
+bindHungarianLocationGlobalHandlers();
+const headerLocRootInit = document.querySelector("#header-search-form [data-loc-combobox]");
+initLocationCombobox(headerLocRootInit);
+syncLocationCombobox(
+  headerLocRootInit,
+  new URLSearchParams(window.location.search).get("loc") || ""
+);
 
 updateAuthUi();
 render();

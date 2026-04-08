@@ -57,13 +57,34 @@
               placeholder="Search for anything…"
               aria-label="Search keywords"
             />
-            <input
-              class="jiji-header__search-input jiji-header__search-loc"
-              name="loc"
-              type="text"
-              placeholder="Location"
-              aria-label="Location"
-            />
+            <div
+              class="loc-dd jiji-header__loc-dd"
+              data-loc-combobox
+              data-loc-mode="filter"
+            >
+              <input type="hidden" name="loc" data-loc-hidden value="" />
+              <button
+                type="button"
+                class="jiji-header__search-input loc-dd__btn"
+                data-loc-btn
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-label="Location"
+              >
+                All Hungary
+              </button>
+              <div class="loc-dd__panel" data-loc-panel hidden>
+                <input
+                  type="search"
+                  class="loc-dd__search"
+                  data-loc-search
+                  placeholder="Search cities…"
+                  autocomplete="off"
+                  aria-label="Search cities"
+                />
+                <ul class="loc-dd__list" role="listbox" data-loc-list></ul>
+              </div>
+            </div>
             <button type="submit" class="btn btn--primary jiji-header__search-btn">Search</button>
           </form>
         </div>
