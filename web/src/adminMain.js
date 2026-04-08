@@ -242,14 +242,53 @@ async function renderDashboard() {
   });
 }
 
+function paintBoot(message) {
+  if (!root) {
+    return;
+  }
+  root.innerHTML = `${headerHtml()}
+    <main class="admin-main">
+      <p class="muted" id="admin-boot-msg" style="margin:0">${esc(message)}</p>
+      <p style="margin-top:1rem"><a href="/" style="color:var(--orange)">← Back to marketplace</a></p>
+    </main>`;
+}
+
+function withTimeout(promise, ms, label) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => {
+      setTimeout(() => reject(new Error(label)), ms);
+    })
+  ]);
+}
+
 async function init() {
   if (!root) {
     return;
   }
 
-  const {
-    data: { session }
-  } = await supabase.auth.getSession();
+  paintBoot("Loading admin…");
+
+  let session;
+  try {
+    const out = await withTimeout(
+      supabase.auth.getSession(),
+      15000,
+      "Supabase auth did not respond in time. Your production build may be missing VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY — add them in Vercel → Environment Variables, then Redeploy."
+    );
+    if (out.error) {
+      throw out.error;
+    }
+    session = out.data?.session ?? null;
+  } catch (e) {
+    root.innerHTML = `${headerHtml()}
+      <main class="admin-main">
+        <div class="admin-alert">${esc(e?.message || String(e))}</div>
+        <p class="muted" style="margin-top:12px">After fixing env vars, trigger a new Production deploy so the admin bundle is rebuilt.</p>
+        <p style="margin-top:1rem"><a href="/" style="color:var(--orange)">← Marketplace</a></p>
+      </main>`;
+    return;
+  }
 
   if (!session) {
     await renderLogin();
@@ -275,4 +314,7 @@ async function init() {
   await renderDashboard();
 }
 
-void init();
+void init().catch((e) => {
+  console.error(e);
+  paintBoot(e?.message || "Unexpected error — open the browser console (F12).");
+});
