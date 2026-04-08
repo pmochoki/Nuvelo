@@ -890,10 +890,16 @@ const conditionLabel = (c) => {
 const getListViewMode = () => {
   try {
     const v = localStorage.getItem(VIEW_MODE_KEY);
-    return v === "list" ? "list" : "grid";
+    if (v === "list" || v === "grid") {
+      return v;
+    }
   } catch {
-    return "grid";
+    /* ignore */
   }
+  if (typeof window !== "undefined" && window.matchMedia("(max-width: 639px)").matches) {
+    return "list";
+  }
+  return "grid";
 };
 
 const setListViewMode = (mode) => {
@@ -1099,11 +1105,11 @@ const buildListingCardEl = (listing, opts = {}) => {
       <span class="lc__cond">${esc(condLine)}</span>
       ${
         isDonation
-          ? `<div class="lc__donation-row"><span>📍 ${esc(loc)}</span>${collLine}</div>
-             <div class="lc__foot lc__foot--donation"><span>${esc(posted || "")}</span></div>${ctaRow}`
+          ? `<div class="lc__donation-row"><span class="lc__loc">📍 ${esc(loc)}</span>${collLine}</div>
+             <div class="lc__foot lc__foot--donation"><span class="lc__time">${esc(posted || "")}</span></div>${ctaRow}`
           : `<div class="lc__foot">
-        <span>📍 ${esc(loc)}</span>
-        <span>${esc(posted || "")}</span>
+        <span class="lc__loc">📍 ${esc(loc)}</span>
+        <span class="lc__time">${esc(posted || "")}</span>
       </div>`
       }
     </div>
@@ -1209,9 +1215,9 @@ const renderLanding = async () => {
           <section class="jiji-trending" aria-label="Trending ads">
             <div class="jiji-section-head">
               <h2>Trending ads</h2>
-              <div class="jiji-view-toggle">
-                <button type="button" id="home-view-grid" aria-pressed="${viewMode === "grid"}" title="Grid">⊞</button>
-                <button type="button" id="home-view-list" aria-pressed="${viewMode === "list"}" title="List">☰</button>
+              <div class="jiji-view-toggle" role="group" aria-label="Listing view">
+                <button type="button" id="home-view-grid" aria-pressed="${viewMode === "grid"}" aria-label="Grid view" title="Grid">⊞</button>
+                <button type="button" id="home-view-list" aria-pressed="${viewMode === "list"}" aria-label="List view" title="List">☰</button>
               </div>
             </div>
             <div class="ad-grid--lc" id="home-listing-grid" data-view="${viewMode}"></div>
@@ -1508,11 +1514,10 @@ const renderList = async () => {
               </label>
             </div>
           </div>
-          <div class="jiji-section-head" style="margin-bottom:0.5rem">
-            <span></span>
-            <div class="jiji-view-toggle">
-              <button type="button" id="browse-view-grid" aria-pressed="${viewMode === "grid"}">⊞</button>
-              <button type="button" id="browse-view-list" aria-pressed="${viewMode === "list"}">☰</button>
+          <div class="browse-view-toolbar">
+            <div class="jiji-view-toggle" role="group" aria-label="Listing view">
+              <button type="button" id="browse-view-grid" aria-pressed="${viewMode === "grid"}" aria-label="Grid view" title="Grid">⊞</button>
+              <button type="button" id="browse-view-list" aria-pressed="${viewMode === "list"}" aria-label="List view" title="List">☰</button>
             </div>
           </div>
           <div class="ad-grid--lc" id="listing-cards" data-view="${viewMode}"></div>
@@ -2016,7 +2021,7 @@ const renderEventsList = async () => {
             <h1 class="feed-head__title" style="margin:0">🎉 Events in Hungary</h1>
             <a class="btn btn--primary" href="#/post">Create event</a>
           </div>
-          <div class="ad-grid--lc" id="events-grid">
+          <div class="ad-grid--lc" id="events-grid" data-view="grid">
             ${rows.map((e) => `<article class="lc lc--grid event-card" role="link" tabindex="0" data-event-id="${esc(e.id)}">
               <div class="lc__media"><img src="${esc(e.image)}" alt="" loading="lazy" /></div>
               <div class="lc__body">
