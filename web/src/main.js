@@ -1,5 +1,6 @@
 import { CATEGORIES } from "./data/categories.js";
 import { HUNGARIAN_LOCATIONS } from "./data/hungarianLocations.js";
+import { DEMO_EVENTS, EVENT_SUBCATEGORIES } from "./data/demoEvents.js";
 import "../styles.css";
 import {
   fetchListings as apiFetchListings,
@@ -26,10 +27,15 @@ const friendlyNetworkError = (err) => {
 /** Soft copy when listings are unavailable; never surface raw errors in the UI. */
 const LISTINGS_UNAVAILABLE_MSG = "Listings are loading, please try again shortly.";
 const USER_STORE_KEY = "nuvelo_user";
+const EVENTS_STORE_KEY = "nuvelo_events_custom";
+const EVENTS_RSVP_KEY = "nuvelo_events_rsvp";
+const EVENTS_ANON_KEY = "nuvelo_events_anon";
+const EVENTS_CATEGORY = "events";
 
 let cachedUser = null;
 const VIEW_MODE_KEY = "nuvelo_list_view";
 const CATEGORY_SLUGS = {
+  events: "events",
   rentals: "rentals",
   jobs: "jobs",
   services: "services",
@@ -41,6 +47,8 @@ const CATEGORY_SLUGS = {
   "babies-kids": "clothes",
   other: "real-estate"
 };
+
+const ADS_CATEGORIES = CATEGORIES.filter((c) => c.slug !== EVENTS_CATEGORY);
 
 const mainShell = () => document.getElementById("app");
 const authBtn = document.getElementById("auth-btn");
@@ -292,6 +300,40 @@ const esc = (s) => {
   const d = document.createElement("div");
   d.textContent = s ?? "";
   return d.innerHTML;
+};
+
+const readJsonStore = (key, fallback) => {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writeJsonStore = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* ignore */
+  }
+};
+
+const ensureAnonEventUser = () => {
+  const existing = localStorage.getItem(EVENTS_ANON_KEY);
+  if (existing) {
+    return existing;
+  }
+  const id = `anon-${Math.random().toString(36).slice(2, 10)}`;
+  localStorage.setItem(EVENTS_ANON_KEY, id);
+  return id;
+};
+
+const getAllEvents = () => {
+  const custom = readJsonStore(EVENTS_STORE_KEY, []);
+  return [...DEMO_EVENTS, ...custom].sort(
+    (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
+  );
 };
 
 const findHungarianLocationRow = (stored) => {
@@ -902,11 +944,20 @@ const parseHash = () => {
   if (parts[0] === "post") {
     return { view: "post" };
   }
+  if (parts[0] === "events") {
+    return { view: "events" };
+  }
+  if (parts[0] === "event" && parts[1]) {
+    return { view: "eventDetail", id: parts[1] };
+  }
   if (parts[0] === "browse") {
     return { view: "list" };
   }
   if (parts[0] === "category" && parts[1]) {
     const slug = parts[1].toLowerCase();
+    if (slug === EVENTS_CATEGORY) {
+      return { view: "events" };
+    }
     const catId = CATEGORY_SLUGS[slug] || slug;
     return { view: "list", categorySlug: catId };
   }
@@ -1035,7 +1086,16 @@ const renderLanding = async () => {
   const viewMode = getListViewMode();
   const trending = sortListings([...listings], "popular").slice(0, 24);
 
-  const catRows = CATEGORIES.map((row) => {
+  const catRows = [
+    `<a class="jiji-cat-row" href="#/events">
+      <span class="jiji-cat-row__thumb" aria-hidden="true">🎉</span>
+      <span class="jiji-cat-row__mid">
+        <span class="jiji-cat-row__name">Events</span>
+        <span class="jiji-cat-row__count">Community board</span>
+      </span>
+      <span class="jiji-cat-row__chev" aria-hidden="true">›</span>
+    </a>`,
+    ...ADS_CATEGORIES.map((row) => {
     const catId = apiCategoryIdForSlug(row.slug);
     const n = counts[catId] ?? 0;
     const countLine = formatStaticCategoryCount(row, n);
@@ -1047,12 +1107,14 @@ const renderLanding = async () => {
       </span>
       <span class="jiji-cat-row__chev" aria-hidden="true">›</span>
     </a>`;
-  }).join("");
+    })
+  ].join("");
 
   const pills = [
     `<button type="button" class="jiji-pill" data-home-pill="post">Post ad</button>`,
+    `<a class="jiji-pill" href="#/events">🎉 Events</a>`,
     `<button type="button" class="jiji-pill jiji-pill--active" data-home-pill="trending">Trending</button>`,
-    ...CATEGORIES.map((row) => {
+    ...ADS_CATEGORIES.map((row) => {
       const catId = apiCategoryIdForSlug(row.slug);
       return `<button type="button" class="jiji-pill" data-home-pill="cat" data-cat="${esc(catId)}"><span aria-hidden="true">${row.icon}</span> ${esc(row.label)}</button>`;
     })
@@ -1202,6 +1264,9 @@ const renderList = async () => {
     listingsLoadFailed = true;
     browseListingsCache = { key: "", data: [] };
   }
+  if (!listingsLoadFailed) {
+    listings = listings.filter((l) => l.categoryId !== EVENTS_CATEGORY);
+  }
 
   let afterBand = listingsLoadFailed ? [] : filterByPriceBand(listings, filters.priceBand);
   afterBand = listingsLoadFailed ? [] : filterBySellerPref(afterBand, filters.sellerFilter);
@@ -1219,8 +1284,9 @@ const renderList = async () => {
   const subCount = totalCount;
 
   const catChips = [
+    `<a href="#/events" class="cat-chip"><span class="cat-chip__emoji" aria-hidden="true">🎉</span><span class="cat-chip__label">Events</span></a>`,
     `<button type="button" class="cat-chip${!filters.categoryId ? " cat-chip--active" : ""}" data-cat=""><span class="cat-chip__emoji" aria-hidden="true">✨</span><span class="cat-chip__label">All</span></button>`,
-    ...CATEGORIES.map((c) => {
+    ...ADS_CATEGORIES.map((c) => {
       const apiId = apiCategoryIdForSlug(c.slug);
       const active = apiId === filters.categoryId ? " cat-chip--active" : "";
       return `<button type="button" class="cat-chip${active}" data-cat="${esc(apiId)}"><span class="cat-chip__emoji" aria-hidden="true">${c.icon}</span><span class="cat-chip__label">${esc(c.label)}</span></button>`;
@@ -1240,7 +1306,7 @@ const renderList = async () => {
 
   const catOptions = [
     `<option value=""${!filters.categoryId ? " selected" : ""}>All categories</option>`,
-    ...CATEGORIES.map((c) => {
+    ...ADS_CATEGORIES.map((c) => {
       const apiId = apiCategoryIdForSlug(c.slug);
       return `<option value="${esc(apiId)}"${apiId === filters.categoryId ? " selected" : ""}>${esc(c.label)}</option>`;
     })
@@ -1721,6 +1787,225 @@ const renderDetail = async (id) => {
   });
 };
 
+const eventDateFmt = (iso) =>
+  new Date(iso).toLocaleString([], {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+const eventFilterParams = () => {
+  const p = new URLSearchParams(window.location.search);
+  return {
+    sub: p.get("esub") || "",
+    city: p.get("ecity") || "",
+    date: p.get("edate") || "any",
+    free: p.get("efree") === "1"
+  };
+};
+
+const eventMatchesDateRange = (eventIso, mode) => {
+  if (!mode || mode === "any") return true;
+  const now = new Date();
+  const ev = new Date(eventIso);
+  const diffDays = (ev.getTime() - now.getTime()) / 86400000;
+  if (mode === "weekend") return diffDays >= 0 && diffDays <= 4;
+  if (mode === "week") return diffDays >= 0 && diffDays <= 7;
+  if (mode === "month") return diffDays >= 0 && diffDays <= 30;
+  return true;
+};
+
+const renderEventsList = async () => {
+  const appEl = mainShell();
+  if (!appEl) return;
+  const f = eventFilterParams();
+  let rows = getAllEvents();
+  rows = rows.filter((e) => {
+    if (f.sub && e.subCategory !== f.sub) return false;
+    if (f.city && e.city !== f.city) return false;
+    if (f.free && !e.isFree) return false;
+    if (!eventMatchesDateRange(e.dateTime, f.date)) return false;
+    return true;
+  });
+  rows.sort((a, b) => new Date(a.dateTime) - new Date(b.dateTime));
+  const filtersOpenLabel =
+    f.sub || f.city || f.free || f.date !== "any" ? "Filters (active)" : "Filters";
+
+  appEl.innerHTML = `
+    <div class="feed-layout feed-layout--browse">
+      <nav class="breadcrumb-jiji"><a href="#/">Home</a> › <span>Events</span></nav>
+      <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="events-filter-open">${filtersOpenLabel}</button>
+      <div class="browse-layout browse-layout--jiji">
+        <aside class="browse-sidebar browse-sidebar--desktop">
+          <form id="events-filter-form" class="filter-panel filter-panel--jiji">
+            <h3 style="margin:0">Event filters</h3>
+            <label class="filter-panel__field"><span class="filter-panel__label">Sub-category</span>
+              <select name="esub"><option value="">All</option>${EVENT_SUBCATEGORIES.map((s) => `<option value="${esc(s)}" ${f.sub === s ? "selected" : ""}>${esc(s)}</option>`).join("")}</select>
+            </label>
+            <label class="filter-panel__field"><span class="filter-panel__label">City</span>
+              <select name="ecity"><option value="">All Hungary</option>${HUNGARIAN_LOCATIONS.filter((x) => x.value !== "all").map((x) => `<option value="${esc(x.label)}" ${f.city === x.label ? "selected" : ""}>${esc(x.label)}</option>`).join("")}</select>
+            </label>
+            <label class="filter-panel__field"><span class="filter-panel__label">Date range</span>
+              <select name="edate">
+                <option value="any" ${f.date === "any" ? "selected" : ""}>Any time</option>
+                <option value="weekend" ${f.date === "weekend" ? "selected" : ""}>This weekend</option>
+                <option value="week" ${f.date === "week" ? "selected" : ""}>This week</option>
+                <option value="month" ${f.date === "month" ? "selected" : ""}>This month</option>
+              </select>
+            </label>
+            <label class="filter-panel__check"><input type="checkbox" name="efree" value="1" ${f.free ? "checked" : ""} /> Free only</label>
+            <div class="filter-actions-row">
+              <button type="button" class="btn btn--ghost" id="events-filter-clear">Clear</button>
+              <button type="submit" class="btn btn--primary">Apply</button>
+            </div>
+          </form>
+        </aside>
+        <div class="browse-main">
+          <div class="sort-bar sort-bar--jiji">
+            <h1 class="feed-head__title" style="margin:0">🎉 Events in Hungary</h1>
+            <a class="btn btn--primary" href="#/post">Create event</a>
+          </div>
+          <div class="ad-grid--lc" id="events-grid">
+            ${rows.map((e) => `<article class="lc lc--grid event-card" role="link" tabindex="0" data-event-id="${esc(e.id)}">
+              <div class="lc__media"><img src="${esc(e.image)}" alt="" loading="lazy" /></div>
+              <div class="lc__body">
+                <p class="lc__price">${e.isFree ? "FREE" : `HUF ${esc(String(e.price || 0))}`}</p>
+                <h3 class="lc__title">${esc(e.title)}</h3>
+                <p class="lc__excerpt">📅 ${esc(eventDateFmt(e.dateTime))}</p>
+                <p class="lc__excerpt">📍 ${esc(e.city)} · ${esc(e.venue || "TBA")}</p>
+                <div class="lc__foot"><span>${esc(e.subCategory)}</span><span>👥 ${e.attendees.length} going</span></div>
+              </div>
+            </article>`).join("")}
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  const form = document.getElementById("events-filter-form");
+  const applyFilter = (sourceForm) => {
+    const fd = new FormData(sourceForm);
+    const q = new URLSearchParams(window.location.search);
+    ["esub", "ecity", "edate"].forEach((k) => {
+      const v = String(fd.get(k) || "").trim();
+      if (!v || (k === "edate" && v === "any")) q.delete(k);
+      else q.set(k, v);
+    });
+    if (fd.get("efree")) q.set("efree", "1");
+    else q.delete("efree");
+    window.history.replaceState(null, "", `${window.location.pathname}${q.toString() ? `?${q}` : ""}#/events`);
+    render();
+  };
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    applyFilter(form);
+  });
+  document.getElementById("events-filter-clear")?.addEventListener("click", () => {
+    window.history.replaceState(null, "", `${window.location.pathname}#/events`);
+    render();
+  });
+  appEl.querySelectorAll("[data-event-id]").forEach((el) => {
+    const go = () => setHash(`/event/${el.getAttribute("data-event-id")}`);
+    el.addEventListener("click", go);
+    el.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter" || ev.key === " ") {
+        ev.preventDefault();
+        go();
+      }
+    });
+  });
+  document.getElementById("events-filter-open")?.addEventListener("click", () => {
+    const sheet = document.getElementById("filter-sheet");
+    const body = document.getElementById("filter-sheet-body");
+    if (body) body.innerHTML = form.outerHTML;
+    const mobileForm = body?.querySelector("form");
+    mobileForm?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      applyFilter(mobileForm);
+      closeFilterSheet();
+    });
+    if (sheet) {
+      sheet.hidden = false;
+      sheet.setAttribute("aria-hidden", "false");
+    }
+  });
+};
+
+const renderEventDetail = async (eventId) => {
+  const appEl = mainShell();
+  if (!appEl) return;
+  const row = getAllEvents().find((x) => x.id === eventId);
+  if (!row) {
+    appEl.innerHTML = `<p>Event not found. <a href="#/events">Back to events</a></p>`;
+    return;
+  }
+  const user = getUser();
+  const userId = user?.id || ensureAnonEventUser();
+  const rsvpState = readJsonStore(EVENTS_RSVP_KEY, {});
+  const eventRsvp = rsvpState[eventId] || { going: [], maybe: [] };
+  const baseAttendees = [...row.attendees];
+  if (eventRsvp.going.includes(userId) && !baseAttendees.some((a) => a.id === userId)) {
+    baseAttendees.push({
+      id: userId,
+      name: user?.name || "You",
+      avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&q=80"
+    });
+  }
+
+  appEl.innerHTML = `
+    <nav class="breadcrumb-jiji"><a href="#/events">Events</a> › <span>${esc(row.title)}</span></nav>
+    <div class="detail-jiji-wrap">
+      <div class="detail-jiji-main">
+        <div class="detail-gallery__main"><img src="${esc(row.image)}" alt="" /></div>
+        <h1 style="margin-top:1rem">${esc(row.title)}</h1>
+        <p>${esc(row.description)}</p>
+        <p>📅 <strong>${esc(eventDateFmt(row.dateTime))}</strong> · ${esc(row.duration || "Duration TBA")}</p>
+        <p>📍 <strong>${esc(row.city)}</strong> · ${esc(row.venue)} · ${esc(row.address || "")}</p>
+        <p>Organiser: <strong>${esc(row.organizerName)}</strong></p>
+        <p><span class="pill">${esc(row.subCategory)}</span> <span class="pill">${row.isFree ? "FREE" : `PAID · HUF ${esc(String(row.price || 0))}`}</span></p>
+        <p class="muted">Contact preference: ${esc(row.contactPreference || "message via app")}</p>
+        <div class="site-footer__social">${(row.tags || []).map((t) => `<span class="filter-chip">${esc(t)}</span>`).join("")}</div>
+      </div>
+      <aside class="detail-jiji-aside">
+        <div class="detail-aside-card">
+          <p class="price-big">👥 ${baseAttendees.length} going</p>
+          <p class="muted small">Maybe: ${eventRsvp.maybe.length}</p>
+          <button class="btn btn--primary" style="width:100%;margin-bottom:0.5rem" id="event-going-btn">I'm Going</button>
+          <button class="btn btn--outline" style="width:100%;margin-bottom:0.5rem" id="event-maybe-btn">Maybe</button>
+          <button class="btn btn--ghost" style="width:100%;margin-bottom:0.5rem" id="event-share-btn">Share</button>
+          <button class="btn btn--ghost" style="width:100%" id="event-report-btn">Report event</button>
+          <div style="margin-top:0.8rem">${baseAttendees.slice(0, 8).map((a) => `<img src="${esc(a.avatar)}" alt="${esc(a.name)}" style="width:28px;height:28px;border-radius:50%;margin-right:4px" />`).join("")}</div>
+        </div>
+      </aside>
+    </div>
+  `;
+
+  const persist = (kind) => {
+    const all = readJsonStore(EVENTS_RSVP_KEY, {});
+    const cur = all[eventId] || { going: [], maybe: [] };
+    cur.going = cur.going.filter((x) => x !== userId);
+    cur.maybe = cur.maybe.filter((x) => x !== userId);
+    cur[kind].push(userId);
+    all[eventId] = cur;
+    writeJsonStore(EVENTS_RSVP_KEY, all);
+    render();
+  };
+  document.getElementById("event-going-btn")?.addEventListener("click", () => persist("going"));
+  document.getElementById("event-maybe-btn")?.addEventListener("click", () => persist("maybe"));
+  document.getElementById("event-share-btn")?.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      window.alert("Event link copied.");
+    } catch {
+      window.alert("Copy failed. You can copy the URL manually.");
+    }
+  });
+  document.getElementById("event-report-btn")?.addEventListener("click", () => {
+    window.alert("Thanks. The event report has been logged for moderation.");
+  });
+};
+
 const staticPageShell = (title, bodyHtml) => `
   <article class="stack" style="max-width:920px;margin:0 auto;padding:0 0 2rem">
     <h1 style="margin:0">${esc(title)}</h1>
@@ -1943,10 +2228,13 @@ const renderPost = async () => {
     return;
   }
 
-  const defaultCat = apiCategoryIdForSlug(CATEGORIES[0].slug);
+  const defaultCat = apiCategoryIdForSlug(ADS_CATEGORIES[0].slug);
   const postLocDefault =
     HUNGARIAN_LOCATIONS.find((r) => r.value === "budapest")?.label || "Budapest";
-  const subOpts = CATEGORIES.map(
+  const postCategories = CATEGORIES.map((c) =>
+    c.slug === EVENTS_CATEGORY ? { ...c, apiId: EVENTS_CATEGORY } : { ...c, apiId: apiCategoryIdForSlug(c.slug) }
+  );
+  const subOpts = ADS_CATEGORIES.map(
     (c) =>
       `<option value="${esc(apiCategoryIdForSlug(c.slug))}">${esc(c.label)} — General</option>`
   ).join("");
@@ -1969,8 +2257,8 @@ const renderPost = async () => {
       <label>
         Category
         <select name="categoryId" id="post-category" required>
-          ${CATEGORIES.map((c) => {
-            const apiId = apiCategoryIdForSlug(c.slug);
+          ${postCategories.map((c) => {
+            const apiId = c.apiId;
             return `<option value="${esc(apiId)}" ${apiId === defaultCat ? "selected" : ""}>${esc(c.label)}</option>`;
           }).join("")}
         </select>
@@ -1979,6 +2267,33 @@ const renderPost = async () => {
         Subcategory
         <select name="subcategoryId" id="post-subcategory">${subOpts}</select>
       </label>
+      <div id="event-fields" hidden>
+        <label>
+          Event sub-category
+          <select name="eventSubCategory">${EVENT_SUBCATEGORIES.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}</select>
+        </label>
+        <label>Date <input name="eventDate" type="date" /></label>
+        <label>Time <input name="eventTime" type="time" /></label>
+        <label>Duration <input name="eventDuration" type="text" placeholder="e.g. 3 hours" /></label>
+        <label>Venue / Address <input name="eventVenue" type="text" placeholder="Venue name or address" /></label>
+        <label>Cover photo URL <input name="eventCover" type="url" placeholder="https://images.unsplash.com/photo-..." /></label>
+        <label>Type
+          <select name="eventPriceType">
+            <option value="free">Free</option>
+            <option value="paid">Paid</option>
+          </select>
+        </label>
+        <label>Event price (HUF, if paid) <input name="eventPrice" type="number" min="0" step="1" /></label>
+        <label>Max attendees (optional) <input name="eventCap" type="number" min="1" step="1" placeholder="Unlimited if empty" /></label>
+        <label>Contact preference
+          <select name="eventContact">
+            <option value="message via app">Message via app</option>
+            <option value="show email">Show email</option>
+            <option value="show phone">Show phone</option>
+          </select>
+        </label>
+        <label>Tags (comma separated) <input name="eventTags" type="text" placeholder="English-speaking, beginners welcome" /></label>
+      </div>
       <label>
         Title (5+ characters)
         <input name="title" required minlength="5" placeholder="City center studio near metro" />
@@ -2029,12 +2344,22 @@ const renderPost = async () => {
   const catSelect = document.getElementById("post-category");
   const catFields = document.getElementById("post-cat-fields");
   const subSel = document.getElementById("post-subcategory");
+  const eventFields = document.getElementById("event-fields");
+  const conditionFs = document.querySelector("#post-form fieldset");
   catSelect?.addEventListener("change", () => {
-    catFields.innerHTML = categoryFieldHtml(catSelect.value);
-    if (subSel) {
-      subSel.value = catSelect.value;
+    const isEvent = catSelect.value === EVENTS_CATEGORY;
+    eventFields.hidden = !isEvent;
+    catFields.hidden = isEvent;
+    subSel.closest("label").hidden = isEvent;
+    conditionFs.hidden = isEvent;
+    if (!isEvent) {
+      catFields.innerHTML = categoryFieldHtml(catSelect.value);
+      if (subSel) {
+        subSel.value = catSelect.value;
+      }
     }
   });
+  catSelect?.dispatchEvent(new Event("change"));
 
   document.getElementById("post-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2045,6 +2370,7 @@ const renderPost = async () => {
       .split(/\r?\n/)
       .map((s) => s.trim())
       .filter(Boolean);
+    const isEvent = categoryId === EVENTS_CATEGORY;
     const condRaw = String(fd.get("condition") || "other");
     const condApi =
       condRaw === "new" ? "new" : condRaw === "used" ? "used" : "good";
@@ -2063,6 +2389,38 @@ const renderPost = async () => {
     const msg = document.getElementById("post-msg");
     msg.textContent = "";
     try {
+      if (isEvent) {
+        const date = String(fd.get("eventDate") || "").trim();
+        const time = String(fd.get("eventTime") || "19:00").trim();
+        if (!date) {
+          throw new Error("Event date is required.");
+        }
+        const eventRow = {
+          id: `ev-user-${Date.now()}`,
+          title: payload.title,
+          description: payload.description,
+          subCategory: String(fd.get("eventSubCategory") || EVENT_SUBCATEGORIES[0]),
+          dateTime: new Date(`${date}T${time}:00`).toISOString(),
+          duration: String(fd.get("eventDuration") || "").trim() || "2 hours",
+          city: payload.location || "Budapest",
+          venue: String(fd.get("eventVenue") || "").trim() || "TBA venue",
+          address: String(fd.get("eventVenue") || "").trim() || "TBA address",
+          image: String(fd.get("eventCover") || "").trim() || payload.images[0] || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=900&q=80",
+          isFree: String(fd.get("eventPriceType") || "free") !== "paid",
+          price: String(fd.get("eventPriceType") || "free") === "paid" ? Number(fd.get("eventPrice") || 0) : 0,
+          maxAttendees: fd.get("eventCap") ? Number(fd.get("eventCap")) : null,
+          contactPreference: String(fd.get("eventContact") || "message via app"),
+          tags: String(fd.get("eventTags") || "").split(",").map((s) => s.trim()).filter(Boolean),
+          organizerName: user.name || "Nuvelo member",
+          attendees: [{ id: user.id, name: user.name || "You", avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=120&q=80" }]
+        };
+        const custom = readJsonStore(EVENTS_STORE_KEY, []);
+        custom.push(eventRow);
+        writeJsonStore(EVENTS_STORE_KEY, custom);
+        msg.textContent = "Your event is live. Redirecting…";
+        setTimeout(() => setHash(`/event/${eventRow.id}`), 700);
+        return;
+      }
       const created = await createListing(payload, user.id);
       msg.textContent = "Your listing is live. Redirecting…";
       setTimeout(() => setHash(`/listing/${created.id}`), 800);
@@ -2121,6 +2479,14 @@ const render = async () => {
     }
     if (route.view === "post") {
       await renderPost();
+      return;
+    }
+    if (route.view === "events") {
+      await renderEventsList();
+      return;
+    }
+    if (route.view === "eventDetail") {
+      await renderEventDetail(route.id);
       return;
     }
     if (route.view === "static") {
