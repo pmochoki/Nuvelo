@@ -696,6 +696,19 @@ const parseBrowseParams = () => {
   };
 };
 
+const activeFilterCount = (f) => {
+  let n = 0;
+  if (f.categoryId) n++;
+  if (f.location) n++;
+  if (f.minPrice != null) n++;
+  if (f.maxPrice != null) n++;
+  if (f.priceBand) n++;
+  if (f.conditionMode && f.conditionMode !== "all") n++;
+  if (f.sellerFilter && f.sellerFilter !== "all") n++;
+  if (f.timeFilter && f.timeFilter !== "any") n++;
+  return n;
+};
+
 const filterByCondition = (listings, cnew, cused) => {
   if (cnew && cused) {
     return listings;
@@ -1238,6 +1251,8 @@ const renderList = async () => {
   const prb = filters.priceBand;
   const sell = filters.sellerFilter;
   const timeSel = filters.timeFilter;
+  const filterCount = activeFilterCount(filters);
+  const filterBtnLabel = filterCount > 0 ? `Filters (${filterCount})` : "Filters";
 
   const filterFieldsHtml = `
     <div class="filter-panel filter-panel--jiji">
@@ -1344,7 +1359,7 @@ const renderList = async () => {
       <div class="category-rail-wrap category-strip-wrap browse-cat-rail-mobile">
         <div class="category-strip" id="category-rail" role="tablist">${catChips}</div>
       </div>
-      <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="browse-filter-open">Filters</button>
+      <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="browse-filter-open">${filterBtnLabel}</button>
       ${
         listingsLoadFailed
           ? `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`

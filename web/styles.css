@@ -43,6 +43,7 @@ body {
     var(--purple-deep);
   color: var(--text);
   line-height: 1.5;
+  overflow-x: hidden;
 }
 
 a {
@@ -2085,8 +2086,8 @@ textarea {
 }
 
 .jiji-view-toggle button {
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 8px;
   border: 1px solid var(--purple-border);
   background: var(--purple-card);
@@ -2332,6 +2333,7 @@ textarea {
   width: 100%;
   justify-content: center;
   margin-bottom: 0.75rem;
+  min-height: 44px;
 }
 
 @media (min-width: 1024px) {
@@ -2483,6 +2485,29 @@ textarea {
   border: 1px solid var(--purple-border);
   display: flex;
   flex-direction: column;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  .filter-sheet__panel {
+    top: 0;
+    bottom: 0;
+    right: auto;
+    width: min(420px, 92vw);
+    max-height: none;
+    border-radius: 0 16px 16px 0;
+    animation: filter-sheet-in 0.2s ease-out;
+  }
+}
+
+@keyframes filter-sheet-in {
+  from {
+    transform: translateX(-12px);
+    opacity: 0.7;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 .filter-sheet__head {
@@ -2808,4 +2833,157 @@ textarea {
   -webkit-line-clamp: 4;
   -webkit-box-orient: vertical;
   overflow: hidden;
+}
+
+/* Global responsive overrides for mobile/tablet/desktop */
+@media (max-width: 639px) {
+  html {
+    font-size: 15px;
+  }
+
+  .main--jiji {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  .jiji-header__inner {
+    padding: 0.45rem 0.6rem;
+    gap: 0.45rem;
+  }
+
+  .jiji-header__brand .brand__logo {
+    width: 110px;
+    height: auto;
+  }
+
+  .jiji-header__search-host:not([hidden]) {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .jiji-header__search-q,
+  .jiji-header__search-form .loc-dd,
+  .jiji-header__search-btn {
+    flex: 1 1 100%;
+  }
+
+  .btn,
+  .jiji-header__text-link,
+  .btn--sell,
+  .nav-drawer__inner a,
+  .nav-drawer__signin,
+  .cat-chip {
+    min-height: 44px;
+  }
+
+  .jiji-home {
+    gap: 1rem;
+  }
+
+  .jiji-cat-list__scroll {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+    overflow: visible;
+    padding: 0.25rem 0.6rem 0.5rem;
+  }
+
+  .jiji-cat-row {
+    min-width: 0;
+    padding: 0.5rem 0.55rem;
+    border: 1px solid var(--purple-border);
+    background: var(--purple-surface);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .jiji-cat-row__thumb {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+  }
+
+  .jiji-cat-row__name {
+    font-size: 0.82rem;
+  }
+
+  .jiji-cat-row__chev {
+    display: none;
+  }
+
+  .ad-grid--lc[data-view="grid"] {
+    grid-template-columns: 1fr;
+  }
+
+  .ad-grid--lc[data-view="list"] .lc {
+    flex-direction: column;
+  }
+
+  .ad-grid--lc[data-view="list"] .lc__media {
+    width: 100%;
+    flex-basis: auto;
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  html {
+    font-size: 16px;
+  }
+
+  .main--jiji {
+    padding-left: 0.9rem;
+    padding-right: 0.9rem;
+  }
+
+  .jiji-header__search-host:not([hidden]) {
+    order: 3;
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .btn,
+  .jiji-header__text-link,
+  .btn--sell,
+  .cat-chip {
+    min-height: 44px;
+  }
+
+  .jiji-cat-list__scroll {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    overflow: visible;
+    padding: 0.25rem 0.75rem 0.5rem;
+  }
+
+  .jiji-cat-row {
+    min-width: 0;
+    padding: 0.55rem 0.6rem;
+    border: 1px solid var(--purple-border);
+    background: var(--purple-surface);
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .jiji-cat-row__chev {
+    display: none;
+  }
+}
+
+@media (min-width: 1024px) {
+  .jiji-cat-list__scroll {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 0.6rem;
+    overflow: visible;
+    padding: 0.25rem 0.75rem 0.75rem;
+  }
+
+  .jiji-home__sidebar .jiji-cat-list__scroll {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+    padding: 0;
+  }
 }
