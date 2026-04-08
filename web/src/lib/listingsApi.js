@@ -1,4 +1,13 @@
 import { supabase } from "./supabase.js";
+import {
+  getDemoListingById,
+  mergeListingsWithDemos
+} from "../data/demoListings.js";
+
+/** Set VITE_DEMO_LISTINGS=false in Vercel to hide sample ads in production. */
+function demosEnabled() {
+  return import.meta.env.VITE_DEMO_LISTINGS !== "false";
+}
 
 /** Escape % and _ for PostgREST ilike patterns */
 function escapeIlike(s) {
@@ -35,65 +44,88 @@ export function normalizeListingRow(row) {
 }
 
 export async function fetchListingsFromSupabase(params = {}) {
-  let query = supabase
-    .from("listings")
-    .select(
-      `
+  const { query: keyword, categoryId, location, minPrice, maxPrice } = params;
+
+  let real = [];
+  try {
+    let query = supabase
+      .from("listings")
+      .select(
+        `
         *,
         profiles (display_name, avatar_url, role, phone)
       `
-    )
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+      )
+      .eq("is_active", true)
+      .order("created_at", { ascending: false });
 
-  const { query: keyword, categoryId, location, minPrice, maxPrice } = params;
+    if (categoryId) {
+      query = query.eq("category", categoryId);
+    }
+    const loc = String(location || "").trim();
+    if (loc) {
+      query = query.ilike("location", `%${escapeIlike(loc)}%`);
+    }
+    const kw = String(keyword || "").trim();
+    if (kw) {
+      const k = escapeIlike(kw);
+      query = query.or(`title.ilike.%${k}%,description.ilike.%${k}%`);
+    }
+    if (minPrice != null && minPrice !== "" && !Number.isNaN(Number(minPrice))) {
+      query = query.gte("price", Number(minPrice));
+    }
+    if (maxPrice != null && maxPrice !== "" && !Number.isNaN(Number(maxPrice))) {
+      query = query.lte("price", Number(maxPrice));
+    }
 
-  if (categoryId) {
-    query = query.eq("category", categoryId);
-  }
-  const loc = String(location || "").trim();
-  if (loc) {
-    query = query.ilike("location", `%${escapeIlike(loc)}%`);
-  }
-  const kw = String(keyword || "").trim();
-  if (kw) {
-    const k = escapeIlike(kw);
-    query = query.or(`title.ilike.%${k}%,description.ilike.%${k}%`);
-  }
-  if (minPrice != null && minPrice !== "" && !Number.isNaN(Number(minPrice))) {
-    query = query.gte("price", Number(minPrice));
-  }
-  if (maxPrice != null && maxPrice !== "" && !Number.isNaN(Number(maxPrice))) {
-    query = query.lte("price", Number(maxPrice));
+    const { data, error } = await query;
+    if (error) {
+      throw error;
+    }
+    real = (data || []).map(normalizeListingRow);
+  } catch (e) {
+    console.error(e);
+    if (!demosEnabled()) {
+      throw e;
+    }
   }
 
-  const { data, error } = await query;
-  if (error) {
-    throw error;
+  if (!demosEnabled()) {
+    return real;
   }
-  return (data || []).map(normalizeListingRow);
+  return mergeListingsWithDemos(real, params);
 }
 
 export async function fetchListingFromSupabase(id) {
-  const { data, error } = await supabase
-    .from("listings")
-    .select(
-      `
+  try {
+    const { data, error } = await supabase
+      .from("listings")
+      .select(
+        `
         *,
         profiles (display_name, avatar_url, role, phone)
       `
-    )
-    .eq("id", id)
-    .eq("is_active", true)
-    .maybeSingle();
+      )
+      .eq("id", id)
+      .eq("is_active", true)
+      .maybeSingle();
 
-  if (error) {
-    throw error;
+    if (error) {
+      throw error;
+    }
+    if (data) {
+      return normalizeListingRow(data);
+    }
+  } catch (e) {
+    console.error(e);
+    if (!demosEnabled()) {
+      throw e;
+    }
   }
-  if (!data) {
+  if (!demosEnabled()) {
     return null;
   }
-  return normalizeListingRow(data);
+  return getDemoListingById(id);
 }
 
 export async function createListingInSupabase(formPayload, userId) {
