@@ -359,43 +359,143 @@ const locationRowsForMode = (mode) =>
     ? HUNGARIAN_LOCATIONS.filter((r) => r.value !== "all")
     : HUNGARIAN_LOCATIONS;
 
-const renderLocationListHtml = (root, searchQuery) => {
-  const list = root.querySelector("[data-loc-list]");
-  if (!list) {
+/** Shown first in the location modal (Jiji-style “POPULAR”). */
+const HUNGARY_POPULAR_VALUES = new Set([
+  "budapest",
+  "debrecen",
+  "szeged",
+  "miskolc",
+  "pecs",
+  "gyor"
+]);
+
+const locModalRowHtml = (r) =>
+  `<button type="button" class="loc-modal__row" role="option" data-loc-opt data-loc-value="${esc(r.value)}" data-loc-label="${esc(r.label)}">
+    <span class="loc-modal__row-main">
+      <span class="loc-modal__row-name">${esc(r.label)}</span>
+      <span class="loc-modal__row-meta">• Ads</span>
+    </span>
+    <span class="loc-modal__row-chev" aria-hidden="true">›</span>
+  </button>`;
+
+const letterBucket = (label) => {
+  const ch = String(label || "").trim().charAt(0);
+  if (!ch) {
+    return "#";
+  }
+  return ch.toLocaleUpperCase("hu");
+};
+
+const renderLocationModalContent = (root, searchQuery) => {
+  const body = root.querySelector("[data-loc-body]");
+  const titleEl = root.querySelector("[data-loc-modal-title]");
+  const metaEl = root.querySelector("[data-loc-modal-meta]");
+  if (!body) {
     return;
   }
+
   const mode = root.getAttribute("data-loc-mode") || "filter";
-  const q = String(searchQuery || "").trim().toLowerCase();
   const rows = locationRowsForMode(mode);
-  const filtered = !q
-    ? rows
-    : rows.filter(
-        (r) =>
-          r.label.toLowerCase().includes(q) || r.value.toLowerCase().includes(q)
-      );
-  list.innerHTML = filtered
-    .map(
+  const q = String(searchQuery || "").trim().toLowerCase();
+
+  if (q) {
+    const filtered = rows.filter(
       (r) =>
-        `<li role="none"><button type="button" role="option" class="loc-dd__opt" data-loc-opt data-loc-value="${esc(r.value)}" data-loc-label="${esc(r.label)}">${esc(r.label)}</button></li>`
-    )
-    .join("");
+        r.label.toLowerCase().includes(q) || r.value.toLowerCase().includes(q)
+    );
+    if (titleEl) {
+      titleEl.textContent = "Search results";
+    }
+    if (metaEl) {
+      metaEl.textContent = `${filtered.length} match${filtered.length !== 1 ? "es" : ""}`;
+    }
+    body.innerHTML =
+      filtered.length === 0
+        ? `<p class="loc-modal__empty muted">No cities match your search.</p>`
+        : `<div class="loc-modal__search-results">${filtered.map(locModalRowHtml).join("")}</div>`;
+    return;
+  }
+
+  if (titleEl) {
+    titleEl.textContent = mode === "post" ? "Choose city" : "All Hungary";
+  }
+  if (metaEl) {
+    metaEl.textContent = "Select a city or town";
+  }
+
+  const parts = [];
+
+  if (mode === "filter") {
+    const allRow = HUNGARIAN_LOCATIONS.find((r) => r.value === "all");
+    if (allRow) {
+      parts.push(
+        `<section class="loc-modal__group"><h3 class="loc-modal__group-h">Whole country</h3>${locModalRowHtml(allRow)}</section>`
+      );
+    }
+  }
+
+  const popular = rows.filter(
+    (r) => r.value !== "all" && HUNGARY_POPULAR_VALUES.has(r.value)
+  );
+  if (popular.length) {
+    const rail = `<span class="loc-modal__rail" aria-hidden="true">POPULAR</span>`;
+    const inner = popular.map(locModalRowHtml).join("");
+    parts.push(
+      `<section class="loc-modal__group loc-modal__group--with-rail">${rail}<div class="loc-modal__group-rows">${inner}</div></section>`
+    );
+  }
+
+  const rest = rows.filter(
+    (r) => r.value !== "all" && !HUNGARY_POPULAR_VALUES.has(r.value)
+  );
+  rest.sort((a, b) => a.label.localeCompare(b.label, "hu"));
+  const byLetter = new Map();
+  for (const r of rest) {
+    const L = letterBucket(r.label);
+    if (!byLetter.has(L)) {
+      byLetter.set(L, []);
+    }
+    byLetter.get(L).push(r);
+  }
+  const letters = [...byLetter.keys()].sort((a, b) => a.localeCompare(b, "hu"));
+  for (const L of letters) {
+    const list = byLetter.get(L);
+    const rail = `<span class="loc-modal__rail" aria-hidden="true">${esc(L)}</span>`;
+    const inner = list.map(locModalRowHtml).join("");
+    parts.push(
+      `<section class="loc-modal__group loc-modal__group--with-rail">${rail}<div class="loc-modal__group-rows">${inner}</div></section>`
+    );
+  }
+
+  body.innerHTML = `<div class="loc-modal__multicolumn">${parts.join("")}</div>`;
 };
+
+const LOC_MODAL_CLOSE_MS = 280;
 
 const closeLocationPanel = (root) => {
   if (!root) {
     return;
   }
-  const panel = root.querySelector("[data-loc-panel]");
+  const modal = root.querySelector("[data-loc-modal]");
   const btn = root.querySelector("[data-loc-btn]");
   const search = root.querySelector("[data-loc-search]");
   root.classList.remove("is-open");
-  if (panel) {
-    panel.hidden = true;
-  }
+  document.body.classList.remove("loc-modal-open");
   if (btn) {
     btn.setAttribute("aria-expanded", "false");
   }
-  if (search) {
+  if (modal) {
+    modal.classList.remove("is-visible");
+    clearTimeout(root._locModalCloseT);
+    root._locModalCloseT = setTimeout(() => {
+      modal.setAttribute("hidden", "");
+      modal.setAttribute("aria-hidden", "true");
+      if (search) {
+        search.value = "";
+      }
+      renderLocationModalContent(root, "");
+    }, LOC_MODAL_CLOSE_MS);
+  } else if (search) {
     search.value = "";
   }
 };
@@ -409,20 +509,28 @@ const openLocationPanel = (root) => {
       closeLocationPanel(el);
     }
   });
-  const panel = root.querySelector("[data-loc-panel]");
+  const modal = root.querySelector("[data-loc-modal]");
   const btn = root.querySelector("[data-loc-btn]");
   const search = root.querySelector("[data-loc-search]");
   root.classList.add("is-open");
-  if (panel) {
-    panel.hidden = false;
-  }
   if (btn) {
     btn.setAttribute("aria-expanded", "true");
   }
-  renderLocationListHtml(root, "");
-  if (search) {
-    search.value = "";
-    search.focus();
+  if (modal) {
+    clearTimeout(root._locModalCloseT);
+    modal.removeAttribute("hidden");
+    modal.setAttribute("aria-hidden", "false");
+    if (search) {
+      search.value = "";
+    }
+    renderLocationModalContent(root, "");
+    document.body.classList.add("loc-modal-open");
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        modal.classList.add("is-visible");
+        search?.focus();
+      });
+    });
   }
 };
 
@@ -493,10 +601,18 @@ const initLocationCombobox = (root) => {
   root.dataset.locInit = "1";
   const btn = root.querySelector("[data-loc-btn]");
   const search = root.querySelector("[data-loc-search]");
-  const list = root.querySelector("[data-loc-list]");
+  const body = root.querySelector("[data-loc-body]");
 
   root.addEventListener("click", (e) => {
     e.stopPropagation();
+  });
+
+  root.querySelectorAll("[data-loc-close]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      closeLocationPanel(root);
+    });
   });
 
   btn?.addEventListener("click", (e) => {
@@ -509,10 +625,10 @@ const initLocationCombobox = (root) => {
   });
 
   search?.addEventListener("input", () => {
-    renderLocationListHtml(root, search.value);
+    renderLocationModalContent(root, search.value);
   });
 
-  list?.addEventListener("click", (e) => {
+  body?.addEventListener("click", (e) => {
     const opt = e.target.closest("[data-loc-opt]");
     if (!opt) {
       return;
@@ -536,10 +652,23 @@ const buildLocationComboboxHtml = ({
   const wc = wrapClass ? `${wrapClass} ` : "";
   return `<div class="${wc}loc-dd" data-loc-combobox data-loc-mode="${esc(mode)}">
   <input type="hidden" name="${esc(fieldName)}" data-loc-hidden value="${esc(apiVal)}"${req} />
-  <button type="button" class="${btnClass}" data-loc-btn aria-haspopup="listbox" aria-expanded="false">${esc(btnText)}</button>
-  <div class="loc-dd__panel" data-loc-panel hidden>
-    <input type="search" class="loc-dd__search" data-loc-search placeholder="Search cities…" autocomplete="off" aria-label="Search cities" />
-    <ul class="loc-dd__list" role="listbox" data-loc-list></ul>
+  <button type="button" class="${btnClass}" data-loc-btn aria-haspopup="dialog" aria-expanded="false">${esc(btnText)}</button>
+  <div class="loc-modal" data-loc-modal hidden aria-hidden="true">
+    <div class="loc-modal__backdrop" data-loc-close tabindex="-1"></div>
+    <div class="loc-modal__dialog" role="dialog" aria-modal="true" aria-label="Choose location">
+      <div class="loc-modal__head">
+        <div>
+          <h2 class="loc-modal__title" data-loc-modal-title>All Hungary</h2>
+          <p class="loc-modal__meta" data-loc-modal-meta>Select a city or town</p>
+        </div>
+        <button type="button" class="loc-modal__x" data-loc-close aria-label="Close">×</button>
+      </div>
+      <div class="loc-modal__search-row">
+        <span class="loc-modal__search-icon" aria-hidden="true">⌕</span>
+        <input type="search" class="loc-modal__search" data-loc-search placeholder="Find city or town…" autocomplete="off" aria-label="Search cities" />
+      </div>
+      <div class="loc-modal__body" data-loc-body></div>
+    </div>
   </div>
 </div>`;
 };

@@ -67,22 +67,35 @@
                 type="button"
                 class="jiji-header__search-input loc-dd__btn"
                 data-loc-btn
-                aria-haspopup="listbox"
+                aria-haspopup="dialog"
                 aria-expanded="false"
                 aria-label="Location"
               >
                 All Hungary
               </button>
-              <div class="loc-dd__panel" data-loc-panel hidden>
-                <input
-                  type="search"
-                  class="loc-dd__search"
-                  data-loc-search
-                  placeholder="Search cities…"
-                  autocomplete="off"
-                  aria-label="Search cities"
-                />
-                <ul class="loc-dd__list" role="listbox" data-loc-list></ul>
+              <div class="loc-modal" data-loc-modal hidden aria-hidden="true">
+                <div class="loc-modal__backdrop" data-loc-close tabindex="-1"></div>
+                <div class="loc-modal__dialog" role="dialog" aria-modal="true" aria-label="Choose location">
+                  <div class="loc-modal__head">
+                    <div>
+                      <h2 class="loc-modal__title" data-loc-modal-title>All Hungary</h2>
+                      <p class="loc-modal__meta" data-loc-modal-meta>Select a city or town</p>
+                    </div>
+                    <button type="button" class="loc-modal__x" data-loc-close aria-label="Close">×</button>
+                  </div>
+                  <div class="loc-modal__search-row">
+                    <span class="loc-modal__search-icon" aria-hidden="true">⌕</span>
+                    <input
+                      type="search"
+                      class="loc-modal__search"
+                      data-loc-search
+                      placeholder="Find city or town…"
+                      autocomplete="off"
+                      aria-label="Search cities"
+                    />
+                  </div>
+                  <div class="loc-modal__body" data-loc-body></div>
+                </div>
               </div>
             </div>
             <button type="submit" class="btn btn--primary jiji-header__search-btn">Search</button>
