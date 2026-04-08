@@ -522,7 +522,8 @@ a:hover {
   }
 
   .jiji-header__actions {
-    margin-left: 0;
+    margin-left: auto;
+    flex-shrink: 0;
   }
 
   .jiji-header__search-host:not([hidden]) {
@@ -943,38 +944,30 @@ textarea {
   margin-top: 0.5rem;
 }
 
-/* Landing (home) — hero has main search */
+/* Landing (home) — hero has main search; use grid so auth stays top-right */
 .is-landing .jiji-header__search-host {
   display: none !important;
 }
 
 .is-landing .jiji-header__inner {
+  display: grid;
   grid-template-columns: auto 1fr auto;
+  align-items: center;
+}
+
+.is-landing .jiji-header__lead {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.is-landing .jiji-header__actions {
+  grid-column: 3;
+  justify-self: end;
+  margin-left: 0;
 }
 
 .is-landing .jiji-header__tagline {
   display: none;
-}
-
-@media (min-width: 1024px) {
-  .is-landing .jiji-header__inner {
-    grid-template-columns: auto 1fr auto;
-  }
-
-  .is-landing .jiji-header__tagline {
-    display: block;
-    grid-column: 2;
-    justify-self: center;
-  }
-
-  .is-landing .jiji-header__brand {
-    grid-column: 1;
-    justify-self: start;
-  }
-
-  .is-landing .jiji-header__actions {
-    grid-column: 3;
-  }
 }
 
 .landing {

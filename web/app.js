@@ -1086,7 +1086,7 @@ const renderList = async () => {
       browseListingsCache = { key: cacheKey, data: listings };
     }
   } catch (e) {
-    error = e.message || friendlyNetworkError(e);
+    error = friendlyNetworkError(e);
     browseListingsCache = { key: "", data: [] };
   }
 
@@ -1429,7 +1429,7 @@ const renderDetail = async (id) => {
   try {
     listing = await fetchListing(id);
   } catch (e) {
-    error = e.message || friendlyNetworkError(e);
+    error = friendlyNetworkError(e);
   }
   if (error) {
     appEl.innerHTML = `<div class="banner-error" role="alert">${esc(error)}</div>

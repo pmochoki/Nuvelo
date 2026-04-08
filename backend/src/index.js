@@ -21,10 +21,26 @@ const corsOrigins = process.env.CORS_ORIGINS
   ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean)
   : null;
 
+/** Always allow production site(s); browsers show "Failed to fetch" if origin is omitted from CORS. */
+const CORS_ALWAYS_ALLOW = new Set([
+  "https://nuvelo.one",
+  "https://www.nuvelo.one"
+]);
+
 app.use(
   cors(
     corsOrigins && corsOrigins.length
-      ? { origin: corsOrigins }
+      ? {
+          origin(origin, callback) {
+            if (!origin) {
+              return callback(null, true);
+            }
+            if (corsOrigins.includes(origin) || CORS_ALWAYS_ALLOW.has(origin)) {
+              return callback(null, true);
+            }
+            return callback(null, false);
+          }
+        }
       : { origin: true }
   )
 );
