@@ -1223,6 +1223,18 @@ const listingImageUrl = (listing) => {
   return "";
 };
 
+const syncLandingHeaderScroll = () => {
+  const header = document.querySelector(".site-header.jiji-header");
+  if (!header) {
+    return;
+  }
+  if (!document.body.classList.contains("is-landing")) {
+    header.classList.remove("is-scrolled");
+    return;
+  }
+  header.classList.toggle("is-scrolled", window.scrollY > 10);
+};
+
 const syncHeaderChrome = (route) => {
   const wrap = document.getElementById("header-search-wrap");
   if (wrap) {
@@ -1232,6 +1244,7 @@ const syncHeaderChrome = (route) => {
       wrap.setAttribute("aria-hidden", "true");
     }
   }
+  syncLandingHeaderScroll();
 };
 
 const countByCategory = (listings) => {
@@ -3131,6 +3144,13 @@ document.getElementById("header-search-form")?.addEventListener("submit", (e) =>
 });
 
 window.addEventListener("hashchange", render);
+window.addEventListener(
+  "scroll",
+  () => {
+    syncLandingHeaderScroll();
+  },
+  { passive: true }
+);
 document.getElementById("filter-sheet-close")?.addEventListener("click", closeFilterSheet);
 document.getElementById("filter-sheet-backdrop")?.addEventListener("click", closeFilterSheet);
 

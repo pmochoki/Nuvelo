@@ -1170,6 +1170,81 @@ textarea {
   display: none;
 }
 
+/* Landing: one purple block from top of viewport through hero search (no white header strip) */
+body.is-landing {
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(124, 58, 237, 0.22), transparent 55%),
+    linear-gradient(135deg, var(--purple) 0%, var(--purple-deep) 100%);
+}
+
+body.is-landing .site-header.jiji-header {
+  background: transparent;
+  border-bottom: none;
+  box-shadow: none;
+  transition:
+    background 0.2s ease,
+    backdrop-filter 0.2s ease,
+    border-color 0.2s ease;
+}
+
+body.is-landing .site-header.jiji-header.is-scrolled {
+  background: rgba(19, 16, 42, 0.88);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+body.is-landing .jiji-header__text-link {
+  color: var(--white);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+body.is-landing .jiji-header__text-link:hover {
+  color: var(--orange);
+  text-decoration: underline;
+}
+
+body.is-landing .jiji-header__chip {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: var(--white);
+}
+
+body.is-landing .nav-burger {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.25);
+  color: var(--white);
+}
+
+body.is-landing .nav-burger .nav-burger__line {
+  background: var(--white);
+}
+
+body.is-landing .nav-burger:hover {
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+body.is-landing .nav-burger:hover .nav-burger__line {
+  background: var(--orange);
+}
+
+body.is-landing .nav-drawer {
+  background: var(--purple-surface);
+  border-top-color: rgba(255, 255, 255, 0.08);
+}
+
+body.is-landing .jiji-hero {
+  background: transparent;
+  margin: 0;
+  padding: 0.5rem 1.25rem 2.5rem;
+  width: auto;
+  max-width: none;
+  position: relative;
+  left: auto;
+  right: auto;
+  margin-left: 0;
+  margin-right: 0;
+}
+
 .landing {
   display: flex;
   flex-direction: column;
