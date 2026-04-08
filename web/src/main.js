@@ -897,6 +897,13 @@ const parseHash = () => {
     const catId = CATEGORY_SLUGS[slug] || slug;
     return { view: "list", categorySlug: catId };
   }
+  if (
+    ["terms", "privacy", "cookies", "faq", "safety", "about", "contact"].includes(
+      parts[0]
+    )
+  ) {
+    return { view: "static", page: parts[0] };
+  }
   return { view: "landing" };
 };
 
@@ -1699,6 +1706,144 @@ const renderDetail = async (id) => {
   });
 };
 
+const staticPageShell = (title, bodyHtml) => `
+  <article class="stack" style="max-width:920px;margin:0 auto;padding:0 0 2rem">
+    <h1 style="margin:0">${esc(title)}</h1>
+    ${bodyHtml}
+  </article>
+`;
+
+const renderStaticPage = async (slug) => {
+  const appEl = mainShell();
+  if (!appEl) {
+    return;
+  }
+
+  const pages = {
+    terms: staticPageShell(
+      "Terms & Conditions",
+      `
+      <p>Welcome to Nuvelo. These Terms and Conditions govern access to and use of our marketplace where users can publish and discover listings for rentals, jobs, services, vehicles, electronics, furniture, fashion, and other legal categories in Hungary. By accessing Nuvelo, creating an account, posting a listing, or responding to a listing, you agree to comply with these terms in full. If you do not agree, you must not use the platform.</p>
+      <p>Nuvelo is a user-generated marketplace. We provide technical infrastructure to help buyers, sellers, tenants, landlords, job seekers, and service providers connect. Nuvelo is not a party to contracts concluded between users. Every user is responsible for verifying information, reviewing documents, and making independent decisions before any transaction. Any contract for sale, rental, employment, or service is solely between the users involved.</p>
+      <p>Users must provide accurate profile information, including a valid name and contact details. You are responsible for maintaining account security and for all actions taken under your account. You may not create accounts using false identities, impersonate others, or share accounts in a way that bypasses moderation. If you suspect unauthorized access, notify us immediately and update your credentials.</p>
+      <p>Listings must be lawful, accurate, and clearly described. You must include truthful pricing, location, and condition details. Misleading titles, bait-and-switch tactics, hidden fees, duplicate spam listings, or intentionally false category placement are prohibited. Listings must represent actual goods, properties, jobs, or services available in Hungary and must not attempt to redirect users to scams or unrelated external offers.</p>
+      <p>Prohibited content includes illegal goods, counterfeit products, weapons where forbidden by law, unsafe medical claims, discriminatory listings, fraudulent investment offers, phishing schemes, stolen property, explicit content involving minors, and anything that violates Hungarian or EU law. Nuvelo may remove content, suspend accounts, and cooperate with authorities when required by law or when user safety is at risk.</p>
+      <p>Users posting jobs must comply with labor law, including lawful working conditions, pay transparency where required, and non-discrimination obligations. Users posting rentals must have legal rights to lease the property and provide accurate information about terms, deposits, and utility obligations. Service providers must represent qualifications truthfully and must not claim licenses or certifications they do not hold.</p>
+      <p>Users must communicate respectfully. Harassment, threats, hate speech, extortion, and abuse are forbidden. You may not scrape user data, harvest email addresses, or use automated scripts to spam messages. Contact information obtained through Nuvelo may only be used for legitimate transaction communication connected to the listing. Reuse for unrelated marketing or bulk solicitation is prohibited.</p>
+      <p>Nuvelo may moderate listings before or after publication. Moderation actions can include requesting edits, limiting visibility, rejecting listings, or suspending accounts. Moderation decisions are based on safety, legal compliance, quality standards, and platform integrity. We are not obligated to publish every listing and we may prioritize user trust and legal obligations over listing visibility.</p>
+      <p>Fees and paid features, if offered, are disclosed in-app. Unless explicitly stated otherwise, standard listing and browsing functionality may be offered without charge during MVP periods. Any future paid products, such as promoted placement or premium tools, will be governed by separate pricing notices. Non-refundable rules may apply after a paid feature is delivered.</p>
+      <p>Nuvelo does not guarantee that users are truthful, that listings remain available, or that transactions will succeed. Platform availability may be interrupted due to maintenance, outages, third-party failures, or force majeure events. To the maximum extent permitted by law, Nuvelo disclaims implied warranties, including merchantability and fitness for a particular purpose. Use of the platform is at your own risk.</p>
+      <p>Limitation of liability: Nuvelo is not liable for indirect, incidental, or consequential damages, lost profits, loss of data, missed opportunities, or personal disputes arising from user interactions. Our total liability for direct damages related to your use of the service is limited to the amount paid by you to Nuvelo for paid features in the 12 months preceding the claim, or 20,000 HUF if no payment was made.</p>
+      <p>You agree to indemnify and hold Nuvelo harmless against claims, losses, and costs arising from your listings, your user content, your legal violations, or disputes with other users. This includes reasonable legal costs where permitted by law. Nuvelo may participate in dispute resolution evidence requests but is not obligated to mediate private contractual disagreements.</p>
+      <p>These terms may be updated to reflect legal changes, product updates, or safety requirements. Material changes will be published on this page with an updated effective date. Continued use after updates means acceptance of revised terms. If you disagree with a change, you must stop using the service and request account closure.</p>
+      <p>These terms are governed by applicable Hungarian law, without prejudice to mandatory EU consumer protections. Disputes should first be raised through Nuvelo support so we can attempt resolution in good faith. If unresolved, disputes may be submitted to competent courts in Hungary. If any clause is invalid, the remaining terms remain in force.</p>
+      <p><strong>Effective date:</strong> 8 April 2026. Contact: <a href="mailto:support@nuvelo.app">support@nuvelo.app</a></p>
+      `
+    ),
+    privacy: staticPageShell(
+      "Privacy Policy",
+      `
+      <p>Nuvelo respects your privacy and processes personal data in accordance with the EU General Data Protection Regulation (GDPR) and applicable Hungarian law. This Privacy Policy explains what data we collect, why we collect it, how we use it, and what rights you have. It applies to users browsing, posting listings, messaging sellers, and contacting support through Nuvelo.</p>
+      <p><strong>Data controller:</strong> Nuvelo Marketplace. For privacy requests, email <a href="mailto:privacy@nuvelo.app">privacy@nuvelo.app</a>. We process account and listing data to operate the marketplace, prevent abuse, and comply with legal obligations.</p>
+      <p><strong>Data we collect:</strong> account details (name, email, phone, role), listing details (title, description, category, price, location, images), communication metadata (message timestamps, moderation reports), technical information (IP address, browser type, device characteristics), and analytics/cookie data where consent applies. We do not intentionally collect special category data unless users include it in free-text fields.</p>
+      <p><strong>Legal bases:</strong> contract performance (providing marketplace functions), legitimate interests (fraud prevention, abuse detection, service security), consent (optional analytics/marketing cookies), and legal obligations (law-enforcement requests, tax/accounting where applicable).</p>
+      <p><strong>How we use data:</strong> creating and maintaining user accounts, publishing and ranking listings, filtering search results by location and category, enabling contact between users, preventing spam/scams, enforcing listing policies, and improving platform performance. We also use aggregated data to understand usage trends and prioritize product fixes.</p>
+      <p><strong>Retention:</strong> Account and listing records are retained while your account is active and for a limited period afterward to handle disputes, legal obligations, and fraud prevention. Logs and technical diagnostics are retained for shorter operational windows unless needed for security investigations. Where possible, data is anonymized when no longer required.</p>
+      <p><strong>Sharing:</strong> We share data only when necessary: with infrastructure providers (hosting, storage, monitoring), with support tooling vendors, and with legal authorities when required by law. We do not sell personal data. If service providers process data outside the EEA, we use appropriate safeguards such as Standard Contractual Clauses.</p>
+      <p><strong>Public data:</strong> Listing content is intentionally visible to other users and search engines depending on site indexing settings. Do not post sensitive personal information in listing descriptions, images, or chat messages. If you publish contact details in a listing, other users may store or reuse that information at their own discretion.</p>
+      <p><strong>Security:</strong> We apply technical and organizational measures such as transport encryption, access controls, monitoring, and moderation tools to protect user data. No internet service is completely secure; users should also protect their accounts by using strong passwords and being cautious with suspicious messages.</p>
+      <p><strong>Your GDPR rights:</strong> right of access, rectification, erasure, restriction, objection, and data portability, plus the right to withdraw consent for consent-based processing. You may also lodge a complaint with a supervisory authority, including the Hungarian Data Protection Authority (NAIH), if you believe your data rights were violated.</p>
+      <p><strong>Cookies and analytics:</strong> Nuvelo uses necessary cookies for essential operation and optional analytics cookies for product improvement. Consent is collected where required. You can control cookie preferences in your browser and via site controls where available. See our Cookie Policy for detailed cookie categories.</p>
+      <p><strong>Children:</strong> Nuvelo is not intended for children under 16. If we learn that personal data of a child was collected without valid authorization, we will remove it as required by law.</p>
+      <p><strong>Policy updates:</strong> We may update this Privacy Policy to reflect legal or service changes. Material updates will be posted with a revised effective date. Continued use after updates indicates acknowledgement of the new policy terms.</p>
+      <p><strong>Effective date:</strong> 8 April 2026. Privacy contact: <a href="mailto:privacy@nuvelo.app">privacy@nuvelo.app</a></p>
+      `
+    ),
+    cookies: staticPageShell(
+      "Cookie Policy",
+      `
+      <p>This Cookie Policy explains how Nuvelo uses cookies and similar technologies when you visit our website. Cookies are small text files stored on your device that help websites remember preferences, maintain sessions, and understand usage.</p>
+      <h2>Cookie categories we use</h2>
+      <p><strong>Necessary cookies:</strong> Required for core functionality such as routing, session continuity, and security controls. These cannot be disabled if you want the website to function properly.</p>
+      <p><strong>Analytics cookies:</strong> Help us understand which pages are useful, where users encounter errors, and how performance can be improved. We use aggregated metrics where possible.</p>
+      <p><strong>Marketing cookies:</strong> If enabled in future campaigns, these cookies may help measure ad effectiveness and show relevant promotions. We only use them with consent where required.</p>
+      <h2>Managing cookies</h2>
+      <p>You can control cookies through browser settings by blocking or deleting stored cookies. You can also use private browsing modes to reduce persistence. Blocking necessary cookies may break parts of the site.</p>
+      <p>For privacy requests related to cookies, contact <a href="mailto:privacy@nuvelo.app">privacy@nuvelo.app</a>.</p>
+      `
+    ),
+    faq: staticPageShell(
+      "Frequently Asked Questions",
+      `
+      <h2>General</h2>
+      <p><strong>1) How do I post an ad?</strong><br />Go to <code>#/post</code>, complete the required fields, add photos, and submit. Listings may be moderated before they appear publicly.</p>
+      <p><strong>2) Do I need an account to browse?</strong><br />No. Browsing is open. You need an account to publish listings and use direct contact features.</p>
+      <p><strong>3) How do I contact a seller?</strong><br />Open the listing page and use the available contact action. Always keep conversations on-platform when possible.</p>
+      <p><strong>4) Is posting free?</strong><br />Core posting is currently free during MVP. Paid promotion features may be introduced later.</p>
+      <p><strong>5) Why was my listing rejected?</strong><br />Common reasons include missing details, prohibited content, misleading titles, duplicate posts, or poor-quality images.</p>
+      <p><strong>6) How can I stay safe?</strong><br />Meet in public places, avoid prepayments, verify documents, and report suspicious users immediately.</p>
+      <p><strong>7) Can I edit or delete my listing?</strong><br />Yes. Use your account area or moderation request channels if direct editing is not yet enabled for your listing type.</p>
+      <p><strong>8) Why can’t I find my city in search?</strong><br />Use the location dropdown and check spelling/diacritics. Filters can hide results if min/max prices are too strict.</p>
+      <p><strong>9) How fast does moderation happen?</strong><br />Most listings are reviewed within one business day, but high-risk categories may take longer.</p>
+      <p><strong>10) How do I report fraud or abuse?</strong><br />Use the report action in listing/chat views or email <a href="mailto:support@nuvelo.app">support@nuvelo.app</a> with screenshots and links.</p>
+      `
+    ),
+    safety: staticPageShell(
+      "Safety Tips",
+      `
+      <p>Nuvelo is built for trusted local trading, but every online marketplace requires caution. Use these practical guidelines for safer buying and selling.</p>
+      <h2>For buyers</h2>
+      <p>Meet sellers in busy public places, ideally during daytime. Inspect the item carefully before payment. Ask for receipts, serial numbers, and ownership proof for high-value goods. Be careful with offers that are far below market value.</p>
+      <p>Never send advance payment to unknown sellers, especially via irreversible channels. Prefer secure, traceable payment methods and avoid sharing unnecessary personal data.</p>
+      <h2>For sellers</h2>
+      <p>Use clear listing photos, accurate descriptions, and realistic prices to reduce misunderstandings. Meet buyers in safe places and do not hand over goods before receiving full payment. For rentals, verify tenant identity and use written agreements.</p>
+      <h2>For jobs and services</h2>
+      <p>Employers should provide clear role terms and lawful work conditions. Candidates should verify company details before sharing sensitive documents. Service providers should state qualifications honestly and avoid taking large upfront payments without contracts.</p>
+      <h2>Report suspicious behavior</h2>
+      <p>If you notice fake profiles, phishing links, pressure tactics, or requests to move off-platform immediately, stop communication and report the user. Fast reporting helps protect everyone.</p>
+      `
+    ),
+    about: staticPageShell(
+      "About Nuvelo",
+      `
+      <p>Nuvelo is a classifieds marketplace built for Hungary’s international community. We help expats and locals connect around real everyday needs: finding rentals, posting jobs, buying and selling goods, and offering trusted services.</p>
+      <p>Our mission is to make local discovery simpler, safer, and more transparent for people living and working across languages and cultures in Hungary.</p>
+      <p>We focus on practical marketplace tools, clear listings, moderation standards, and a mobile-friendly experience that works on both desktop and phone.</p>
+      <p>Contact: <a href="mailto:support@nuvelo.app">support@nuvelo.app</a></p>
+      `
+    ),
+    contact: staticPageShell(
+      "Contact Us",
+      `
+      <p>If you need support, have a moderation question, or want to report an issue, contact us using the form below.</p>
+      <form id="contact-form" class="stack" style="max-width:640px">
+        <label>Name<input name="name" required placeholder="Your full name" /></label>
+        <label>Email<input name="email" type="email" required placeholder="you@example.com" /></label>
+        <label>Message<textarea name="message" required rows="6" placeholder="How can we help?"></textarea></label>
+        <div><button type="submit" class="btn btn--primary">Send message</button></div>
+        <p id="contact-msg" class="muted"></p>
+      </form>
+      <p>Support email: <a href="mailto:support@nuvelo.app">support@nuvelo.app</a></p>
+      `
+    )
+  };
+
+  appEl.innerHTML =
+    pages[slug] || staticPageShell("Page not found", `<p>We could not find that page. <a href="#/">Return home</a>.</p>`);
+
+  if (slug === "contact") {
+    document.getElementById("contact-form")?.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const msg = document.getElementById("contact-msg");
+      if (msg) {
+        msg.textContent =
+          "Thanks. Your message has been queued for support review. We typically reply within 1 business day.";
+      }
+      e.target.reset();
+    });
+  }
+};
+
 const categoryFieldHtml = (categoryId) => {
   if (categoryId === "vehicles") {
     return `
@@ -1961,6 +2106,10 @@ const render = async () => {
     }
     if (route.view === "post") {
       await renderPost();
+      return;
+    }
+    if (route.view === "static") {
+      await renderStaticPage(route.page);
       return;
     }
     await renderList();

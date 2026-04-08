@@ -1,289 +1,167 @@
+import { HUNGARIAN_LOCATIONS } from "./hungarianLocations.js";
+
 /**
- * Static demo listings for UI / integration tests.
+ * Static demo listings for UI/integration tests.
  * Disable with VITE_DEMO_LISTINGS=false (Vercel env + redeploy).
  */
 
-const img = (seed) => `https://picsum.photos/seed/nuvelo-${seed}/800/600`;
-
-/** Normalized listing shape (same as normalizeListingRow output) */
-export const DEMO_LISTINGS = [
+const DEMO_TEMPLATES = [
   {
-    id: "a1000000-0000-4000-8000-000000000001",
-    userId: "d0000000-0000-4000-8000-000000000001",
+    key: "rentals",
     categoryId: "rentals",
-    title: "Bright 2-room flat near Keleti — long-term",
+    title: "Furnished studio near city center",
     description:
-      "Fully furnished two-bedroom apartment, fourth floor with lift. Bills excluded. Available from May. International students welcome. Minimum 6 months.",
-    price: 245000,
-    currency: "HUF",
+      "Bright apartment with washing machine, fast Wi-Fi, and low utility costs. Landlord speaks English and supports expat paperwork.",
+    image: "https://images.unsplash.com/photo-1493666438817-866a91353ca9?w=800&q=80",
+    price: 195000,
     condition: "used",
-    location: "Budapest, District VIII",
-    images: [img("r1")],
-    categoryFields: { type: "apartment", bedrooms: 2, bathrooms: 1, area: 58 },
-    createdAt: "2026-04-07T09:15:00.000Z",
-    updatedAt: "2026-04-07T09:15:00.000Z",
-    featured: true,
-    isFeatured: true,
-    viewCount: 412,
-    views: 412,
-    sellerName: "Anna M.",
-    sellerVerified: false,
-    enterprise: false
+    fields: { type: "studio", bedrooms: 1, bathrooms: 1, area: 34 }
   },
   {
-    id: "a1000000-0000-4000-8000-000000000002",
-    userId: "d0000000-0000-4000-8000-000000000002",
+    key: "jobs",
     categoryId: "jobs",
-    title: "English-speaking barista — downtown café",
+    title: "Customer support specialist (English)",
     description:
-      "Morning shifts, friendly team, training provided. Hungarian not required; work permit required. Send a short intro and availability.",
-    price: 450000,
-    currency: "HUF",
+      "International team, hybrid schedule, and onboarding support for newcomers. Prior helpdesk experience is a plus.",
+    image: "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?w=800&q=80",
+    price: 620000,
     condition: "other",
-    location: "Budapest, District V",
-    images: [img("j1")],
-    categoryFields: { role: "Barista", contractType: "full-time" },
-    createdAt: "2026-04-06T14:30:00.000Z",
-    updatedAt: "2026-04-06T14:30:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 289,
-    views: 289,
-    sellerName: "River Roast Kft.",
-    sellerVerified: true,
-    enterprise: true
+    fields: { role: "Customer Support", contractType: "full-time" }
   },
   {
-    id: "a1000000-0000-4000-8000-000000000003",
-    userId: "d0000000-0000-4000-8000-000000000003",
+    key: "services",
     categoryId: "services",
-    title: "Certified electrician — same-week slots",
+    title: "Home cleaning service (weekly slots)",
     description:
-      "Installations, fault finding, new outlets. Insured. English & Hungarian. Debrecen and surrounding area.",
-    price: 12000,
-    currency: "HUF",
-    condition: "used",
-    location: "Debrecen",
-    images: [img("s1")],
-    categoryFields: { serviceType: "Electrical" },
-    createdAt: "2026-04-05T11:00:00.000Z",
-    updatedAt: "2026-04-05T11:00:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 156,
-    views: 156,
-    sellerName: "Zsolt K.",
-    sellerVerified: false,
-    enterprise: false
+      "Trusted cleaner with references from expat families. Supplies available on request, invoicing possible for companies.",
+    image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80",
+    price: 14000,
+    condition: "other",
+    fields: { serviceType: "Home cleaning" }
   },
   {
-    id: "a1000000-0000-4000-8000-000000000004",
-    userId: "d0000000-0000-4000-8000-000000000004",
+    key: "goods-items",
     categoryId: "clothes",
-    title: "Winter coat — North Face, size M, like new",
+    title: "Dyson air purifier in excellent condition",
     description:
-      "Worn twice. Original tags available. Pickup in Szeged or ship at buyer cost. Perfect for Hungarian winters.",
-    price: 42000,
-    currency: "HUF",
-    condition: "new",
-    location: "Szeged",
-    images: [img("c1"), img("c1b")],
-    categoryFields: {},
-    createdAt: "2026-04-04T16:45:00.000Z",
-    updatedAt: "2026-04-04T16:45:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 98,
-    views: 98,
-    sellerName: "Chris P.",
-    sellerVerified: false,
-    enterprise: false
-  },
-  {
-    id: "a1000000-0000-4000-8000-000000000005",
-    userId: "d0000000-0000-4000-8000-000000000005",
-    categoryId: "vehicles",
-    title: "2016 VW Golf — well maintained, full service history",
-    description:
-      "Petrol, manual, 118k km. New tyres 2025. Climate control, parking sensors. Reason for sale: relocating.",
-    price: 3850000,
-    currency: "HUF",
-    condition: "used",
-    location: "Győr",
-    images: [img("v1"), img("v2")],
-    categoryFields: { make: "Volkswagen", model: "Golf", year: 2016 },
-    createdAt: "2026-04-03T10:20:00.000Z",
-    updatedAt: "2026-04-03T10:20:00.000Z",
-    featured: true,
-    isFeatured: true,
-    viewCount: 601,
-    views: 601,
-    sellerName: "Márton T.",
-    sellerVerified: false,
-    enterprise: false
-  },
-  {
-    id: "a1000000-0000-4000-8000-000000000006",
-    userId: "d0000000-0000-4000-8000-000000000006",
-    categoryId: "electronics",
-    title: 'MacBook Air M2 13" — 256 GB, battery 96%',
-    description:
-      "Space grey, Hungarian keyboard layout. No repairs. Box and charger included. Meet in person at WestEnd or Andrássy.",
-    price: 329000,
-    currency: "HUF",
-    condition: "used",
-    location: "Budapest, District VI",
-    images: [img("e1")],
-    categoryFields: { brand: "Apple", model: "MacBook Air M2" },
-    createdAt: "2026-04-02T08:00:00.000Z",
-    updatedAt: "2026-04-02T08:00:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 512,
-    views: 512,
-    sellerName: "Eszter L.",
-    sellerVerified: true,
-    enterprise: false
-  },
-  {
-    id: "a1000000-0000-4000-8000-000000000007",
-    userId: "d0000000-0000-4000-8000-000000000007",
-    categoryId: "electronics",
-    title: "Sony WH-1000XM5 noise cancelling headphones",
-    description:
-      "Barely used, all accessories. Great for open-office or flights. Cash or Revolut on pickup in Pécs.",
+      "Perfect for apartments with pets or allergies. Filter recently replaced and works quietly during night mode.",
+    image: "https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80",
     price: 89000,
-    currency: "HUF",
-    condition: "new",
-    location: "Pécs",
-    images: [img("e2")],
-    categoryFields: { brand: "Sony", model: "WH-1000XM5" },
-    createdAt: "2026-04-01T19:10:00.000Z",
-    updatedAt: "2026-04-01T19:10:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 203,
-    views: 203,
-    sellerName: "Balázs R.",
-    sellerVerified: false,
-    enterprise: false
-  },
-  {
-    id: "a1000000-0000-4000-8000-000000000008",
-    userId: "d0000000-0000-4000-8000-000000000008",
-    categoryId: "rentals",
-    title: "Room in shared flat — Corvin quarter, quiet housemates",
-    description:
-      "One private room in a 3-bed flat. Shared kitchen and bath. 2 minutes to metro. Ideal for students or young professionals.",
-    price: 185000,
-    currency: "HUF",
     condition: "used",
-    location: "Budapest, District IX",
-    images: [img("r2")],
-    categoryFields: { type: "room", bedrooms: 1, bathrooms: 1, area: 12 },
-    createdAt: "2026-03-30T12:00:00.000Z",
-    updatedAt: "2026-03-30T12:00:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 377,
-    views: 377,
-    sellerName: "Shared Living BP",
-    sellerVerified: false,
-    enterprise: false
+    fields: {}
   },
   {
-    id: "a1000000-0000-4000-8000-000000000009",
-    userId: "d0000000-0000-4000-8000-000000000009",
-    categoryId: "jobs",
-    title: "Part-time nanny — afternoons, English preferred",
+    key: "vehicles",
+    categoryId: "vehicles",
+    title: "2017 VW Golf 1.4 TSI, full service history",
     description:
-      "Two kids (4 and 7). Pickup from kindergarten twice a week. District XII. References required.",
-    price: 2200,
-    currency: "HUF",
-    condition: "other",
-    location: "Budapest, District XII",
-    images: [img("j2")],
-    categoryFields: { role: "Nanny", contractType: "part-time" },
-    createdAt: "2026-03-29T07:30:00.000Z",
-    updatedAt: "2026-03-29T07:30:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 144,
-    views: 144,
-    sellerName: "Family K.",
-    sellerVerified: false,
-    enterprise: false
-  },
-  {
-    id: "a1000000-0000-4000-8000-00000000000a",
-    userId: "d0000000-0000-4000-8000-00000000000a",
-    categoryId: "real-estate",
-    title: "Commercial unit — suitable for small office or studio",
-    description:
-      "Ground floor, street front, 45 m². Previously a design studio. Flexible lease terms. Viewing on weekends.",
-    price: null,
-    currency: "HUF",
+      "Reliable city and highway car with valid technical inspection, winter tires included, and documented maintenance records.",
+    image: "https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=800&q=80",
+    price: 4190000,
     condition: "used",
-    location: "Miskolc",
-    images: [img("re1")],
-    categoryFields: { type: "commercial", bedrooms: 0, bathrooms: 1, area: 45 },
-    createdAt: "2026-03-28T15:45:00.000Z",
-    updatedAt: "2026-03-28T15:45:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 88,
-    views: 88,
-    sellerName: "Horizon Properties",
-    sellerVerified: true,
-    enterprise: true
+    fields: { make: "Volkswagen", model: "Golf", year: 2017 }
   },
   {
-    id: "a1000000-0000-4000-8000-00000000000b",
-    userId: "d0000000-0000-4000-8000-00000000000b",
-    categoryId: "services",
-    title: "Hungarian ↔ English translation — certified available",
+    key: "electronics",
+    categoryId: "electronics",
+    title: "iPhone 14, 128GB, factory unlocked",
     description:
-      "Contracts, CVs, university documents. Fast turnaround. 10+ years experience. Remote or in-person in Veszprém.",
-    price: 8000,
-    currency: "HUF",
-    condition: "other",
-    location: "Veszprém",
-    images: [img("s2")],
-    categoryFields: { serviceType: "Translation" },
-    createdAt: "2026-03-27T09:00:00.000Z",
-    updatedAt: "2026-03-27T09:00:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 67,
-    views: 67,
-    sellerName: "TranslatePro",
-    sellerVerified: false,
-    enterprise: false
+      "Battery health above 90%, no cracks, original box and cable included. Great option for students and remote workers.",
+    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80",
+    price: 249000,
+    condition: "used",
+    fields: { brand: "Apple", model: "iPhone 14" }
   },
   {
-    id: "a1000000-0000-4000-8000-00000000000c",
-    userId: "d0000000-0000-4000-8000-00000000000c",
+    key: "furniture-home",
+    categoryId: "electronics",
+    title: "Solid oak dining table with 4 chairs",
+    description:
+      "Sturdy table set for small apartments, easy to transport in two parts. Minor wear on the tabletop edge.",
+    image: "https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=800&q=80",
+    price: 125000,
+    condition: "used",
+    fields: { brand: "HomeCraft", model: "Oak Set" }
+  },
+  {
+    key: "fashion",
     categoryId: "clothes",
-    title: "Kids’ bike 20” — serviced, ready to ride",
+    title: "Zara trench coat, beige, size M",
     description:
-      "Outgrown but in great shape. Helmet included. Meet near Balatonfüred marina.",
-    price: 28000,
-    currency: "HUF",
+      "Classic spring/autumn coat worn only a few times. Clean, smoke-free home, pickup near tram lines.",
+    image: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80",
+    price: 32000,
+    condition: "new",
+    fields: {}
+  },
+  {
+    key: "babies-kids",
+    categoryId: "clothes",
+    title: "Baby stroller with rain cover and cup holder",
+    description:
+      "Smooth wheels and compact fold. Perfect for city walking and public transport around Hungary.",
+    image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=800&q=80",
+    price: 74000,
     condition: "used",
-    location: "Balatonfüred",
-    images: [img("k1")],
-    categoryFields: {},
-    createdAt: "2026-03-26T13:20:00.000Z",
-    updatedAt: "2026-03-26T13:20:00.000Z",
-    featured: false,
-    isFeatured: false,
-    viewCount: 45,
-    views: 45,
-    sellerName: "Petra N.",
-    sellerVerified: false,
-    enterprise: false
+    fields: {}
+  },
+  {
+    key: "other",
+    categoryId: "real-estate",
+    title: "Private Hungarian language tutoring (A1-B2)",
+    description:
+      "Personalized lessons for expats: everyday situations, job interviews, and bureaucracy vocabulary with practical exercises.",
+    image: "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&q=80",
+    price: 8500,
+    condition: "other",
+    fields: { type: "service", bedrooms: 0, bathrooms: 0, area: 0 }
+  },
+  {
+    key: "vehicles-2",
+    categoryId: "vehicles",
+    title: "2018 Toyota Yaris Hybrid, low mileage",
+    description:
+      "Automatic hybrid ideal for Budapest traffic, recently serviced, and economical fuel consumption in daily commute.",
+    image: "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=800&q=80",
+    price: 5390000,
+    condition: "used",
+    fields: { make: "Toyota", model: "Yaris Hybrid", year: 2018 }
   }
 ];
+
+const locations = HUNGARIAN_LOCATIONS.filter((x) => x.value !== "all");
+
+const buildListing = (idx, city, template) => {
+  const createdTs = Date.now() - idx * 3600_000;
+  return {
+    id: `demo-${String(idx + 1).padStart(4, "0")}`,
+    userId: `demo-user-${String((idx % 35) + 1).padStart(3, "0")}`,
+    categoryId: template.categoryId,
+    title: `${template.title} — ${city.label}`,
+    description: `${template.description} Location: ${city.label}.`,
+    price: template.price + ((idx % 7) - 3) * 3500,
+    currency: "HUF",
+    condition: template.condition,
+    location: city.label,
+    images: [template.image],
+    categoryFields: template.fields,
+    createdAt: new Date(createdTs).toISOString(),
+    updatedAt: new Date(createdTs).toISOString(),
+    featured: idx % 19 === 0,
+    isFeatured: idx % 19 === 0,
+    viewCount: 45 + (idx % 30) * 11,
+    views: 45 + (idx % 30) * 11,
+    sellerName: `Nuvelo Demo Seller ${idx + 1}`,
+    sellerVerified: idx % 3 === 0,
+    enterprise: idx % 5 === 0
+  };
+};
+
+export const DEMO_LISTINGS = locations.flatMap((city, i) => {
+  const t1 = DEMO_TEMPLATES[(i * 2) % DEMO_TEMPLATES.length];
+  const t2 = DEMO_TEMPLATES[(i * 2 + 1) % DEMO_TEMPLATES.length];
+  return [buildListing(i * 2, city, t1), buildListing(i * 2 + 1, city, t2)];
+});
 
 const byId = new Map(DEMO_LISTINGS.map((l) => [l.id, l]));
 
