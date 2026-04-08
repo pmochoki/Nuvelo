@@ -120,13 +120,15 @@ a:hover {
 
 .jiji-header__search-form {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.35rem;
   width: 100%;
+  min-width: 0;
 }
 
 .jiji-header__search-input {
-  flex: 1 1 120px;
   min-height: 40px;
   padding: 0.45rem 0.75rem;
   border-radius: 8px;
@@ -137,25 +139,46 @@ a:hover {
 }
 
 .jiji-header__search-q {
-  flex: 2 1 180px;
+  flex: 1 1 0%;
+  min-width: 0;
 }
 
 .jiji-header__search-btn {
+  flex-shrink: 0;
   min-height: 40px;
   border-radius: 8px;
 }
 
+/* DOM order is keyword → location → submit; display as location → keyword → submit */
 .jiji-header__search-form .loc-dd {
-  flex: 1 1 120px;
+  flex: 0 0 auto;
+  width: auto;
   min-width: 0;
+  max-width: min(240px, 38%);
+  order: 1;
+  border-right: 1px solid var(--purple-border);
+  padding-right: 0.35rem;
+  margin-right: 0.1rem;
+}
+
+.jiji-header__search-form .jiji-header__search-q {
+  order: 2;
+}
+
+.jiji-header__search-form .jiji-header__search-btn {
+  order: 3;
 }
 
 .jiji-header__search-form .loc-dd__btn {
   width: 100%;
+  max-width: 100%;
   text-align: left;
   cursor: pointer;
   position: relative;
   padding-right: 2rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .jiji-header__search-form .loc-dd__btn::after {
@@ -1865,19 +1888,26 @@ body.is-landing .jiji-hero {
 
 .jiji-hero__search {
   display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
   background: var(--white);
   border-radius: 12px;
   padding: 0.35rem;
-  gap: 0.25rem;
+  gap: 0;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
 .jiji-hero__loc-wrap {
   flex: 0 0 42%;
   min-width: 140px;
+  max-width: 42%;
   position: relative;
+  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
 .jiji-hero__loc-btn {
@@ -1893,6 +1923,9 @@ body.is-landing .jiji-hero {
   font-weight: 600;
   text-align: left;
   cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .jiji-hero__loc-wrap::after {
@@ -1916,7 +1949,7 @@ body.is-landing .jiji-hero {
 }
 
 .jiji-hero__q-wrap {
-  flex: 1 1 200px;
+  flex: 1 1 0%;
   display: flex;
   align-items: stretch;
   min-width: 0;
@@ -2999,12 +3032,88 @@ body.is-landing .jiji-hero {
     order: 3;
     flex: 1 1 100%;
     max-width: none;
+    min-width: 0;
   }
 
-  .jiji-header__search-q,
-  .jiji-header__search-form .loc-dd,
+  .jiji-header__search-form {
+    gap: 0.25rem;
+  }
+
+  .jiji-header__search-form .loc-dd {
+    flex: 0 0 auto;
+    max-width: 110px;
+    width: 110px;
+    border-right-color: rgba(255, 255, 255, 0.12);
+  }
+
+  .jiji-header__search-form .loc-dd__btn {
+    min-height: 44px;
+    padding: 10px 8px;
+    padding-right: 1.5rem;
+    font-size: 13px;
+    border-radius: 8px;
+  }
+
+  .jiji-header__search-q {
+    flex: 1 1 0%;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+
   .jiji-header__search-btn {
-    flex: 1 1 100%;
+    flex: 0 0 44px;
+    width: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding-left: 0;
+    padding-right: 0;
+    border-radius: 10px;
+  }
+
+  .jiji-hero__search {
+    width: calc(100% - 32px);
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 4px;
+    align-items: center;
+  }
+
+  .jiji-hero__loc-wrap {
+    flex: 0 0 110px;
+    width: 110px;
+    max-width: 110px;
+    min-width: 0;
+  }
+
+  .jiji-hero__loc-btn {
+    min-height: 44px;
+    height: 44px;
+    padding: 10px 8px;
+    padding-right: 1.5rem;
+    font-size: 13px;
+  }
+
+  .jiji-hero__q-wrap {
+    flex: 1 1 0%;
+    min-width: 0;
+  }
+
+  .jiji-hero__q {
+    padding: 10px 8px;
+    font-size: 14px;
+  }
+
+  .jiji-hero__submit {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    margin: 4px;
+    border-radius: 10px;
+    font-size: 1.1rem;
   }
 
   .btn,
