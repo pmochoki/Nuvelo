@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const fs = require("fs");
 const path = require("path");
 const {
   categories,
@@ -45,6 +46,12 @@ app.use(
   )
 );
 app.use(express.json());
+
+/**
+ * All JSON API routes (mounted at "/" and "/api" so /listings and /api/listings both work).
+ * This is Express — not Django. Start command: npm run start (see render.yaml).
+ */
+const api = express.Router();
 
 const generateId = (prefix) =>
   `${prefix}_${Math.random().toString(36).slice(2, 10)}`;
@@ -120,15 +127,29 @@ const isBlocked = (blockerId, blockedId) =>
     (entry) => entry.blockerId === blockerId && entry.blockedId === blockedId
   );
 
-app.get("/health", (req, res) => {
+const sendHealth = (req, res) => {
   res.json({ status: "ok" });
+};
+
+api.get("/health", sendHealth);
+api.get("/health/", sendHealth);
+
+api.get("/", (req, res) => {
+  res.json({
+    service: "nuvelo-backend",
+    runtime: "express",
+    health: "/health",
+    listings: "/listings",
+    listingsUnderApi: "/api/listings",
+    categories: "/categories"
+  });
 });
 
-app.get("/categories", (req, res) => {
+api.get("/categories", (req, res) => {
   res.json(categories);
 });
 
-app.post("/auth/login", (req, res) => {
+api.post("/auth/login", (req, res) => {
   const { name, role, email, phone, otp } = req.body || {};
   if (!name || !role) {
     return res.status(400).json({ error: "name and role are required." });
@@ -183,7 +204,7 @@ app.post("/auth/login", (req, res) => {
   res.json(toUserProfile(user));
 });
 
-app.get("/users/:id", (req, res) => {
+api.get("/users/:id", (req, res) => {
   const user = findUser(req.params.id);
   if (!user) {
     return res.status(404).json({ error: "User not found." });
@@ -191,7 +212,7 @@ app.get("/users/:id", (req, res) => {
   res.json(toUserProfile(user));
 });
 
-app.put("/users/:id/verification", (req, res) => {
+api.put("/users/:id/verification", (req, res) => {
   const { emailVerified, phoneVerified } = req.body || {};
   const user = findUser(req.params.id);
   if (!user) {
@@ -206,7 +227,7 @@ app.put("/users/:id/verification", (req, res) => {
   res.json(toUserProfile(user));
 });
 
-app.get("/listings", (req, res) => {
+api.get("/listings", (req, res) => {
   const {
     query,
     categoryId,
@@ -261,7 +282,7 @@ app.get("/listings", (req, res) => {
   res.json(filtered.map(enrichListing));
 });
 
-app.get("/listings/:id", (req, res) => {
+api.get("/listings/:id", (req, res) => {
   const listing = listings.find((item) => item.id === req.params.id);
   if (!listing) {
     return res.status(404).json({ error: "Listing not found" });
@@ -276,7 +297,7 @@ app.get("/listings/:id", (req, res) => {
   res.json(enrichListing(listing));
 });
 
-app.post("/listings", (req, res) => {
+api.post("/listings", (req, res) => {
   const payload = req.body || {};
   const limit = isRateLimited(payload.userId, "listings");
   if (limit.limited) {
@@ -312,7 +333,7 @@ app.post("/listings", (req, res) => {
   res.status(201).json(enrichListing(newListing));
 });
 
-app.put("/listings/:id", (req, res) => {
+api.put("/listings/:id", (req, res) => {
   const listing = listings.find((item) => item.id === req.params.id);
   if (!listing) {
     return res.status(404).json({ error: "Listing not found" });
@@ -326,7 +347,7 @@ app.put("/listings/:id", (req, res) => {
   res.json(enrichListing(listing));
 });
 
-app.delete("/listings/:id", (req, res) => {
+api.delete("/listings/:id", (req, res) => {
   const index = listings.findIndex((item) => item.id === req.params.id);
   if (index === -1) {
     return res.status(404).json({ error: "Listing not found" });
@@ -335,7 +356,7 @@ app.delete("/listings/:id", (req, res) => {
   res.status(204).end();
 });
 
-app.post("/conversations", (req, res) => {
+api.post("/conversations", (req, res) => {
   const { listingId, buyerId, sellerId } = req.body || {};
   if (!listingId || !buyerId || !sellerId) {
     return res.status(400).json({ error: "Missing conversation fields." });
@@ -354,7 +375,7 @@ app.post("/conversations", (req, res) => {
   res.status(201).json(conversation);
 });
 
-app.get("/conversations", (req, res) => {
+api.get("/conversations", (req, res) => {
   const { userId } = req.query;
   if (!userId) {
     return res.status(400).json({ error: "userId is required." });
@@ -365,12 +386,12 @@ app.get("/conversations", (req, res) => {
   res.json(result);
 });
 
-app.get("/conversations/:id/messages", (req, res) => {
+api.get("/conversations/:id/messages", (req, res) => {
   const result = messages.filter((msg) => msg.conversationId === req.params.id);
   res.json(result);
 });
 
-app.post("/conversations/:id/messages", (req, res) => {
+api.post("/conversations/:id/messages", (req, res) => {
   const { senderId, text } = req.body || {};
   if (!senderId || !text) {
     return res.status(400).json({ error: "senderId and text are required." });
@@ -413,7 +434,7 @@ app.post("/conversations/:id/messages", (req, res) => {
   res.status(201).json(message);
 });
 
-app.post("/conversations/:id/mark-read", (req, res) => {
+api.post("/conversations/:id/mark-read", (req, res) => {
   const { userId } = req.body || {};
   if (!userId) {
     return res.status(400).json({ error: "userId is required." });
@@ -436,7 +457,7 @@ app.post("/conversations/:id/mark-read", (req, res) => {
   res.json({ updatedCount: updated.length });
 });
 
-app.post("/reports", (req, res) => {
+api.post("/reports", (req, res) => {
   const { type, targetId, reason, reporterId } = req.body || {};
   if (!type || !targetId || !reason || !reporterId) {
     return res.status(400).json({ error: "Missing report fields." });
@@ -469,7 +490,7 @@ app.post("/reports", (req, res) => {
   res.status(201).json(report);
 });
 
-app.post("/blocks", (req, res) => {
+api.post("/blocks", (req, res) => {
   const { blockerId, blockedId } = req.body || {};
   if (!blockerId || !blockedId) {
     return res.status(400).json({ error: "Missing block fields." });
@@ -487,7 +508,7 @@ app.post("/blocks", (req, res) => {
   res.status(201).json(block);
 });
 
-app.get("/blocks", (req, res) => {
+api.get("/blocks", (req, res) => {
   const { userId } = req.query;
   if (!userId) {
     return res.status(400).json({ error: "userId is required." });
@@ -495,7 +516,7 @@ app.get("/blocks", (req, res) => {
   res.json(blocks.filter((block) => block.blockerId === userId));
 });
 
-app.post("/favorites", (req, res) => {
+api.post("/favorites", (req, res) => {
   const { userId, listingId } = req.body || {};
   if (!userId || !listingId) {
     return res.status(400).json({ error: "Missing favorite fields." });
@@ -516,7 +537,7 @@ app.post("/favorites", (req, res) => {
   res.status(201).json(favorite);
 });
 
-app.delete("/favorites", (req, res) => {
+api.delete("/favorites", (req, res) => {
   const { userId, listingId } = req.body || {};
   if (!userId || !listingId) {
     return res.status(400).json({ error: "Missing favorite fields." });
@@ -531,7 +552,7 @@ app.delete("/favorites", (req, res) => {
   res.status(204).end();
 });
 
-app.get("/favorites", (req, res) => {
+api.get("/favorites", (req, res) => {
   const { userId } = req.query;
   if (!userId) {
     return res.status(400).json({ error: "userId is required." });
@@ -539,7 +560,7 @@ app.get("/favorites", (req, res) => {
   res.json(favorites.filter((fav) => fav.userId === userId));
 });
 
-app.post("/saved-searches", (req, res) => {
+api.post("/saved-searches", (req, res) => {
   const { userId, query, categoryId, location, minPrice, maxPrice } =
     req.body || {};
   if (!userId) {
@@ -559,7 +580,7 @@ app.post("/saved-searches", (req, res) => {
   res.status(201).json(saved);
 });
 
-app.get("/saved-searches", (req, res) => {
+api.get("/saved-searches", (req, res) => {
   const { userId } = req.query;
   if (!userId) {
     return res.status(400).json({ error: "userId is required." });
@@ -567,7 +588,7 @@ app.get("/saved-searches", (req, res) => {
   res.json(savedSearches.filter((search) => search.userId === userId));
 });
 
-app.delete("/saved-searches/:id", (req, res) => {
+api.delete("/saved-searches/:id", (req, res) => {
   const index = savedSearches.findIndex((item) => item.id === req.params.id);
   if (index === -1) {
     return res.status(404).json({ error: "Saved search not found." });
@@ -576,11 +597,11 @@ app.delete("/saved-searches/:id", (req, res) => {
   res.status(204).end();
 });
 
-app.get("/admin/reports", (req, res) => {
+api.get("/admin/reports", (req, res) => {
   res.json(reports);
 });
 
-app.post("/admin/reports/:id/resolve", (req, res) => {
+api.post("/admin/reports/:id/resolve", (req, res) => {
   const report = reports.find((item) => item.id === req.params.id);
   if (!report) {
     return res.status(404).json({ error: "Report not found." });
@@ -589,7 +610,7 @@ app.post("/admin/reports/:id/resolve", (req, res) => {
   res.json(report);
 });
 
-app.get("/admin/listings", (req, res) => {
+api.get("/admin/listings", (req, res) => {
   const { status } = req.query;
   const result = status
     ? listings.filter((listing) => listing.status === status)
@@ -597,7 +618,7 @@ app.get("/admin/listings", (req, res) => {
   res.json(result);
 });
 
-app.post("/admin/listings/:id/status", (req, res) => {
+api.post("/admin/listings/:id/status", (req, res) => {
   const { status } = req.body || {};
   const listing = listings.find((item) => item.id === req.params.id);
   if (!listing) {
@@ -607,7 +628,7 @@ app.post("/admin/listings/:id/status", (req, res) => {
   res.json(listing);
 });
 
-app.post("/admin/ban-user", (req, res) => {
+api.post("/admin/ban-user", (req, res) => {
   const { userId, banned } = req.body || {};
   const user = findUser(userId);
   if (!user) {
@@ -617,11 +638,11 @@ app.post("/admin/ban-user", (req, res) => {
   res.json(user);
 });
 
-app.get("/admin/categories", (req, res) => {
+api.get("/admin/categories", (req, res) => {
   res.json(categories);
 });
 
-app.post("/admin/categories", (req, res) => {
+api.post("/admin/categories", (req, res) => {
   const { id, name } = req.body || {};
   if (!id || !name) {
     return res.status(400).json({ error: "id and name are required." });
@@ -634,7 +655,7 @@ app.post("/admin/categories", (req, res) => {
   res.status(201).json(category);
 });
 
-app.put("/admin/categories/:id", (req, res) => {
+api.put("/admin/categories/:id", (req, res) => {
   const { name } = req.body || {};
   const category = categories.find((item) => item.id === req.params.id);
   if (!category) {
@@ -647,7 +668,7 @@ app.put("/admin/categories/:id", (req, res) => {
   res.json(category);
 });
 
-app.get("/admin/metrics", (req, res) => {
+api.get("/admin/metrics", (req, res) => {
   const since = Date.now() - 24 * 60 * 60 * 1000;
   const openReports = reports.filter((report) => report.status === "open").length;
   const pendingListings = listings.filter(
@@ -671,10 +692,25 @@ app.get("/admin/metrics", (req, res) => {
   });
 });
 
-app.use(express.static(path.join(__dirname, "../../web")));
-app.use("/admin", express.static(path.join(__dirname, "../../admin-ui")));
+app.use(api);
+app.use("/api", api);
+
+const webStatic = path.join(__dirname, "../../web");
+const adminStatic = path.join(__dirname, "../../admin-ui");
+app.use(express.static(webStatic));
+app.use("/admin", express.static(adminStatic));
+
+app.use((req, res) => {
+  res.status(404).json({
+    error: "Not found",
+    message:
+      "Nuvelo API is Node/Express (not Django). Try GET /health, GET /listings, or GET /api/listings. There is no /api/ Django router.",
+    path: req.originalUrl.split("?")[0]
+  });
+});
 
 const port = process.env.PORT || 4000;
 app.listen(port, () => {
   console.log(`API server listening on ${port}`);
+  console.log(`Static web: ${webStatic} (exists=${fs.existsSync(webStatic)})`);
 });

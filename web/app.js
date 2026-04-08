@@ -44,6 +44,10 @@ const friendlyNetworkError = (err) => {
   return msg || "Something went wrong. Please try again.";
 };
 
+/** Shown when listings cannot be loaded; never surface raw fetch() errors in the UI. */
+const LISTINGS_UNAVAILABLE_MSG =
+  "Listings are loading, please try again shortly.";
+
 /** Helps with cold starts on free hosting (e.g. Render spin-up). */
 const fetchWithRetry = async (url, init = {}, attempts = 2) => {
   let lastErr;
@@ -922,10 +926,12 @@ const buildListingCardEl = (listing, opts = {}) => {
 
 const renderLanding = async () => {
   let listings = [];
+  let listingsFetchFailed = false;
   try {
     listings = await fetchListings({});
   } catch {
     listings = [];
+    listingsFetchFailed = true;
   }
   const counts = countByCategory(listings);
   const viewMode = getListViewMode();
@@ -1001,6 +1007,11 @@ const renderLanding = async () => {
                 <button type="button" id="home-view-list" aria-pressed="${viewMode === "list"}" title="List">☰</button>
               </div>
             </div>
+            ${
+              listingsFetchFailed
+                ? `<p class="muted small browse-listings-soft-msg" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`
+                : ""
+            }
             <div class="ad-grid--lc" id="home-listing-grid" data-view="${viewMode}"></div>
           </section>
         </div>
@@ -1245,7 +1256,11 @@ const renderList = async () => {
         <div class="category-strip" id="category-rail" role="tablist">${catChips}</div>
       </div>
       <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="browse-filter-open">Filters</button>
-      ${error ? `<div class="banner-error" role="alert">${esc(error)}</div>` : ""}
+      ${
+        error
+          ? `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`
+          : ""
+      }
       <div class="browse-layout browse-layout--jiji">
         <aside class="browse-sidebar browse-sidebar--desktop" aria-label="Filters">
           <form id="sidebar-filter-form" class="browse-filter-form">${filterFieldsHtml}</form>

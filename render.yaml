@@ -1,5 +1,7 @@
 # Blueprint: link repo, ensure Web Service root directory is `backend`.
+# Stack: Node + Express (NOT Django). Start command must be npm run start — do NOT use gunicorn.
 # Live check: GET https://<your-service>.onrender.com/health → {"status":"ok"}
+# Listings: GET /listings or GET /api/listings (both work).
 # If curl shows `x-render-routing: no-server`, the service is missing or suspended — resume/create it in the Render dashboard.
 services:
   - type: web
