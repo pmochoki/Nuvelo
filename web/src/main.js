@@ -41,7 +41,7 @@ const CATEGORY_SLUGS = {
   other: "real-estate"
 };
 
-const appEl = document.getElementById("app");
+const mainShell = () => document.getElementById("app");
 const authBtn = document.getElementById("auth-btn");
 const userChip = document.getElementById("user-chip");
 const loginModal = document.getElementById("login-modal");
@@ -59,21 +59,27 @@ const syncAuthFromSession = async (session) => {
   let name = u.user_metadata?.display_name || u.email?.split("@")[0] || "User";
   let role = u.user_metadata?.role || "buyer";
   let phone = u.user_metadata?.phone || "";
-  const { data: prof } = await supabase
-    .from("profiles")
-    .select("display_name, role, phone")
-    .eq("id", u.id)
-    .maybeSingle();
-  if (prof) {
-    if (prof.display_name) {
-      name = prof.display_name;
+  try {
+    const { data: prof, error } = await supabase
+      .from("profiles")
+      .select("display_name, role, phone")
+      .eq("id", u.id)
+      .maybeSingle();
+    if (error) {
+      console.error(error);
+    } else if (prof) {
+      if (prof.display_name) {
+        name = prof.display_name;
+      }
+      if (prof.role) {
+        role = prof.role;
+      }
+      if (prof.phone) {
+        phone = prof.phone;
+      }
     }
-    if (prof.role) {
-      role = prof.role;
-    }
-    if (prof.phone) {
-      phone = prof.phone;
-    }
+  } catch (e) {
+    console.error(e);
   }
   cachedUser = { id: u.id, name, role, email: u.email || "", phone };
   updateAuthUi();
@@ -1050,6 +1056,10 @@ const buildListingCardEl = (listing, opts = {}) => {
 };
 
 const renderLanding = async () => {
+  const appEl = mainShell();
+  if (!appEl) {
+    return;
+  }
   let listings = [];
   try {
     listings = await fetchListings({});
@@ -1188,6 +1198,10 @@ const renderLanding = async () => {
 };
 
 const renderList = async () => {
+  const appEl = mainShell();
+  if (!appEl) {
+    return;
+  }
   const routeInfo = parseHash();
   const filters = parseBrowseParams();
   if (routeInfo.categorySlug) {
@@ -1568,6 +1582,10 @@ function closeFilterSheet() {
 }
 
 const renderDetail = async (id) => {
+  const appEl = mainShell();
+  if (!appEl) {
+    return;
+  }
   let listing = null;
   let loadFailed = false;
   try {
@@ -1802,6 +1820,10 @@ const buildCategoryFields = (categoryId, fd) => {
 };
 
 const renderPost = async () => {
+  const appEl = mainShell();
+  if (!appEl) {
+    return;
+  }
   const user = getUser();
   if (!user) {
     appEl.innerHTML = `
@@ -1970,7 +1992,11 @@ const render = async () => {
   document.body.classList.toggle("is-landing", route.view === "landing");
   syncHeaderChrome(route);
   if (route.view === "landing") {
-    renderLanding();
+    await renderLanding();
+    return;
+  }
+  const appEl = mainShell();
+  if (!appEl) {
     return;
   }
   appEl.innerHTML = `
@@ -2120,13 +2146,27 @@ syncLocationCombobox(
 );
 
 supabase.auth.onAuthStateChange((_event, session) => {
-  void syncAuthFromSession(session);
+  void (async () => {
+    try {
+      await syncAuthFromSession(session);
+    } catch (e) {
+      console.error(e);
+    }
+    await render().catch((e) => console.error(e));
+  })();
 });
 
+void render().catch((e) => console.error(e));
+
 void (async () => {
-  const {
-    data: { session }
-  } = await supabase.auth.getSession();
-  await syncAuthFromSession(session);
-  render();
-})();
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error(error);
+    }
+    await syncAuthFromSession(data?.session ?? null);
+  } catch (e) {
+    console.error(e);
+  }
+  await render();
+})().catch((e) => console.error(e));
