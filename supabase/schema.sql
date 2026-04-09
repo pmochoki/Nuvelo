@@ -129,3 +129,5 @@ $$;
 create trigger on_listing_updated
   before update on public.listings
   for each row execute function public.handle_updated_at();
+
+-- In-app messaging (1:1 per listing + pair): run supabase/messaging.sql after this file.

@@ -47,86 +47,54 @@ function formatShortTime(iso) {
   });
 }
 
-/** Mock chat threads — Hungary marketplace; at least 2 with unread > 0 */
-export const MOCK_MESSAGE_THREADS = [
-  {
-    id: "mock-dog",
-    name: "Krisztina M.",
-    listingTitle: "Dog walking — Újbuda, flexible hours",
-    thumb: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=120&h=120&fit=crop&q=80",
-    preview: "Is this still available for next week?",
-    dateLabel: "8 Apr",
-    unread: 2,
-    spam: false,
-    messages: [
-      { from: "them", text: "Hi! Is this still available for next week?", time: "14:02" },
-      { from: "me", text: "Yes, I’m free Tue–Thu afternoons.", time: "14:18" },
-      { from: "them", text: "Perfect — could we meet near Kosztolányi tér?", time: "14:20" }
-    ]
-  },
-  {
-    id: "mock-flat",
-    name: "András T.",
-    listingTitle: "2 BR apartment · near Nyugati",
-    thumb: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=120&h=120&fit=crop&q=80",
-    preview: "Can we schedule a viewing on Saturday morning?",
-    dateLabel: "7 Apr",
-    unread: 0,
-    spam: false,
-    messages: [
-      { from: "them", text: "Can we schedule a viewing on Saturday morning?", time: "10:05" },
-      { from: "me", text: "Saturday works — 10:30?", time: "10:12" },
-      { from: "them", text: "Yes, see you at the building entrance.", time: "10:14" }
-    ]
-  },
-  {
-    id: "mock-car",
-    name: "Péter K.",
-    listingTitle: "VW Golf 7 — low mileage, HUF negotiable",
-    thumb: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=120&h=120&fit=crop&q=80",
-    preview: "Still interested if the service book is complete.",
-    dateLabel: "6 Apr",
-    unread: 1,
-    spam: false,
-    messages: [
-      { from: "them", text: "Still interested if the service book is complete.", time: "18:40" },
-      { from: "me", text: "Full VW history, two keys. Want photos of the underside?", time: "18:55" }
-    ]
-  },
-  {
-    id: "mock-bike",
-    name: "Anna L.",
-    listingTitle: "City bike 28″ — lights included",
-    thumb: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=120&h=120&fit=crop&q=80",
-    preview: "I can pick it up tomorrow — what time works?",
-    dateLabel: "5 Apr",
-    unread: 0,
-    spam: false,
-    messages: [
-      { from: "them", text: "I can pick it up tomorrow — what time works?", time: "19:12" },
-      { from: "me", text: "After 17:00 near Blaha Lujza tér works for me.", time: "19:30" }
-    ]
-  },
-  {
-    id: "mock-spam",
-    name: "Promo Deals",
-    listingTitle: "WIN IPHONE CLICK HERE!!!",
-    thumb: "",
-    preview: "Congratulations! Claim your prize now…",
-    dateLabel: "3 Apr",
-    unread: 0,
-    spam: true,
-    messages: [{ from: "them", text: "Congratulations! Claim your prize now…", time: "08:00" }]
+/** @param {string} [iso] */
+function formatMsgTime(iso) {
+  if (!iso) {
+    return "";
   }
-];
-
-/** Sum of unread counts for nav badge (demo) */
-export function getMockUnreadMessageTotal() {
-  return MOCK_MESSAGE_THREADS.filter((t) => !t.spam).reduce((sum, t) => sum + (t.unread || 0), 0);
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return "";
+  }
+  return d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
 }
 
-export function getMockUnreadThreadCount() {
-  return MOCK_MESSAGE_THREADS.filter((t) => !t.spam && t.unread > 0).length;
+/**
+ * Thread row for the messages list (server-backed threads use this shape).
+ * @param {object} t
+ * @param {string} t.id
+ * @param {string} t.name
+ * @param {string} t.listingTitle
+ * @param {string} [t.thumb]
+ * @param {string} t.preview
+ * @param {string} t.dateLabel
+ * @param {number} [t.unread]
+ * @param {boolean} [t.spam]
+ */
+export function buildMessageThreadRowHtml(t) {
+  const thumb = t.thumb
+    ? `<img src="${esc(t.thumb)}" alt="" width="56" height="56" loading="lazy" />`
+    : `<div class="msg-row__ph" aria-hidden="true"></div>`;
+  const unread = t.unread || 0;
+  const badge =
+    unread > 0
+      ? `<span class="msg-row__unread-badge" aria-label="${unread} unread">${esc(unread > 9 ? "9+" : String(unread))}</span>`
+      : "";
+  return `
+    <button type="button" class="msg-row${unread ? " msg-row--unread" : ""}" data-thread-id="${esc(t.id)}" data-thread-spam="${t.spam ? "1" : ""}">
+      <div class="msg-row__thumb">${thumb}</div>
+      <div class="msg-row__body">
+        <div class="msg-row__top">
+          <span class="msg-row__name">${esc(t.name)}</span>
+          <time class="msg-row__date" datetime="">${esc(t.dateLabel)}</time>
+        </div>
+        <p class="msg-row__listing">${esc(t.listingTitle)}</p>
+        <div class="msg-row__bottom">
+          <span class="msg-row__preview">${esc(t.preview)}</span>
+          ${badge}
+        </div>
+      </div>
+    </button>`;
 }
 
 const MOCK_NOTIFICATIONS = [
@@ -338,40 +306,9 @@ export function renderProfileSidebar(user, section) {
 }
 
 function renderMessagesLayout() {
-  const unreadThreads = getMockUnreadThreadCount();
-  const threads = MOCK_MESSAGE_THREADS.filter((t) => !t.spam);
-  const spamThreads = MOCK_MESSAGE_THREADS.filter((t) => t.spam);
-
-  const threadRow = (t) => {
-    const thumb = t.thumb
-      ? `<img src="${esc(t.thumb)}" alt="" width="56" height="56" loading="lazy" />`
-      : `<div class="msg-row__ph" aria-hidden="true"></div>`;
-    const badge =
-      t.unread > 0
-        ? `<span class="msg-row__unread-badge" aria-label="${t.unread} unread">${esc(t.unread > 9 ? "9+" : String(t.unread))}</span>`
-        : "";
-    return `
-    <button type="button" class="msg-row${t.unread ? " msg-row--unread" : ""}" data-thread-id="${esc(t.id)}" data-thread-spam="${t.spam ? "1" : ""}">
-      <div class="msg-row__thumb">${thumb}</div>
-      <div class="msg-row__body">
-        <div class="msg-row__top">
-          <span class="msg-row__name">${esc(t.name)}</span>
-          <time class="msg-row__date" datetime="">${esc(t.dateLabel)}</time>
-        </div>
-        <p class="msg-row__listing">${esc(t.listingTitle)}</p>
-        <div class="msg-row__bottom">
-          <span class="msg-row__preview">${esc(t.preview)}</span>
-          ${badge}
-        </div>
-      </div>
-    </button>`;
-  };
-
-  const listHtml = threads.map(threadRow).join("");
-  const spamHtml = spamThreads.map(threadRow).join("");
-
   return `
     <div class="messages-jiji" data-messages-root>
+      <p class="muted small" data-msg-banner hidden style="margin:0 0 0.75rem"></p>
       <div class="messages-jiji__left" data-msg-list-column>
         <h2 class="messages-jiji__title">My messages</h2>
         <label class="messages-jiji__search-wrap">
@@ -380,12 +317,12 @@ function renderMessagesLayout() {
         </label>
         <div class="messages-jiji__tabs" role="tablist" data-msg-tabs>
           <button type="button" class="messages-jiji__tab is-active" role="tab" aria-selected="true" data-msg-tab="all">All</button>
-          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">Unread (${unreadThreads})</button>
-          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">Spam (${spamThreads.length})</button>
+          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">Unread (0)</button>
+          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">Spam (0)</button>
         </div>
-        <div class="messages-jiji__list" data-msg-list-all role="list">${listHtml}</div>
-        <div class="messages-jiji__list" data-msg-list-unread hidden role="list">${threads.filter((t) => t.unread > 0).map(threadRow).join("")}</div>
-        <div class="messages-jiji__list" data-msg-list-spam hidden role="list">${spamHtml}</div>
+        <div class="messages-jiji__list" data-msg-list-all role="list"></div>
+        <div class="messages-jiji__list" data-msg-list-unread hidden role="list"></div>
+        <div class="messages-jiji__list" data-msg-list-spam hidden role="list"></div>
       </div>
       <div class="messages-jiji__right" data-msg-pane>
         <div class="messages-jiji__empty" data-msg-empty>
@@ -397,36 +334,42 @@ function renderMessagesLayout() {
     </div>`;
 }
 
-function renderChatPanel(threadId) {
-  const t = MOCK_MESSAGE_THREADS.find((x) => x.id === threadId);
-  if (!t) {
-    return "";
-  }
-  const bubbles = (t.messages || [])
+/**
+ * @param {object} thread — display fields for header
+ * @param {string} thread.otherDisplayName
+ * @param {string} thread.listingTitle
+ * @param {string} [thread.thumb]
+ * @param {Array<{ sender_id: string, body: string, created_at: string }>} messages
+ * @param {string} currentUserId
+ */
+export function buildChatPanelHtml(thread, messages, currentUserId) {
+  const bubbles = (messages || [])
     .map((m) => {
-      const cls = m.from === "me" ? "chat-bubble chat-bubble--me" : "chat-bubble chat-bubble--them";
+      const mine = m.sender_id === currentUserId;
+      const cls = mine ? "chat-bubble chat-bubble--me" : "chat-bubble chat-bubble--them";
+      const tm = formatMsgTime(m.created_at);
       return `<div class="${cls}">
-        <p class="chat-bubble__text">${esc(m.text)}</p>
-        <time class="chat-bubble__time">${esc(m.time)}</time>
+        <p class="chat-bubble__text">${esc(m.body)}</p>
+        <time class="chat-bubble__time">${esc(tm)}</time>
       </div>`;
     })
     .join("");
-  const thumb = t.thumb
-    ? `<img src="${esc(t.thumb)}" alt="" width="40" height="40" />`
+  const thumb = thread.thumb
+    ? `<img src="${esc(thread.thumb)}" alt="" width="40" height="40" />`
     : `<div class="chat-head__ph"></div>`;
   return `
     <header class="chat-head">
       <button type="button" class="chat-head__back" data-msg-back aria-label="Back to messages">←</button>
       <div class="chat-head__thumb">${thumb}</div>
       <div class="chat-head__meta">
-        <p class="chat-head__name">${esc(t.name)}</p>
-        <p class="chat-head__listing">${esc(t.listingTitle)}</p>
+        <p class="chat-head__name">${esc(thread.otherDisplayName)}</p>
+        <p class="chat-head__listing">${esc(thread.listingTitle)}</p>
       </div>
     </header>
-    <div class="chat-scroll" role="log">${bubbles}</div>
+    <div class="chat-scroll" role="log" data-msg-scroll>${bubbles}</div>
     <footer class="chat-compose">
-      <input type="text" class="chat-compose__input" disabled placeholder="Replies coming soon…" aria-label="Message" />
-      <button type="button" class="btn btn--primary chat-compose__send" disabled>Send</button>
+      <input type="text" class="chat-compose__input" placeholder="Type a message…" aria-label="Message" data-msg-input autocomplete="off" />
+      <button type="button" class="btn btn--primary chat-compose__send" data-msg-send>Send</button>
     </footer>`;
 }
 
@@ -621,7 +564,3 @@ function renderFollowers() {
     <div class="profile-empty-state"><p>No followers yet.</p></div>`;
 }
 
-/** Expose chat HTML for client-side thread switching */
-export function getMessageChatHtml(threadId) {
-  return renderChatPanel(threadId);
-}

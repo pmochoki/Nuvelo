@@ -21,10 +21,19 @@ import {
 } from "./data/donationConstants.js";
 import { getDisplayInitials } from "./lib/profileInitials.js";
 import {
-  getMessageChatHtml,
-  getMockUnreadMessageTotal,
+  buildChatPanelHtml,
+  buildMessageThreadRowHtml,
   renderProfilePage
 } from "./pages/ProfilePage.js";
+import {
+  fetchMessages,
+  fetchThreadsForCurrentUser,
+  fetchUnreadThreadCount,
+  getOrCreateThread,
+  isUuid,
+  sendMessage,
+  subscribeToThreadMessages
+} from "./lib/messaging.js";
 import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 
@@ -362,12 +371,14 @@ async function initAuth() {
   }
   applySupabaseSession(session ?? null);
   updateAuthUi();
+  void refreshMessageNavBadge();
 
   supabase.auth.onAuthStateChange((event, session) => {
     applySupabaseSession(session ?? null);
     updateAuthUi();
     if (event === "SIGNED_IN") {
       resetAuthModalMessages();
+      void refreshMessageNavBadge();
       const u = getUser();
       if (u) {
         onAuthSuccess(u);
@@ -379,6 +390,11 @@ async function initAuth() {
     if (event === "SIGNED_OUT") {
       cachedUser = null;
       writeStoredUser(null);
+      try {
+        localStorage.removeItem("nuvelo_unread_messages");
+      } catch {
+        /* ignore */
+      }
       void render().catch((e) => console.error(e));
     }
   });
@@ -401,14 +417,29 @@ const getNavBadgeCounts = () => {
     const savedCount = readSavedListingIds().length;
     const raw = localStorage.getItem("nuvelo_unread_messages");
     const unreadMessages =
-      raw === null || raw === ""
-        ? getMockUnreadMessageTotal()
-        : Math.max(0, Math.floor(Number(raw)));
+      raw === null || raw === "" ? 0 : Math.max(0, Math.floor(Number(raw)));
     return { savedCount, unreadMessages };
   } catch {
     return { savedCount: 0, unreadMessages: 0 };
   }
 };
+
+async function refreshMessageNavBadge() {
+  if (!isSupabaseConfigured) {
+    return;
+  }
+  try {
+    const n = await fetchUnreadThreadCount();
+    try {
+      localStorage.setItem("nuvelo_unread_messages", String(n));
+    } catch {
+      /* ignore */
+    }
+    syncNavUserIcons();
+  } catch {
+    /* ignore */
+  }
+}
 
 const syncNavUserIcons = () => {
   const nav = document.getElementById("nav-user-icons");
@@ -1517,6 +1548,7 @@ function initMessagesPageUi() {
   if (!root) {
     return;
   }
+  const banner = root.querySelector("[data-msg-banner]");
   const search = root.querySelector("[data-msg-search]");
   const empty = root.querySelector("[data-msg-empty]");
   const chat = root.querySelector("[data-msg-chat]");
@@ -1526,6 +1558,32 @@ function initMessagesPageUi() {
     all: root.querySelector("[data-msg-list-all]"),
     unread: root.querySelector("[data-msg-list-unread]"),
     spam: root.querySelector("[data-msg-list-spam]")
+  };
+
+  /** @type {Map<string, object>} */
+  let threadById = new Map();
+  let unsubscribe = null;
+  let activeThreadId = null;
+
+  const appendBubbleFromPayload = (m) => {
+    const scroll = chat?.querySelector("[data-msg-scroll]");
+    const u = getUser();
+    if (!scroll || !u || m?.body == null) {
+      return;
+    }
+    const mine = m.sender_id === u.id;
+    const cls = mine ? "chat-bubble chat-bubble--me" : "chat-bubble chat-bubble--them";
+    const time = m.created_at
+      ? new Date(m.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
+      : "";
+    scroll.insertAdjacentHTML(
+      "beforeend",
+      `<div class="${cls}">
+        <p class="chat-bubble__text">${esc(m.body)}</p>
+        <time class="chat-bubble__time">${esc(time)}</time>
+      </div>`
+    );
+    scroll.scrollTop = scroll.scrollHeight;
   };
 
   const filterRows = () => {
@@ -1578,6 +1636,11 @@ function initMessagesPageUi() {
   });
 
   const closeThread = () => {
+    activeThreadId = null;
+    if (unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
+    }
     root.classList.remove("messages-jiji--thread-open");
     if (chat) {
       chat.innerHTML = "";
@@ -1589,20 +1652,177 @@ function initMessagesPageUi() {
     root.querySelectorAll(".msg-row").forEach((row) => row.classList.remove("msg-row--selected"));
   };
 
-  const openThread = (id) => {
+  const bindCompose = (threadId) => {
+    const input = chat?.querySelector("[data-msg-input]");
+    const sendBtn = chat?.querySelector("[data-msg-send]");
+    const doSend = async () => {
+      const text = input instanceof HTMLInputElement ? input.value.trim() : "";
+      if (!text || !threadId) {
+        return;
+      }
+      const u = getUser();
+      if (!u) {
+        return;
+      }
+      if (sendBtn instanceof HTMLButtonElement) {
+        sendBtn.disabled = true;
+      }
+      try {
+        await sendMessage(threadId, text);
+        if (input instanceof HTMLInputElement) {
+          input.value = "";
+        }
+        appendBubbleFromPayload({ sender_id: u.id, body: text, created_at: new Date().toISOString() });
+        await reloadThreads();
+        await refreshMessageNavBadge();
+      } catch (err) {
+        showNuveloToast(String(err?.message || "Could not send"));
+      } finally {
+        if (sendBtn instanceof HTMLButtonElement) {
+          sendBtn.disabled = false;
+        }
+      }
+    };
+    sendBtn?.addEventListener("click", () => void doSend());
+    input?.addEventListener("keydown", (ev) => {
+      if (ev.key === "Enter") {
+        ev.preventDefault();
+        void doSend();
+      }
+    });
+  };
+
+  const openThread = async (id) => {
     if (!chat || !empty) {
       return;
     }
-    chat.innerHTML = getMessageChatHtml(id);
+    const row = threadById.get(id);
+    const u = getUser();
+    if (!row || !u) {
+      showNuveloToast("Could not open this chat.");
+      return;
+    }
+    activeThreadId = id;
+    if (unsubscribe) {
+      unsubscribe();
+      unsubscribe = null;
+    }
+    try {
+      const msgs = await fetchMessages(id);
+      chat.innerHTML = buildChatPanelHtml(
+        {
+          otherDisplayName: row.otherDisplayName,
+          listingTitle: row.listing_title_snapshot || "Listing",
+          thumb: row.listing_thumb_url || row.otherAvatarUrl || ""
+        },
+        msgs,
+        u.id
+      );
+    } catch (e) {
+      showNuveloToast(String(e?.message || "Could not load messages"));
+      return;
+    }
     empty.hidden = true;
     chat.hidden = false;
     root.classList.add("messages-jiji--thread-open");
-    root.querySelectorAll(".msg-row").forEach((row) => {
-      row.classList.toggle("msg-row--selected", row.getAttribute("data-thread-id") === id);
+    root.querySelectorAll(".msg-row").forEach((el) => {
+      el.classList.toggle("msg-row--selected", el.getAttribute("data-thread-id") === id);
     });
-    const back = chat.querySelector("[data-msg-back]");
-    back?.focus();
+    const scroll = chat.querySelector("[data-msg-scroll]");
+    if (scroll) {
+      scroll.scrollTop = scroll.scrollHeight;
+    }
+    bindCompose(id);
+    if (isSupabaseConfigured) {
+      unsubscribe = subscribeToThreadMessages(id, (m) => {
+        if (m.sender_id === getUser()?.id) {
+          void reloadThreads();
+          void refreshMessageNavBadge();
+          return;
+        }
+        appendBubbleFromPayload(m);
+        void reloadThreads();
+        void refreshMessageNavBadge();
+      });
+    }
+    chat.querySelector("[data-msg-back]")?.focus();
   };
+
+  const rebindRowClicks = () => {
+    root.querySelectorAll("[data-thread-id]").forEach((btn) => {
+      btn.addEventListener("click", () => void openThread(btn.getAttribute("data-thread-id") || ""));
+    });
+  };
+
+  const fillThreadLists = (threads) => {
+    const uiRows = threads.map((row) => ({
+      id: row.id,
+      name: row.otherDisplayName,
+      listingTitle: row.listing_title_snapshot || "Listing",
+      thumb: row.listing_thumb_url || row.otherAvatarUrl || "",
+      preview: row.preview,
+      dateLabel: row.dateLabel,
+      unread: row.unread,
+      spam: false
+    }));
+    const allHtml = uiRows.map(buildMessageThreadRowHtml).join("");
+    if (lists.all) {
+      lists.all.innerHTML = allHtml;
+    }
+    const unreadRows = uiRows.filter((r) => r.unread > 0);
+    if (lists.unread) {
+      lists.unread.innerHTML = unreadRows.map(buildMessageThreadRowHtml).join("");
+    }
+    if (lists.spam) {
+      lists.spam.innerHTML = "";
+    }
+    const tabUnread = root.querySelector('[data-msg-tab="unread"]');
+    const tabSpam = root.querySelector('[data-msg-tab="spam"]');
+    if (tabUnread) {
+      tabUnread.textContent = `Unread (${unreadRows.length})`;
+    }
+    if (tabSpam) {
+      tabSpam.textContent = "Spam (0)";
+    }
+    rebindRowClicks();
+    filterRows();
+  };
+
+  async function reloadThreads() {
+    if (!isSupabaseConfigured) {
+      if (banner) {
+        banner.hidden = false;
+        banner.textContent =
+          "Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your build environment to enable messaging.";
+      }
+      return;
+    }
+    if (!getUser()) {
+      return;
+    }
+    try {
+      const threads = await fetchThreadsForCurrentUser();
+      threadById = new Map(threads.map((t) => [t.id, t]));
+      fillThreadLists(threads);
+      if (banner) {
+        banner.hidden = true;
+      }
+      await refreshMessageNavBadge();
+      const param = new URLSearchParams(window.location.search).get("thread");
+      if (param && threadById.has(param) && param === activeThreadId) {
+        const scroll = chat?.querySelector("[data-msg-scroll]");
+        if (scroll) {
+          scroll.scrollTop = scroll.scrollHeight;
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      if (banner) {
+        banner.hidden = false;
+        banner.textContent = String(e?.message || "Could not load messages.");
+      }
+    }
+  }
 
   root.addEventListener("click", (e) => {
     if (e.target.closest("[data-msg-back]")) {
@@ -1611,8 +1831,11 @@ function initMessagesPageUi() {
     }
   });
 
-  root.querySelectorAll("[data-thread-id]").forEach((btn) => {
-    btn.addEventListener("click", () => openThread(btn.getAttribute("data-thread-id") || ""));
+  void reloadThreads().then(() => {
+    const param = new URLSearchParams(window.location.search).get("thread");
+    if (param && threadById.has(param)) {
+      void openThread(param);
+    }
   });
 }
 
@@ -3334,6 +3557,11 @@ const renderDetail = async (id) => {
               ? `<button type="button" class="btn btn--outline" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-owner-claimed">${claimed ? "Mark as available" : "Mark as claimed"}</button>`
               : ""
           }
+          ${
+            !isOwner
+              ? `<button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-donation-chat">Message donor</button>`
+              : ""
+          }
           <button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-report">Report listing</button>
         </div>
       </aside>`
@@ -3477,7 +3705,7 @@ const renderDetail = async (id) => {
     window.alert("Offers can be sent from the Nuvelo app.");
   });
 
-  document.getElementById("detail-contact")?.addEventListener("click", async () => {
+  const startListingChat = async () => {
     const user = getUser();
     const msg = document.getElementById("detail-contact-msg");
     if (!user) {
@@ -3489,15 +3717,40 @@ const renderDetail = async (id) => {
       msg.textContent = "This is your listing.";
       return;
     }
-    msg.textContent =
-      "In-app messaging is not wired yet. Use Show contact for now.";
-  });
+    if (!isSupabaseConfigured) {
+      msg.textContent = "Messaging requires Supabase (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) to be configured.";
+      return;
+    }
+    if (!isUuid(listing.userId)) {
+      msg.textContent =
+        "This listing uses a demo seller account. Chat works for listings posted by registered users.";
+      return;
+    }
+    msg.textContent = "Opening chat…";
+    try {
+      const thumb = listingImageUrl(listing);
+      const tid = await getOrCreateThread({
+        listingId: listing.id,
+        listingOwnerId: listing.userId,
+        listingTitle: listing.title,
+        listingThumbUrl: thumb || undefined
+      });
+      navigateTo(`/profile/messages?thread=${encodeURIComponent(tid)}`);
+      msg.textContent = "";
+    } catch (e) {
+      msg.textContent = String(e?.message || "Could not start chat.");
+    }
+  };
+
+  document.getElementById("detail-contact")?.addEventListener("click", () => void startListingChat());
+
+  document.getElementById("detail-donation-chat")?.addEventListener("click", () => void startListingChat());
 
   document.getElementById("detail-donation-claim")?.addEventListener("click", async () => {
     const user = getUser();
     const msg = document.getElementById("detail-contact-msg");
     if (!user) {
-      msg.textContent = "Sign in first to message the donor.";
+      msg.textContent = "Sign in first to claim or message the donor.";
       openModal("signin");
       return;
     }
@@ -3506,7 +3759,7 @@ const renderDetail = async (id) => {
       return;
     }
     msg.textContent =
-      "Your interest has been noted. In-app messaging will connect you to the donor when it is available.";
+      "Your interest has been noted. You can also use “Message donor” to chat when both accounts are registered.";
   });
 
   document.getElementById("detail-owner-claimed")?.addEventListener("click", () => {
