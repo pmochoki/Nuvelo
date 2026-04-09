@@ -39,6 +39,38 @@ const friendlyNetworkError = (err) => {
   return msg || "Something went wrong. Please try again.";
 };
 
+/** Supabase SMS expects E.164 (e.g. +36201234567). Strips spaces, dashes, parentheses. */
+function normalizePhoneE164(raw) {
+  if (raw == null || typeof raw !== "string") {
+    return null;
+  }
+  const trimmed = raw.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const core = trimmed.replace(/[\s\-().]/g, "");
+  let digits;
+  if (core.startsWith("+")) {
+    digits = core.slice(1).replace(/\D/g, "");
+  } else if (core.startsWith("00")) {
+    digits = core.slice(2).replace(/\D/g, "");
+  } else {
+    digits = core.replace(/\D/g, "");
+  }
+  if (!digits || digits.length < 8 || digits.length > 15) {
+    return null;
+  }
+  return `+${digits}`;
+}
+
+function mapSupabasePhoneError(message) {
+  const m = String(message || "");
+  if (/unsupported phone provider/i.test(m)) {
+    return "SMS isn’t available for this number with your project’s SMS provider (country or routing). Try email sign-in, or enable Hungary / configure Twilio (or another provider) in Supabase Dashboard → Authentication. Use E.164, e.g. +36201234567.";
+  }
+  return m;
+}
+
 /** OAuth needs Supabase env vars baked in at build time (Vercel → Production env → redeploy). */
 const showOAuthUnavailable = (providerLabel) => {
   console.warn(
@@ -548,15 +580,27 @@ loginForm?.addEventListener("submit", async (e) => {
         return;
       }
 
+      const normalizedPhone = normalizePhoneE164(phone);
+      if (!normalizedPhone) {
+        showLoginError(
+          "Enter a valid international phone number (e.g. +36201234567). You can include spaces; we normalize to E.164."
+        );
+        return;
+      }
+      const phoneInput = loginForm?.querySelector("input[name='phone']");
+      if (phoneInput) {
+        phoneInput.value = normalizedPhone;
+      }
+
       const { error } = await supabase.auth.signInWithOtp({
-        phone,
+        phone: normalizedPhone,
         options: { data: meta }
       });
       if (error) {
-        showLoginError(error.message || "Could not send SMS.");
+        showLoginError(mapSupabasePhoneError(error.message) || "Could not send SMS.");
         return;
       }
-      phoneOtpPending = phone;
+      phoneOtpPending = normalizedPhone;
       setSmsSent(true);
       requestAnimationFrame(() => {
         document.getElementById("auth-phone-verify")?.scrollIntoView({
