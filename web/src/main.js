@@ -35,6 +35,18 @@ const friendlyNetworkError = (err) => {
   return msg || "Something went wrong. Please try again.";
 };
 
+/** OAuth needs Supabase env vars baked in at build time (Vercel → Production env → redeploy). */
+const showOAuthUnavailable = (providerLabel) => {
+  console.warn(
+    "[Nuvelo] Supabase not configured: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for the production build (e.g. Vercel project env), then redeploy."
+  );
+  showLoginError(
+    import.meta.env.DEV
+      ? `Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable ${providerLabel}.`
+      : `${providerLabel} isn’t available right now. Try email or phone below, or try again after the site is updated.`
+  );
+};
+
 /** Soft copy when listings are unavailable; never surface raw errors in the UI. */
 const LISTINGS_UNAVAILABLE_MSG = "Listings are loading, please try again shortly.";
 const USER_STORE_KEY = "nuvelo_user";
@@ -328,9 +340,7 @@ document.getElementById("drawer-register")?.addEventListener("click", () => {
 
 document.getElementById("auth-google-stub")?.addEventListener("click", async () => {
   if (!supabase) {
-    showLoginError(
-      "Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable Google sign-in."
-    );
+    showOAuthUnavailable("Google sign-in");
     return;
   }
   showLoginError("");
@@ -347,9 +357,7 @@ document.getElementById("auth-google-stub")?.addEventListener("click", async () 
 
 document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
   if (!supabase) {
-    showLoginError(
-      "Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable Facebook sign-in."
-    );
+    showOAuthUnavailable("Facebook sign-in");
     return;
   }
   showLoginError("");
