@@ -42,8 +42,15 @@ export function setDonationClaimed(listingId, claimed) {
 }
 
 /**
- * When VITE_API_URL is unset or empty, use same-origin `/api` (Vercel serverless).
- * Set VITE_API_URL only if you need to call a different origin (CORS must allow your site).
+ * Browser API base for listings/auth.
+ *
+ * - `VITE_API_URL` unset or whitespace-only → same-origin `/api` (Vercel Functions in this repo).
+ * - Set a full URL only if the API is on another origin (CORS must allow your site).
+ *
+ * Vercel (Production) — typical setup:
+ * - Omit `VITE_API_URL` or set it empty so the app calls `/api` on the deployed domain.
+ * - Set `VITE_DEMO_LISTINGS=false` so browse/detail/post do not mix in demo listings or offline fallbacks.
+ * - Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` for auth (baked in at build time).
  */
 function getApiBase() {
   const raw = import.meta.env.VITE_API_URL;
@@ -53,7 +60,7 @@ function getApiBase() {
   return String(raw).trim().replace(/\/+$/, "");
 }
 
-/** Set VITE_DEMO_LISTINGS=false in Vercel to hide sample ads in production. */
+/** When false, demo listings are hidden and post/browse avoid misleading offline fallbacks. */
 function demosEnabled() {
   return import.meta.env.VITE_DEMO_LISTINGS !== "false";
 }
@@ -317,6 +324,14 @@ export async function createListing(formPayload, userId) {
           : msg
       );
     }
+    if (!demosEnabled()) {
+      console.error("[createListing] API error (no local fallback when VITE_DEMO_LISTINGS=false)", e);
+      throw new Error(
+        msg && msg.length < 200 && !/https?:\/\//i.test(msg)
+          ? msg
+          : "Unable to submit your ad — the server could not be reached. Please try again shortly."
+      );
+    }
     console.warn("[createListing] API unavailable, saving locally", e);
     try {
       return createListingLocalFallback({ ...row, userId });
@@ -327,6 +342,11 @@ export async function createListing(formPayload, userId) {
   }
 }
 
+/**
+ * Legacy sign-in: POST same-origin `/api/auth/login` → Vercel proxies to `LISTINGS_BACKEND_URL` /
+ * `NUVELO_API_URL` (see `api/auth/login.js`). Used only when Supabase is not configured; production
+ * builds disable this path unless `VITE_ALLOW_LEGACY_AUTH=true` (see `web/src/main.js`).
+ */
 export async function loginUser({ name, role, email, phone }) {
   const data = await apiFetch("/auth/login", {
     method: "POST",

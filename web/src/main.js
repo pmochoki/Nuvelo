@@ -28,14 +28,23 @@ import {
 import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 
-if (!import.meta.env.VITE_API_URL) {
+if (import.meta.env.VITE_API_URL == null || String(import.meta.env.VITE_API_URL).trim() === "") {
   console.info(
-    "[Nuvelo] VITE_API_URL is unset — using same-origin /api (Vercel serverless or `vercel dev` for local API)."
+    "[Nuvelo] VITE_API_URL is unset or empty — using same-origin /api (Vercel serverless or `vercel dev` for local API)."
   );
 }
 
+/**
+ * Production sign-in is Supabase (OTP + OAuth). Legacy POST /api/auth/login → Render exists for
+ * local/dev or rare demos; opt in on Vercel with VITE_ALLOW_LEGACY_AUTH=true.
+ */
+const deploymentAllowsLegacyBackendLogin =
+  !import.meta.env.PROD || import.meta.env.VITE_ALLOW_LEGACY_AUTH === "true";
+
+const signInFlowsAvailable = isSupabaseConfigured || deploymentAllowsLegacyBackendLogin;
+
 /** Maps browser network failures (e.g. TypeError: Failed to fetch) to a clear message. */
-const friendlyNetworkError = (err) => {
+const friendlyNetworkError = (err, context = "default") => {
   const name = err && err.name;
   const msg = String((err && err.message) || "");
   if (
@@ -44,7 +53,26 @@ const friendlyNetworkError = (err) => {
     /networkerror/i.test(msg) ||
     /load failed/i.test(msg)
   ) {
-    return "Could not reach the sign-in service. Check your connection. If you’re not using email magic links (Supabase), the demo server may need up to a minute to wake up — try again shortly.";
+    if (context === "legacy") {
+      return "Could not reach the sign-in service. Check your connection. If the listings backend was asleep, wait a minute and try again.";
+    }
+    return "Could not reach the sign-in service. Check your connection and try again.";
+  }
+  return msg || "Something went wrong. Please try again.";
+};
+
+/** Listings, profile, and generic route errors — neutral wording (not sign-in specific). */
+const friendlyPageLoadError = (err) => {
+  const name = err && err.name;
+  const msg = String((err && err.message) || "");
+  if (
+    name === "TypeError" ||
+    /failed to fetch/i.test(msg) ||
+    /networkerror/i.test(msg) ||
+    /load failed/i.test(msg) ||
+    /unable to reach the server/i.test(msg)
+  ) {
+    return "Could not reach the server. Check your connection and try again shortly.";
   }
   return msg || "Something went wrong. Please try again.";
 };
@@ -86,15 +114,22 @@ const showOAuthUnavailable = (providerLabel) => {
   console.warn(
     "[Nuvelo] Supabase not configured: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for the production build (e.g. Vercel project env), then redeploy."
   );
+  if (!signInFlowsAvailable) {
+    showLoginError(
+      "Sign-in isn’t available: this deployment has no Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then redeploy."
+    );
+    return;
+  }
   showLoginError(
     import.meta.env.DEV
       ? `Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable ${providerLabel}.`
-      : `${providerLabel} isn’t available right now. Try email or phone below, or try again after the site is updated.`
+      : `${providerLabel} isn’t available without Supabase. Use email or phone below, or try again after the site is updated.`
   );
 };
 
-/** Soft copy when listings are unavailable; never surface raw errors in the UI. */
-const LISTINGS_UNAVAILABLE_MSG = "Listings are loading, please try again shortly.";
+/** When the listings API fails (e.g. production with VITE_DEMO_LISTINGS=false); never surface raw stack traces. */
+const LISTINGS_UNAVAILABLE_MSG =
+  "We couldn’t load listings. Check your connection and try again.";
 const USER_STORE_KEY = "nuvelo_user";
 const PROFILE_FIELDS_KEY = "nuvelo_profile_fields";
 /** Canonical profile JSON for /profile/settings (merged with legacy key on read). */
@@ -474,12 +509,39 @@ userChip?.addEventListener("click", () => void signOutNuvelo());
 /** @type {"signin" | "register"} */
 let authModalMode = "signin";
 
+/** Shown only when the legacy /api/auth/login path can run (no Supabase, dev or VITE_ALLOW_LEGACY_AUTH). */
 const syncAuthBackendHint = () => {
   const el = document.getElementById("auth-backend-hint");
   if (!el) {
     return;
   }
-  el.hidden = isSupabaseConfigured;
+  el.hidden = isSupabaseConfigured || !deploymentAllowsLegacyBackendLogin;
+};
+
+/** Hides OAuth/email UI when production has neither Supabase nor legacy opt-in. */
+const syncAuthSignInAvailability = () => {
+  const available = signInFlowsAvailable;
+  const miss = document.getElementById("auth-missing-config");
+  const social = document.getElementById("login-social-block");
+  const form = document.getElementById("login-form");
+  const switchLine = document.getElementById("auth-switch-line");
+  const legal = document.querySelector("#login-modal .auth-legal");
+  if (miss) {
+    miss.hidden = available;
+  }
+  if (social) {
+    social.hidden = !available;
+  }
+  if (switchLine) {
+    switchLine.hidden = !available;
+  }
+  if (legal) {
+    legal.hidden = !available;
+  }
+  if (form && !available) {
+    form.hidden = true;
+  }
+  syncAuthBackendHint();
 };
 
 /**
@@ -497,14 +559,32 @@ const openModal = (mode = "signin") => {
   const subEl = document.getElementById("login-subtitle");
   const errEl = document.getElementById("login-error");
   const formEl = document.getElementById("login-form");
-  const socialEl = document.getElementById("login-social-block");
   const switchBtn = document.getElementById("auth-switch-mode");
   const signinEmailBtn = document.getElementById("auth-signin-email-form");
   const registerEmailBtn = document.getElementById("auth-show-email-form");
+
+  if (!signInFlowsAvailable) {
+    if (titleEl) {
+      titleEl.textContent = "Sign-in unavailable";
+    }
+    if (subEl) {
+      subEl.textContent = "";
+      subEl.hidden = true;
+    }
+    if (errEl) {
+      errEl.textContent = "";
+      errEl.hidden = true;
+    }
+    loginModal.hidden = false;
+    syncAuthSignInAvailability();
+    return;
+  }
+
   if (titleEl) {
     titleEl.textContent = mode === "register" ? "Create account" : "Sign in";
   }
   if (subEl) {
+    subEl.hidden = false;
     subEl.textContent =
       mode === "register"
         ? "Create your Nuvelo profile to post listings and message sellers."
@@ -513,9 +593,6 @@ const openModal = (mode = "signin") => {
   if (errEl) {
     errEl.textContent = "";
     errEl.hidden = true;
-  }
-  if (socialEl) {
-    socialEl.hidden = false;
   }
   /* In register mode the full form is shown; hide the email-pathway buttons. In signin, show both. */
   if (signinEmailBtn) {
@@ -543,7 +620,7 @@ const openModal = (mode = "signin") => {
       mode === "register" ? "Already have an account? Sign in" : "New here? Register";
   }
   loginModal.hidden = false;
-  syncAuthBackendHint();
+  syncAuthSignInAvailability();
   if (mode === "register" && formEl && !formEl.hidden) {
     loginModal.querySelector("input[name='name']")?.focus();
   }
@@ -785,6 +862,13 @@ loginForm?.addEventListener("submit", async (e) => {
     return;
   }
 
+  if (!deploymentAllowsLegacyBackendLogin) {
+    showLoginError(
+      "Sign-in isn’t available in this deployment. Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or set VITE_ALLOW_LEGACY_AUTH=true only if you use the listings API login proxy."
+    );
+    return;
+  }
+
   if (submitBtn) {
     submitBtn.disabled = true;
   }
@@ -801,7 +885,7 @@ loginForm?.addEventListener("submit", async (e) => {
     onAuthSuccess(user);
   } catch (err) {
     console.error(err);
-    showLoginError(friendlyNetworkError(err));
+    showLoginError(friendlyNetworkError(err, "legacy"));
   } finally {
     if (submitBtn) {
       submitBtn.disabled = false;
@@ -2598,10 +2682,12 @@ const renderLanding = async () => {
     return;
   }
   let listings = [];
+  let listingsLoadFailed = false;
   try {
     listings = await fetchListings({});
   } catch (err) {
     console.error(err);
+    listingsLoadFailed = true;
     listings = [];
   }
   const viewMode = getListViewMode();
@@ -2671,7 +2757,9 @@ const renderLanding = async () => {
   `;
 
   const grid = document.getElementById("home-listing-grid");
-  if (!listings.length) {
+  if (listingsLoadFailed) {
+    grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`;
+  } else if (!listings.length) {
     grid.innerHTML = `<div class="listings-empty muted" role="status">No listings yet. Be the first to post!</div>`;
   } else {
     trending.forEach((listing, i) => {
@@ -2927,7 +3015,11 @@ const renderList = async () => {
           <div class="sort-bar sort-bar--jiji">
             <div>
               <h1 class="feed-head__title" style="margin:0;font-size:1.125rem">${feedTitle}</h1>
-              <p class="muted" style="margin:0.15rem 0 0;font-size:0.875rem">${esc(String(totalCount))} results</p>
+              <p class="muted" style="margin:0.15rem 0 0;font-size:0.875rem">${
+                listingsLoadFailed
+                  ? "Unable to load results."
+                  : `${esc(String(totalCount))} results`
+              }</p>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
               <label class="sort-bar__sort">
@@ -3711,7 +3803,7 @@ const renderProfile = async (section) => {
     appEl.innerHTML = `
       <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
         <h1 style="margin:0 0 0.5rem">${esc(title)}</h1>
-        <p class="muted">${esc(friendlyNetworkError(e))}</p>
+        <p class="muted">${esc(friendlyPageLoadError(e))}</p>
         <p><a href="/browse">Browse listings</a></p>
       </section>
     `;
@@ -4351,7 +4443,7 @@ const render = async () => {
     appEl.innerHTML = `
       <section class="stack">
         <h2>We could not load this page.</h2>
-        <p class="muted">${esc(friendlyNetworkError(err))}</p>
+        <p class="muted">${esc(friendlyPageLoadError(err))}</p>
         <p><a href="/">Go to home</a> · <a href="/browse">Browse listings</a></p>
       </section>
     `;
