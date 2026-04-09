@@ -58,9 +58,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://nuvelo-backend.onrender.com",
-        changeOrigin: true,
-        rewrite: (p) => p.replace(/^\/api/, "")
+        target: "http://127.0.0.1:3000",
+        changeOrigin: true
       }
     }
   },

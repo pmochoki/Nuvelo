@@ -2,6 +2,7 @@ import { getDemoListingById, mergeListingsWithDemos } from "../data/demoListings
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
 
 const DONATIONS_CLAIMED_KEY = "nuvelo_donations_claimed";
+const LOCAL_LISTINGS_KEY = "nuvelo_local_listings_v1";
 
 function readDonationClaimedStore() {
   try {
@@ -40,11 +41,9 @@ export function setDonationClaimed(listingId, claimed) {
   }
 }
 
-const DEFAULT_REMOTE_API = "https://nuvelo-backend.onrender.com";
-
 /**
- * When VITE_API_URL is unset or empty, use same-origin `/api` (Vercel serverless proxy).
- * When set to a full URL, call that backend directly.
+ * When VITE_API_URL is unset or empty, use same-origin `/api` (Vercel serverless).
+ * Set VITE_API_URL only if you need to call a different origin (CORS must allow your site).
  */
 function getApiBase() {
   const raw = import.meta.env.VITE_API_URL;
@@ -57,6 +56,23 @@ function getApiBase() {
 /** Set VITE_DEMO_LISTINGS=false in Vercel to hide sample ads in production. */
 function demosEnabled() {
   return import.meta.env.VITE_DEMO_LISTINGS !== "false";
+}
+
+function readLocalListings() {
+  try {
+    const raw = localStorage.getItem(LOCAL_LISTINGS_KEY);
+    if (!raw) {
+      return [];
+    }
+    const p = JSON.parse(raw);
+    return Array.isArray(p) ? p : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalListings(rows) {
+  localStorage.setItem(LOCAL_LISTINGS_KEY, JSON.stringify(rows.slice(0, 200)));
 }
 
 async function apiFetch(path, options = {}) {
@@ -74,13 +90,8 @@ async function apiFetch(path, options = {}) {
       }
     });
   } catch (err) {
-    const name = err?.name || "Error";
-    const msg = err?.message || String(err);
-    const hint =
-      base.startsWith("http")
-        ? `Tried ${url}. Check CORS, SSL, and that the server is running.`
-        : `Tried ${url}. For local dev, use Vite proxy to a backend, or set VITE_API_URL=${DEFAULT_REMOTE_API}`;
-    throw new Error(`Nuvelo API request failed (${name}): ${msg}. ${hint}`);
+    console.warn("[Nuvelo API] network error", url, err);
+    throw new Error("Unable to reach the server. Please try again shortly.");
   }
   const text = await res.text();
   let payload = null;
@@ -140,13 +151,18 @@ export function normalizeListingRow(row) {
     views: Number(row.viewCount) || 0,
     sellerName: row.sellerName || "Seller",
     sellerVerified: Boolean(row.sellerVerified),
-    enterprise: Boolean(row.enterprise)
+    enterprise: Boolean(row.enterprise),
+    status: row.status
   };
   return applyDonationClaimed(base);
 }
 
+/**
+ * @param {object} params
+ * @param {string} [params.forUserId] — when set, includes this user's pending listings from API + offline queue
+ */
 export async function fetchListings(params = {}) {
-  const { query: keyword, categoryId, location, minPrice, maxPrice } = params;
+  const { query: keyword, categoryId, location, minPrice, maxPrice, forUserId } = params;
   const qs = new URLSearchParams();
   if (keyword) {
     qs.set("query", String(keyword).trim());
@@ -163,6 +179,10 @@ export async function fetchListings(params = {}) {
   if (maxPrice != null && maxPrice !== "" && !Number.isNaN(Number(maxPrice))) {
     qs.set("maxPrice", String(Number(maxPrice)));
   }
+  if (forUserId) {
+    qs.set("userId", String(forUserId));
+  }
+
   let real = [];
   try {
     const data = await apiFetch(`/listings${qs.toString() ? `?${qs}` : ""}`);
@@ -174,10 +194,25 @@ export async function fetchListings(params = {}) {
     }
   }
 
-  if (!demosEnabled()) {
-    return real;
+  const locals = readLocalListings().map(normalizeListingRow);
+  let mergedLocals = [];
+  if (forUserId) {
+    mergedLocals = locals.filter((l) => String(l.userId) === String(forUserId));
+  } else {
+    mergedLocals = locals.filter((l) => {
+      const st = String(l.status || "").toLowerCase();
+      return st === "approved" || st === "active";
+    });
   }
-  return mergeListingsWithDemos(real, params).map((x) => normalizeListingRow(x));
+
+  const seen = new Set(real.map((r) => String(r.id)));
+  const extra = mergedLocals.filter((l) => l?.id && !seen.has(String(l.id)));
+  const combined = [...real, ...extra];
+
+  if (!demosEnabled()) {
+    return combined;
+  }
+  return mergeListingsWithDemos(combined, params).map((x) => normalizeListingRow(x));
 }
 
 export async function fetchListing(id) {
@@ -192,11 +227,41 @@ export async function fetchListing(id) {
       throw e;
     }
   }
+  const local = readLocalListings().find((l) => String(l.id) === String(id));
+  if (local) {
+    return normalizeListingRow(local);
+  }
   if (!demosEnabled()) {
     return null;
   }
   const demo = getDemoListingById(id);
   return demo ? normalizeListingRow(demo) : null;
+}
+
+function isValidationErrorMessage(msg) {
+  return /required|invalid|must be|Price must|Listing rate|banned|errors/i.test(String(msg || ""));
+}
+
+function createListingLocalFallback(row) {
+  const id = `local-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+  const now = new Date().toISOString();
+  const listing = normalizeListingRow({
+    ...row,
+    id,
+    userId: row.userId,
+    status: "Pending",
+    createdAt: now,
+    updatedAt: now
+  });
+  const all = readLocalListings();
+  all.unshift(listing);
+  try {
+    saveLocalListings(all);
+  } catch (e) {
+    console.error(e);
+    throw new Error("Unable to submit your ad right now. Please try again in a moment.");
+  }
+  return listing;
 }
 
 export async function createListing(formPayload, userId) {
@@ -236,11 +301,30 @@ export async function createListing(formPayload, userId) {
     images,
     categoryFields: formPayload.categoryFields || {}
   };
-  const data = await apiFetch("/listings", {
-    method: "POST",
-    body: JSON.stringify(row)
-  });
-  return normalizeListingRow(data);
+
+  try {
+    const data = await apiFetch("/listings", {
+      method: "POST",
+      body: JSON.stringify(row)
+    });
+    return normalizeListingRow(data);
+  } catch (e) {
+    const msg = String(e?.message || "");
+    if (isValidationErrorMessage(msg)) {
+      throw new Error(
+        msg.length > 120 || /https?:\/\//i.test(msg)
+          ? "Please check your listing details and try again."
+          : msg
+      );
+    }
+    console.warn("[createListing] API unavailable, saving locally", e);
+    try {
+      return createListingLocalFallback({ ...row, userId });
+    } catch (e2) {
+      console.error(e2);
+      throw new Error("Unable to submit your ad right now. Please try again in a moment.");
+    }
+  }
 }
 
 export async function loginUser({ name, role, email, phone }) {

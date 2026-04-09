@@ -30,7 +30,7 @@ import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from ".
 
 if (!import.meta.env.VITE_API_URL) {
   console.info(
-    "[Nuvelo] VITE_API_URL is unset — using same-origin /api (Vercel proxy or Vite dev proxy to Render)."
+    "[Nuvelo] VITE_API_URL is unset — using same-origin /api (Vercel serverless or `vercel dev` for local API)."
   );
 }
 
@@ -3690,7 +3690,7 @@ const renderProfile = async (section) => {
     </div>
   `;
   try {
-    const all = await fetchListings({});
+    const all = await fetchListings({ forUserId: user.id });
     const adverts = all.filter((l) => l.userId === user.id);
     const rawSaved = readJsonStore("nuvelo_saved_listing_ids", []);
     const ids = Array.isArray(rawSaved) ? rawSaved.slice(0, 50) : [];
@@ -4257,11 +4257,15 @@ const renderPost = async () => {
         return;
       }
       const created = await createListing(payload, user.id);
-      msg.textContent = "Your listing is live. Redirecting…";
-      setTimeout(() => navigateTo(`/listing/${created.id}`), 800);
+      msg.textContent = "Your ad has been submitted and is pending review.";
+      setTimeout(() => navigateTo("/profile/adverts"), 800);
     } catch (err) {
       console.error(err);
-      msg.textContent = err?.message || "Could not create listing. Check your API connection and try again.";
+      const m = String(err?.message || "");
+      msg.textContent =
+        m && !/https?:\/\//i.test(m) && m.length < 200
+          ? m
+          : "Unable to submit your ad right now. Please try again in a moment.";
     }
   });
 };

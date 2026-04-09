@@ -1,10 +1,80 @@
 const { applyCors } = require("../_cors");
-const { backendBase, queryStringFromReq } = require("../_backend");
+const store = require("../_listingsStore");
 
 /**
- * GET /api/listings?…  → backend /listings
- * POST /api/listings   → backend /listings
+ * GET /api/listings — all listings (filter: public = approved only; ?userId= = that user's rows incl. pending)
+ * POST /api/listings — create listing (JSON body), returns created row with status pending
+ *
+ * No longer proxies to Render; uses in-repo store. TODO: wire to a real database.
  */
+
+async function readJsonBody(req) {
+  if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
+    return req.body;
+  }
+  return new Promise((resolve, reject) => {
+    let data = "";
+    req.on("data", (chunk) => {
+      data += chunk;
+    });
+    req.on("end", () => {
+      try {
+        resolve(data ? JSON.parse(data) : {});
+      } catch (e) {
+        reject(e);
+      }
+    });
+    req.on("error", reject);
+  });
+}
+
+function filterListings(listings, q) {
+  const {
+    query: keyword,
+    categoryId,
+    location,
+    minPrice,
+    maxPrice,
+    userId,
+    status: statusFilter
+  } = q;
+
+  return listings.filter((listing) => {
+    if (userId) {
+      if (String(listing.userId) !== String(userId)) {
+        return false;
+      }
+    } else if (listing.status && listing.status !== "approved") {
+      return false;
+    }
+    if (statusFilter && listing.status !== statusFilter) {
+      return false;
+    }
+    if (categoryId && String(listing.categoryId) !== String(categoryId)) {
+      return false;
+    }
+    if (location && listing.location) {
+      if (!String(listing.location).toLowerCase().includes(String(location).toLowerCase())) {
+        return false;
+      }
+    }
+    if (keyword) {
+      const text = `${listing.title || ""} ${listing.description || ""}`.toLowerCase();
+      if (!text.includes(String(keyword).toLowerCase())) {
+        return false;
+      }
+    }
+    const p = listing.price;
+    if (minPrice != null && minPrice !== "" && p != null && Number(p) < Number(minPrice)) {
+      return false;
+    }
+    if (maxPrice != null && maxPrice !== "" && p != null && Number(p) > Number(maxPrice)) {
+      return false;
+    }
+    return true;
+  });
+}
+
 module.exports = async (req, res) => {
   applyCors(req, res);
   if (req.method === "OPTIONS") {
@@ -12,39 +82,51 @@ module.exports = async (req, res) => {
     return res.end();
   }
 
-  if (req.method !== "GET" && req.method !== "POST") {
-    res.statusCode = 405;
-    return res.end(JSON.stringify({ error: "Method not allowed" }));
+  if (req.method === "GET") {
+    const q = { ...(req.query || {}) };
+    delete q.path;
+    delete q.slug;
+    delete q.id;
+    const rows = filterListings(store.getAll(), q);
+    res.statusCode = 200;
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify(rows));
   }
 
-  const backend = backendBase();
-  const search = req.method === "GET" ? queryStringFromReq(req) : "";
-  const target = `${backend}/listings${search}`;
-
-  try {
-    const headers = { "Content-Type": "application/json" };
-    const init = {
-      method: req.method,
-      headers
-    };
-    if (req.method === "POST") {
-      init.body = JSON.stringify(req.body ?? {});
+  if (req.method === "POST") {
+    let payload;
+    try {
+      payload = await readJsonBody(req);
+    } catch (e) {
+      res.statusCode = 400;
+      return res.end(JSON.stringify({ error: "Invalid JSON body" }));
     }
-
-    const upstream = await fetch(target, init);
-    const text = await upstream.text();
-    res.statusCode = upstream.status;
-    res.setHeader("Content-Type", upstream.headers.get("content-type") || "application/json");
-    return res.end(text);
-  } catch (err) {
-    console.error("[api/listings] proxy error:", err);
-    res.statusCode = 502;
-    return res.end(
-      JSON.stringify({
-        error: "Bad gateway",
-        message: err?.message || "Could not reach listings backend",
-        hint: "Set LISTINGS_BACKEND_URL on Vercel if the default Render URL is down."
-      })
-    );
+    if (!payload || typeof payload.title !== "string" || payload.title.length < 3) {
+      res.statusCode = 400;
+      return res.end(JSON.stringify({ error: "Title is required." }));
+    }
+    if (!payload.categoryId) {
+      res.statusCode = 400;
+      return res.end(JSON.stringify({ error: "categoryId is required." }));
+    }
+    const created = store.addListing({
+      title: payload.title,
+      description: payload.description || "",
+      categoryId: payload.categoryId,
+      price: payload.price ?? null,
+      currency: payload.currency || "HUF",
+      condition: payload.condition || "other",
+      location: payload.location || "Hungary",
+      images: Array.isArray(payload.images) ? payload.images : [],
+      categoryFields: payload.categoryFields && typeof payload.categoryFields === "object" ? payload.categoryFields : {},
+      userId: payload.userId || "anonymous",
+      status: "pending"
+    });
+    res.statusCode = 201;
+    res.setHeader("Content-Type", "application/json");
+    return res.end(JSON.stringify(created));
   }
+
+  res.statusCode = 405;
+  return res.end(JSON.stringify({ error: "Method not allowed" }));
 };

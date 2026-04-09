@@ -30,3 +30,6 @@ ios/Flutter/
 # Logs
 *.log
 .vercel
+
+# Ephemeral API data (local dev listings store)
+/data/*.json

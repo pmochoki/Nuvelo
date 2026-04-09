@@ -1,7 +1,7 @@
 const { applyCors } = require("../_cors");
-const { backendBase, queryStringFromReq } = require("../_backend");
+const store = require("../_listingsStore");
 
-/** GET /api/listings/:id → backend /listings/:id */
+/** GET /api/listings/:id — single listing from local store */
 module.exports = async (req, res) => {
   applyCors(req, res);
   if (req.method === "OPTIONS") {
@@ -19,24 +19,13 @@ module.exports = async (req, res) => {
     return res.end(JSON.stringify({ error: "Missing listing id" }));
   }
 
-  const backend = backendBase();
-  const search = queryStringFromReq(req);
-  const target = `${backend}/listings/${encodeURIComponent(id)}${search}`;
-
-  try {
-    const upstream = await fetch(target, { method: "GET" });
-    const text = await upstream.text();
-    res.statusCode = upstream.status;
-    res.setHeader("Content-Type", upstream.headers.get("content-type") || "application/json");
-    return res.end(text);
-  } catch (err) {
-    console.error("[api/listings/[id]] proxy error:", err);
-    res.statusCode = 502;
-    return res.end(
-      JSON.stringify({
-        error: "Bad gateway",
-        message: err?.message || "Could not reach listings backend"
-      })
-    );
+  const listing = store.getById(id);
+  if (!listing) {
+    res.statusCode = 404;
+    return res.end(JSON.stringify({ error: "Listing not found" }));
   }
+
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json");
+  return res.end(JSON.stringify(listing));
 };
