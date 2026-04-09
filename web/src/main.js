@@ -130,6 +130,8 @@ const showOAuthUnavailable = (providerLabel) => {
 /** When the listings API fails (e.g. production with VITE_DEMO_LISTINGS=false); never surface raw stack traces. */
 const LISTINGS_UNAVAILABLE_MSG =
   "We couldn’t load listings. Check your connection and try again.";
+const LISTING_DETAIL_UNAVAILABLE_MSG =
+  "We couldn’t load this ad. Check your connection and try again.";
 const USER_STORE_KEY = "nuvelo_user";
 const PROFILE_FIELDS_KEY = "nuvelo_profile_fields";
 /** Canonical profile JSON for /profile/settings (merged with legacy key on read). */
@@ -4628,6 +4630,6 @@ syncGlobalHeaderDrawerSearch();
 
 void (async () => {
   await initAuth();
-  syncAuthBackendHint();
+  syncAuthSignInAvailability();
   await render().catch((e) => console.error(e));
 })();

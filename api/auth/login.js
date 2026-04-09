@@ -1,3 +1,8 @@
+/**
+ * POST /api/auth/login — proxies to upstream `{LISTINGS_BACKEND_URL|NUVELO_API_URL}/auth/login`
+ * (see `_backend.js`). Used by the web app only when Supabase env vars are absent and legacy login
+ * is allowed (`VITE_ALLOW_LEGACY_AUTH` in production). Safe to deploy unused when auth is Supabase-only.
+ */
 const { applyCors } = require("../_cors");
 const { backendBase } = require("../_backend");
 
@@ -32,7 +37,9 @@ module.exports = async (req, res) => {
     return res.end(
       JSON.stringify({
         error: "Bad gateway",
-        message: err?.message || "Could not reach auth backend"
+        message:
+          err?.message ||
+          "Could not reach the listings API (check LISTINGS_BACKEND_URL / NUVELO_API_URL on the host)"
       })
     );
   }

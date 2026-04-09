@@ -375,10 +375,18 @@
         </p>
         <p id="login-error" class="login-error" role="alert" hidden></p>
         <p id="login-success" class="login-success" role="status" hidden></p>
+        <p id="auth-missing-config" class="auth-missing-config muted small" role="note" hidden>
+          Sign-in is not configured for this build. Production requires
+          <strong>VITE_SUPABASE_URL</strong> and <strong>VITE_SUPABASE_ANON_KEY</strong> in the web
+          app environment, then a redeploy. Optional: set <strong>VITE_ALLOW_LEGACY_AUTH=true</strong>
+          only if you intentionally use the listings API <code>/auth/login</code> proxy instead of
+          Supabase.
+        </p>
         <p id="auth-backend-hint" class="auth-backend-hint muted small" hidden>
-          Email or phone sign-in uses the Nuvelo demo API (no Supabase in this build). The first
-          request can take up to a minute while the server wakes up — try Continue again if it
-          fails.
+          Without Supabase, this browser build signs in via this site’s <code>/api</code> route,
+          which proxies to the listings backend (<code>LISTINGS_BACKEND_URL</code> /
+          <code>NUVELO_API_URL</code> on the server). The first request may take up to a minute if
+          that host was asleep — try Continue again if it fails.
         </p>
 
         <div id="login-social-block" class="auth-social">

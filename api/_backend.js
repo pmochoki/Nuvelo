@@ -1,4 +1,7 @@
-/** Upstream Express API (Render or self-hosted). Override in Vercel: LISTINGS_BACKEND_URL */
+/**
+ * Upstream listings API (Render or self-hosted). Vercel: set `LISTINGS_BACKEND_URL` or
+ * `NUVELO_API_URL` so `/api/*` routes can proxy; default is the public Render demo host.
+ */
 function backendBase() {
   const raw =
     process.env.LISTINGS_BACKEND_URL ||
