@@ -270,15 +270,34 @@ const openModal = (mode = "login") => {
   if (socialEl) {
     socialEl.hidden = false;
   }
+  const emailToggle = document.getElementById("auth-show-email-form");
+  if (emailToggle) {
+    emailToggle.hidden = mode === "signup";
+    if (!emailToggle.hidden) {
+      emailToggle.textContent = "Sign in with email or phone";
+    }
+  }
   if (formEl) {
-    formEl.hidden = mode === "signup";
+    /* Login: start with OAuth only; signup: show name/role/email form immediately */
+    formEl.hidden = mode === "login";
+    loginModal.querySelectorAll(".auth-field--signup").forEach((el) => {
+      el.hidden = mode === "login";
+    });
+    const nameInput = formEl.querySelector("input[name='name']");
+    const roleSelect = formEl.querySelector("select[name='role']");
+    if (nameInput) {
+      nameInput.required = mode === "signup";
+    }
+    if (roleSelect) {
+      roleSelect.required = mode === "signup";
+    }
   }
   if (switchBtn) {
     switchBtn.textContent =
       mode === "signup" ? "Already have an account? Sign in" : "New here? Register";
   }
   loginModal.hidden = false;
-  if (mode === "login" && formEl && !formEl.hidden) {
+  if (mode === "signup" && formEl && !formEl.hidden) {
     loginModal.querySelector("input[name='name']")?.focus();
   }
 };
@@ -349,7 +368,11 @@ document.getElementById("auth-show-email-form")?.addEventListener("click", () =>
   const formEl = document.getElementById("login-form");
   if (formEl) {
     formEl.hidden = false;
-    formEl.querySelector("input[name='name']")?.focus();
+    if (authModalMode === "login") {
+      formEl.querySelector("input[name='email']")?.focus();
+    } else {
+      formEl.querySelector("input[name='name']")?.focus();
+    }
   }
 });
 
@@ -427,13 +450,25 @@ loginForm?.addEventListener("submit", async (e) => {
     return;
   }
 
+  if (authModalMode === "signup" && (!name || name.length < 2)) {
+    showLoginError("Enter your display name (at least 2 characters).");
+    return;
+  }
+
   if (supabase) {
     if (submitBtn) {
       submitBtn.disabled = true;
     }
     try {
       const redirectTo = getAuthRedirectUrl();
-      const meta = { name, role, full_name: name, display_name: name };
+      const metaName = name || (email ? email.split("@")[0] : "") || "Member";
+      const metaRole = role || "buyer";
+      const meta = {
+        name: metaName,
+        role: metaRole,
+        full_name: metaName,
+        display_name: metaName
+      };
 
       if (email) {
         const { error } = await supabase.auth.signInWithOtp({
@@ -477,7 +512,12 @@ loginForm?.addEventListener("submit", async (e) => {
     submitBtn.disabled = true;
   }
   try {
-    const user = await loginUser({ name, role, email, phone });
+    const user = await loginUser({
+      name: name || "Member",
+      role: role || "buyer",
+      email,
+      phone
+    });
     cachedUser = user;
     writeStoredUser(user);
     updateAuthUi();

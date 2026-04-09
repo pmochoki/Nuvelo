@@ -226,13 +226,13 @@
         </div>
 
         <form id="login-form" class="stack auth-email-form">
-          <label>
+          <label class="auth-field--signup">
             Display name
-            <input name="name" required minlength="2" autocomplete="name" placeholder="Maria Kovacs" />
+            <input name="name" minlength="2" autocomplete="name" placeholder="Maria Kovacs" />
           </label>
-          <label>
+          <label class="auth-field--signup">
             Role
-            <select name="role" required>
+            <select name="role">
               <option value="buyer">Buyer</option>
               <option value="tenant">Tenant</option>
               <option value="seller">Seller</option>
