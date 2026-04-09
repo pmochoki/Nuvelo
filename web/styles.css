@@ -2346,119 +2346,145 @@ body.is-landing .jiji-hero {
   gap: 1.5rem;
 }
 
-@media (min-width: 1024px) {
-  .jiji-home__cols {
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 1.5rem;
-  }
-
-  .jiji-home__sidebar {
-    flex: 0 0 280px;
-    width: 280px;
-  }
-
-  .jiji-home__main {
-    flex: 1;
-    min-width: 0;
-  }
+.jiji-home__main {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
 }
 
-.jiji-cat-list {
-  background: var(--purple-card);
-  border: 1px solid var(--purple-border);
-  border-radius: 8px;
-  padding: 0.75rem 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+/* Homepage — Jiji-style category icon grid (below search, full width) */
+.jiji-cat-grid-section {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 0.75rem 0.25rem;
+  box-sizing: border-box;
 }
 
-.jiji-cat-list__title {
-  margin: 0 0 0.5rem;
-  padding: 0 1rem;
+.jiji-cat-grid-section__title {
+  margin: 0 0 0.65rem;
   font-size: 1rem;
   font-weight: 800;
   color: var(--text);
+  letter-spacing: 0.02em;
 }
 
-.jiji-cat-list__scroll {
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem;
-  padding: 0.25rem 0.75rem 0.5rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
+.jiji-cat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.6rem 0.45rem;
+  align-items: start;
 }
 
-@media (min-width: 1024px) {
-  .jiji-cat-list__scroll {
-    flex-direction: column;
-    overflow: visible;
-    padding: 0;
+@media (min-width: 640px) and (max-width: 1023px) {
+  .jiji-cat-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    gap: 0.75rem 0.55rem;
   }
 }
 
-.jiji-cat-row {
+@media (min-width: 1024px) {
+  .jiji-cat-grid-section {
+    padding: 0 1rem 0.35rem;
+  }
+
+  .jiji-cat-grid {
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 0.85rem 0.65rem;
+  }
+}
+
+.jiji-cat-tile {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.65rem;
-  padding: 0.6rem 1rem;
+  justify-content: flex-start;
+  min-width: 0;
+  padding: 0.2rem;
   text-decoration: none;
   color: inherit;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  cursor: pointer;
-  border-radius: 6px;
-  flex-shrink: 0;
-  min-width: 200px;
+  border-radius: 12px;
+  -webkit-tap-highlight-color: transparent;
+  transition:
+    transform 0.12s ease,
+    background 0.12s ease;
 }
 
-@media (min-width: 1024px) {
-  .jiji-cat-row {
-    min-width: 0;
+.jiji-cat-tile:hover {
+  background: rgba(124, 58, 237, 0.06);
+}
+
+.jiji-cat-tile:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.jiji-cat-tile:active {
+  transform: scale(0.98);
+}
+
+.jiji-cat-tile__icon-wrap {
+  width: 100%;
+  max-width: 80px;
+  aspect-ratio: 1;
+  margin: 0 auto 0.3rem;
+  border-radius: 12px;
+  background: #f3f4f6;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.35rem, 4.2vw, 1.85rem);
+  line-height: 1;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.jiji-cat-tile__icon-wrap--post,
+.jiji-cat-tile--post .jiji-cat-tile__icon-wrap {
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+  color: var(--white);
+  box-shadow: none;
+}
+
+.jiji-cat-tile__plus {
+  display: block;
+  font-size: 2rem;
+  font-weight: 300;
+  line-height: 1;
+  margin-top: -2px;
+}
+
+.jiji-cat-tile__label {
+  width: 100%;
+  max-width: 100%;
+  font-size: 0.6875rem;
+  line-height: 1.2;
+  font-weight: 600;
+  text-align: center;
+  color: var(--purple-deep);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+@media (min-width: 640px) {
+  .jiji-cat-tile__label {
+    font-size: 0.75rem;
+    line-height: 1.25;
+  }
+
+  .jiji-cat-tile__icon-wrap {
+    max-width: 76px;
   }
 }
 
-.jiji-cat-row:hover,
-.jiji-cat-row:focus-visible {
-  background: rgba(124, 58, 237, 0.12);
-  outline: none;
-}
-
-.jiji-cat-row__thumb {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  background: var(--purple-surface);
-  display: grid;
-  place-items: center;
-  font-size: 1.25rem;
-  flex-shrink: 0;
-}
-
-.jiji-cat-row__mid {
-  flex: 1;
-  min-width: 0;
-}
-
-.jiji-cat-row__name {
-  display: block;
-  font-weight: 700;
-  font-size: 0.9rem;
-  color: var(--text);
-}
-
-.jiji-cat-row__count {
-  display: block;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-}
-
-.jiji-cat-row__chev {
-  color: var(--text-muted);
-  font-size: 1.1rem;
+@media (min-width: 1024px) {
+  .jiji-cat-tile__icon-wrap {
+    max-width: 72px;
+    font-size: 1.65rem;
+  }
 }
 
 .jiji-promo-strip {
@@ -2515,6 +2541,13 @@ body.is-landing .jiji-hero {
   overflow-x: auto;
   padding: 0.25rem 0;
   -webkit-overflow-scrolling: touch;
+}
+
+/* Secondary filter chips — desktop only; mobile uses the category icon grid */
+@media (max-width: 1023px) {
+  .jiji-pills {
+    display: none;
+  }
 }
 
 .jiji-pill {
@@ -3601,44 +3634,6 @@ body.is-landing .jiji-hero {
     gap: 1rem;
   }
 
-  .jiji-home__sidebar .jiji-cat-list__scroll {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    padding: 0.25rem 0.5rem 0.65rem;
-  }
-
-  .jiji-home__sidebar .jiji-cat-row {
-    flex: 0 0 auto;
-    min-width: 148px;
-    max-width: 200px;
-    padding: 0.55rem 0.6rem;
-    border: 1px solid var(--purple-border);
-    background: var(--purple-surface);
-    border-radius: 10px;
-    flex-direction: row;
-    align-items: center;
-  }
-
-  .jiji-cat-row__thumb {
-    width: 34px;
-    height: 34px;
-    font-size: 1rem;
-  }
-
-  .jiji-cat-row__name {
-    font-size: 0.82rem;
-  }
-
-  .jiji-cat-row__chev {
-    display: none;
-  }
-
   /* Grid view: 2 columns; compact card — 4:3 media, truncated text, tappable save */
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__media {
     aspect-ratio: 4 / 3;
@@ -3792,42 +3787,6 @@ body.is-landing .jiji-hero {
   .btn--sell,
   .cat-chip {
     min-height: 44px;
-  }
-
-  .jiji-home__sidebar .jiji-cat-list__scroll {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
-    overflow: visible;
-    padding: 0.25rem 0.75rem 0.5rem;
-  }
-
-  .jiji-home__sidebar .jiji-cat-row {
-    min-width: 0;
-    padding: 0.55rem 0.6rem;
-    border: 1px solid var(--purple-border);
-    background: var(--purple-surface);
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .jiji-home__sidebar .jiji-cat-row__chev {
-    display: none;
-  }
-}
-
-@media (min-width: 1024px) {
-  .jiji-cat-list__scroll {
-    display: grid;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    gap: 0.6rem;
-    overflow: visible;
-    padding: 0.25rem 0.75rem 0.75rem;
-  }
-
-  .jiji-home__sidebar .jiji-cat-list__scroll {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-    padding: 0;
   }
 }
 

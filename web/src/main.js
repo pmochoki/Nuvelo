@@ -140,6 +140,67 @@ const CATEGORY_SLUGS = {
 
 const ADS_CATEGORIES = CATEGORIES.filter((c) => c.slug !== EVENTS_CATEGORY);
 
+/** Order for homepage category grid (after Post, Trending, Events). */
+const HOME_GRID_SLUG_ORDER = [
+  "donations",
+  "rentals",
+  "jobs",
+  "services",
+  "goods",
+  "vehicles",
+  "electronics",
+  "furniture",
+  "fashion",
+  "babies-kids",
+  "other"
+];
+
+const homeGridLabel = (row) => {
+  if (row.slug === "donations") {
+    return "Donations";
+  }
+  return String(row.label || "")
+    .replace(/^🤲\s*/, "")
+    .trim();
+};
+
+const homeGridIcon = (row) => {
+  if (row.slug === "goods") {
+    return "👕";
+  }
+  return row.icon || "📁";
+};
+
+/** Jiji-style icon grid: Post ad, Trending, Events, then marketplace categories. */
+const buildHomeCategoryGridHtml = () => {
+  const parts = [];
+  parts.push(`<a class="jiji-cat-tile jiji-cat-tile--post" href="/post">
+    <span class="jiji-cat-tile__icon-wrap jiji-cat-tile__icon-wrap--post" aria-hidden="true"><span class="jiji-cat-tile__plus">+</span></span>
+    <span class="jiji-cat-tile__label">Post ad</span>
+  </a>`);
+  parts.push(`<a class="jiji-cat-tile" href="/browse?sort=popular">
+    <span class="jiji-cat-tile__icon-wrap" aria-hidden="true">🔥</span>
+    <span class="jiji-cat-tile__label">Trending</span>
+  </a>`);
+  parts.push(`<a class="jiji-cat-tile" href="/events">
+    <span class="jiji-cat-tile__icon-wrap" aria-hidden="true">🎉</span>
+    <span class="jiji-cat-tile__label">Events</span>
+  </a>`);
+  for (const slug of HOME_GRID_SLUG_ORDER) {
+    const row = ADS_CATEGORIES.find((c) => c.slug === slug);
+    if (!row) {
+      continue;
+    }
+    const icon = homeGridIcon(row);
+    const label = homeGridLabel(row);
+    parts.push(`<a class="jiji-cat-tile" href="/category/${esc(row.slug)}">
+      <span class="jiji-cat-tile__icon-wrap" aria-hidden="true">${icon}</span>
+      <span class="jiji-cat-tile__label">${esc(label)}</span>
+    </a>`);
+  }
+  return `<nav class="jiji-cat-grid" aria-label="Browse categories">${parts.join("")}</nav>`;
+};
+
 const mainShell = () => document.getElementById("app");
 const authBtn = document.getElementById("auth-btn");
 const userChip = document.getElementById("user-chip");
@@ -2150,13 +2211,6 @@ const categoryDisplayName = (apiId) => {
   return row ? row.label : id;
 };
 
-const formatStaticCategoryCount = (catRow, nFromListings) => {
-  if (catRow.count != null) {
-    return formatListingCountLabel(catRow.count);
-  }
-  return formatListingCountLabel(nFromListings);
-};
-
 const excerptOneLine = (text, max = 72) => {
   const t = String(text || "").replace(/\s+/g, " ").trim();
   return t.length > max ? `${t.slice(0, max)}…` : t;
@@ -2396,15 +2450,6 @@ const syncHeaderChrome = (route) => {
   syncLandingHeaderScroll();
 };
 
-const countByCategory = (listings) => {
-  const m = {};
-  listings.forEach((l) => {
-    const id = l.categoryId || "";
-    m[id] = (m[id] || 0) + 1;
-  });
-  return m;
-};
-
 /** Card/detail price line — never show negative HUF. */
 const formatDisplayPrice = (listing) => {
   if (listing.categoryId === DONATIONS_CATEGORY_ID) {
@@ -2559,33 +2604,9 @@ const renderLanding = async () => {
     console.error(err);
     listings = [];
   }
-  const counts = countByCategory(listings);
   const viewMode = getListViewMode();
   const trending = sortListings([...listings], "popular").slice(0, 24);
-
-  const catRows = [
-    `<a class="jiji-cat-row" href="/events">
-      <span class="jiji-cat-row__thumb" aria-hidden="true">🎉</span>
-      <span class="jiji-cat-row__mid">
-        <span class="jiji-cat-row__name">Events</span>
-        <span class="jiji-cat-row__count">Community board</span>
-      </span>
-      <span class="jiji-cat-row__chev" aria-hidden="true">›</span>
-    </a>`,
-    ...ADS_CATEGORIES.map((row) => {
-    const catId = apiCategoryIdForSlug(row.slug);
-    const n = counts[catId] ?? 0;
-    const countLine = formatStaticCategoryCount(row, n);
-    return `<a class="jiji-cat-row" href="/category/${esc(row.slug)}">
-      <span class="jiji-cat-row__thumb" aria-hidden="true">${row.icon}</span>
-      <span class="jiji-cat-row__mid">
-        <span class="jiji-cat-row__name">${esc(row.label)}</span>
-        <span class="jiji-cat-row__count">${esc(countLine)}</span>
-      </span>
-      <span class="jiji-cat-row__chev" aria-hidden="true">›</span>
-    </a>`;
-    })
-  ].join("");
+  const homeCategoryGrid = buildHomeCategoryGridHtml();
 
   const pills = [
     `<button type="button" class="jiji-pill" data-home-pill="post">Post ad</button>`,
@@ -2620,13 +2641,11 @@ const renderLanding = async () => {
           </form>
         </div>
       </section>
+      <section class="jiji-cat-grid-section" aria-labelledby="home-cat-heading">
+        <h2 id="home-cat-heading" class="jiji-cat-grid-section__title">Categories</h2>
+        ${homeCategoryGrid}
+      </section>
       <div class="jiji-home__cols">
-        <aside class="jiji-home__sidebar" aria-label="Categories">
-          <div class="jiji-cat-list">
-            <h2 class="jiji-cat-list__title">Categories</h2>
-            <div class="jiji-cat-list__scroll">${catRows}</div>
-          </div>
-        </aside>
         <div class="jiji-home__main">
           <div class="jiji-promo-strip" aria-label="Promotions">
             <a href="/post" class="jiji-promo-card jiji-promo-card--a">Post your first ad</a>
