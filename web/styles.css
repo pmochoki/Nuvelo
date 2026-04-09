@@ -122,7 +122,7 @@ a:hover {
 .jiji-header__user-nav.nav-user-icons {
   display: flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: 4px;
   flex: 0 0 auto;
   flex-wrap: nowrap;
 }
@@ -133,24 +133,24 @@ a:hover {
 
 .nav-user-icons .nav-icon-btn {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 40px;
   height: 40px;
   padding: 0;
   border: none;
-  border-radius: 10px;
-  background: transparent;
-  color: var(--purple-deep);
-  cursor: pointer;
+  border-radius: 50%;
+  background: white;
+  color: #333;
   text-decoration: none;
+  cursor: pointer;
   flex-shrink: 0;
+  transition: background 0.15s;
 }
 
 .nav-user-icons .nav-icon-btn:hover {
-  background: rgba(123, 63, 178, 0.1);
-  color: var(--orange);
+  background: #f0f0f0;
 }
 
 .nav-icon-btn__wrap {
@@ -159,23 +159,24 @@ a:hover {
 
 .nav-user-icons .nav-badge {
   position: absolute;
-  top: 2px;
-  right: 2px;
-  min-width: 1rem;
-  height: 1rem;
-  padding: 0 0.2rem;
-  border-radius: 999px;
-  background: var(--purple-deep);
-  color: var(--white);
-  font-size: 0.65rem;
+  top: 4px;
+  right: 4px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: #e53e3e;
+  color: white;
+  font-size: 10px;
   font-weight: 700;
-  line-height: 1rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   pointer-events: none;
 }
 
 .nav-user-icons .nav-badge--alert {
-  background: #e11d48;
+  background: #e53e3e;
 }
 
 .nav-user-icons .nav-avatar-btn {
@@ -183,25 +184,26 @@ a:hover {
   align-items: center;
   justify-content: center;
   padding: 0;
-  margin-left: 0.15rem;
-  border: 2px solid var(--purple-border);
+  margin-left: 0;
+  border: none;
   border-radius: 50%;
-  background: var(--white);
+  background: transparent;
   overflow: hidden;
   flex-shrink: 0;
   text-decoration: none;
 }
 
 .nav-user-icons .nav-avatar-btn:hover {
-  border-color: var(--orange);
+  opacity: 0.92;
 }
 
 .nav-user-icons .nav-avatar {
-  display: block;
   width: 36px;
   height: 36px;
-  object-fit: cover;
   border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid white;
+  display: block;
 }
 
 .jiji-header__search-form {
