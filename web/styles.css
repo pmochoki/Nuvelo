@@ -5054,10 +5054,133 @@ body.is-landing .jiji-hero {
   padding-top: 0;
 }
 
+.settings-jiji-section--photo {
+  margin-top: 0;
+}
+
 .settings-jiji-section__title {
   margin: 0 0 0.75rem;
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.settings-account-photo__lead {
+  margin: 0 0 1rem;
+}
+
+.settings-account-photo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.settings-account-photo__circle {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid #e2e8f0;
+  background: var(--purple-surface);
+}
+
+.settings-account-photo__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.settings-account-photo__img--hidden {
+  display: none !important;
+}
+
+.settings-account-photo__initials {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #fff;
+  background: linear-gradient(145deg, var(--purple) 0%, var(--purple-deep) 100%);
+  letter-spacing: 0.02em;
+}
+
+.settings-account-photo__trigger {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  background: transparent;
+}
+
+.settings-account-photo__overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 23, 42, 0.45);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.settings-account-photo__circle:hover .settings-account-photo__overlay,
+.settings-account-photo__trigger:focus-visible .settings-account-photo__overlay {
+  opacity: 1;
+}
+
+.settings-account-photo__hint {
+  margin: 0;
+  max-width: 280px;
+}
+
+.form-field__error {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #b91c1c;
+}
+
+.form-input[aria-invalid="true"] {
+  border-color: #f87171;
+}
+
+.settings-jiji-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.65rem;
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.btn--ghost {
+  background: #fff;
+  color: var(--text-secondary);
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.55rem 1.1rem;
+  font-weight: 600;
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.btn--ghost:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 .phone-prefix-field {
@@ -5089,16 +5212,6 @@ body.is-landing .jiji-hero {
 .form-textarea {
   min-height: 100px;
   resize: vertical;
-}
-
-.settings-avatar-wrap .profile-avatar-large {
-  width: 112px;
-  height: 112px;
-}
-
-.avatar-edit-btn--large {
-  width: 40px;
-  height: 40px;
 }
 
 .settings-save-btn:disabled {

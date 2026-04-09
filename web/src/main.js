@@ -19,6 +19,7 @@ import {
   donationConditionLabel,
   donationCollectionMeta
 } from "./data/donationConstants.js";
+import { getDisplayInitials } from "./lib/profileInitials.js";
 import {
   getMessageChatHtml,
   getMockUnreadMessageTotal,
@@ -902,6 +903,72 @@ function showNuveloToast(message) {
   }, 2600);
 }
 
+function syncGlobalAvatarImages(url) {
+  const src =
+    url &&
+    typeof url === "string" &&
+    (url.startsWith("data:image/") || url.startsWith("http://") || url.startsWith("https://"))
+      ? url
+      : "/default-avatar.svg";
+  const nav = document.getElementById("nav-user-avatar");
+  const side = document.getElementById("profile-sidebar-avatar-img");
+  if (nav instanceof HTMLImageElement) {
+    nav.src = src;
+  }
+  if (side instanceof HTMLImageElement) {
+    side.src = src;
+  }
+}
+
+/**
+ * Settings page: local data URL, remote http(s) avatar, or initials.
+ * @param {string} [httpFallback] — e.g. OAuth photo when no local crop
+ */
+function updateSettingsAvatarVisual(dataUrl, displayName, httpFallback = "") {
+  const img = document.getElementById("settings-avatar-img");
+  const initialsEl = document.getElementById("settings-avatar-initials");
+  const nm = String(displayName ?? "").trim() || getUser()?.name || "Member";
+  if (!img || !initialsEl) {
+    return;
+  }
+  const hasLocal = Boolean(dataUrl && typeof dataUrl === "string" && dataUrl.startsWith("data:image/"));
+  const hasHttp = Boolean(
+    !hasLocal &&
+      httpFallback &&
+      typeof httpFallback === "string" &&
+      (httpFallback.startsWith("http://") || httpFallback.startsWith("https://"))
+  );
+  if (hasLocal) {
+    img.src = dataUrl;
+    img.classList.remove("settings-account-photo__img--hidden");
+    img.hidden = false;
+    initialsEl.hidden = true;
+  } else if (hasHttp) {
+    img.src = httpFallback;
+    img.classList.remove("settings-account-photo__img--hidden");
+    img.hidden = false;
+    initialsEl.hidden = true;
+  } else {
+    img.removeAttribute("src");
+    img.classList.add("settings-account-photo__img--hidden");
+    img.hidden = true;
+    initialsEl.textContent = getDisplayInitials(nm);
+    initialsEl.hidden = false;
+  }
+}
+
+function updateProfileChromeFromUser(u) {
+  if (!u) {
+    return;
+  }
+  document.querySelectorAll(".profile-sidebar .profile-name").forEach((el) => {
+    el.textContent = u.name || "Member";
+  });
+  document.querySelectorAll(".profile-phone--accent").forEach((el) => {
+    el.textContent = u.phone || "Add phone in Settings";
+  });
+}
+
 function persistAvatarFromFile(file) {
   if (!file?.type.startsWith("image/")) {
     return;
@@ -918,24 +985,38 @@ function persistAvatarFromFile(file) {
       cachedUser = { ...u, avatarUrl: dataUrl };
       writeStoredUser(cachedUser);
     }
-    const preview = document.getElementById("avatar-preview");
-    if (preview instanceof HTMLImageElement) {
-      preview.src = dataUrl;
-    }
-    const side = document.getElementById("profile-sidebar-avatar-img");
-    if (side instanceof HTMLImageElement) {
-      side.src = dataUrl;
-    }
-    const nav = document.getElementById("nav-user-avatar");
-    if (nav instanceof HTMLImageElement) {
-      nav.src = dataUrl;
-    }
+    const dn = document.getElementById("settings-display-name");
+    const nameVal = dn instanceof HTMLInputElement ? dn.value : u?.name ?? "";
+    updateSettingsAvatarVisual(dataUrl, nameVal, "");
+    syncGlobalAvatarImages(dataUrl);
     updateAuthUi();
   };
   reader.readAsDataURL(file);
 }
 
-/** Wire settings form (Jiji-style contact details), avatar, save. */
+const validateEmailFormat = (email) => {
+  const t = String(email || "").trim();
+  if (!t) {
+    return "Email is required.";
+  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) {
+    return "Enter a valid email address.";
+  }
+  return "";
+};
+
+const validateHuMobileNational = (digits) => {
+  const d = String(digits || "").replace(/\D/g, "");
+  if (!d) {
+    return "";
+  }
+  if (d.length < 8 || d.length > 9) {
+    return "Use 8–9 digits after +36 (Hungarian mobile).";
+  }
+  return "";
+};
+
+/** Wire settings form: avatar, validation, save, cancel/revert. */
 function bindProfileSettingsPage() {
   const updateCount = (input) => {
     const id = input.getAttribute("data-char-target");
@@ -965,43 +1046,161 @@ function bindProfileSettingsPage() {
     if (f) {
       persistAvatarFromFile(f);
     }
+    t.value = "";
+    syncDirty();
   });
 
   const saveBtn = document.getElementById("save-profile-btn");
+  const cancelBtn = document.getElementById("settings-cancel-btn");
   const form = document.getElementById("profile-settings-form");
+  const emailErr = document.getElementById("settings-email-error");
+  const phoneErr = document.getElementById("settings-phone-error");
 
-  const snapshot = () => {
+  const getFormState = () => {
     if (!(form instanceof HTMLFormElement)) {
-      return "";
+      return {
+        fullName: "",
+        email: "",
+        phoneNational: "",
+        location: "",
+        bio: "",
+        role: ""
+      };
     }
     const fd = new FormData(form);
-    const bits = [
-      String(fd.get("fullName") || ""),
-      String(fd.get("email") || ""),
-      String(fd.get("phoneNational") || ""),
-      String(fd.get("location") || ""),
-      String(fd.get("bio") || ""),
-      String(fd.get("role") || "")
-    ];
-    return JSON.stringify(bits);
+    return {
+      fullName: String(fd.get("fullName") || "").trim(),
+      email: String(fd.get("email") || "").trim(),
+      phoneNational: String(fd.get("phoneNational") || "").replace(/\D/g, ""),
+      location: String(fd.get("location") || ""),
+      bio: String(fd.get("bio") || ""),
+      role: String(fd.get("role") || "Buyer")
+    };
   };
 
-  let baseline = snapshot();
+  let baselineForm = getFormState();
+  let baselineLocalAvatarDataUrl = readStoredAvatarDataUrl();
+  let baselineAvatarResolvedAtLoad = withMergedAvatar(getUser())?.avatarUrl || "";
 
-  const syncSaveState = () => {
-    if (!(saveBtn instanceof HTMLButtonElement)) {
-      return;
+  const applyFormState = (state) => {
+    const set = (name, val) => {
+      const el = form?.elements.namedItem(name);
+      if (el instanceof HTMLInputElement || el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
+        el.value = val;
+      }
+    };
+    set("fullName", state.fullName);
+    set("email", state.email);
+    set("phoneNational", state.phoneNational);
+    set("location", state.location);
+    set("bio", state.bio);
+    set("role", state.role);
+    document.querySelectorAll("[data-char-target]").forEach((el) => {
+      if (el instanceof HTMLTextAreaElement) {
+        updateCount(el);
+      }
+    });
+  };
+
+  const syncDirty = () => {
+    const formDirty = JSON.stringify(getFormState()) !== JSON.stringify(baselineForm);
+    const avatarDirty = readStoredAvatarDataUrl() !== baselineLocalAvatarDataUrl;
+    const dirty = formDirty || avatarDirty;
+    if (saveBtn instanceof HTMLButtonElement) {
+      saveBtn.disabled = !dirty;
+      saveBtn.classList.toggle("btn--settings-ready", dirty);
     }
-    const dirty = snapshot() !== baseline;
-    saveBtn.disabled = !dirty;
-    saveBtn.classList.toggle("btn--settings-ready", dirty);
+    if (cancelBtn instanceof HTMLButtonElement) {
+      cancelBtn.disabled = !dirty;
+    }
   };
+
+  const clearFieldErrors = () => {
+    if (emailErr) {
+      emailErr.textContent = "";
+      emailErr.hidden = true;
+    }
+    if (phoneErr) {
+      phoneErr.textContent = "";
+      phoneErr.hidden = true;
+    }
+    const em = document.getElementById("settings-email");
+    if (em instanceof HTMLInputElement) {
+      em.setAttribute("aria-invalid", "false");
+    }
+    const ph = document.getElementById("settings-phone");
+    if (ph instanceof HTMLInputElement) {
+      ph.setAttribute("aria-invalid", "false");
+    }
+  };
+
+  const showEmailError = (msg) => {
+    if (emailErr) {
+      emailErr.textContent = msg;
+      emailErr.hidden = !msg;
+    }
+    const em = document.getElementById("settings-email");
+    if (em instanceof HTMLInputElement) {
+      em.setAttribute("aria-invalid", msg ? "true" : "false");
+    }
+  };
+
+  const showPhoneError = (msg) => {
+    if (phoneErr) {
+      phoneErr.textContent = msg;
+      phoneErr.hidden = !msg;
+    }
+    const ph = document.getElementById("settings-phone");
+    if (ph instanceof HTMLInputElement) {
+      ph.setAttribute("aria-invalid", msg ? "true" : "false");
+    }
+  };
+
+  document.getElementById("settings-email")?.addEventListener("blur", () => {
+    const st = getFormState();
+    const err = validateEmailFormat(st.email);
+    showEmailError(err);
+  });
+
+  document.getElementById("settings-phone")?.addEventListener("blur", () => {
+    const st = getFormState();
+    const err = validateHuMobileNational(st.phoneNational);
+    showPhoneError(err);
+  });
+
+  document.getElementById("settings-display-name")?.addEventListener("input", () => {
+    const nm =
+      document.getElementById("settings-display-name") instanceof HTMLInputElement
+        ? document.getElementById("settings-display-name").value
+        : "";
+    if (!readStoredAvatarDataUrl()) {
+      updateSettingsAvatarVisual("", nm, baselineAvatarResolvedAtLoad);
+    }
+    syncDirty();
+  });
 
   form?.querySelectorAll("[data-settings-track]").forEach((el) => {
-    el.addEventListener("input", syncSaveState);
-    el.addEventListener("change", syncSaveState);
+    el.addEventListener("input", syncDirty);
+    el.addEventListener("change", syncDirty);
   });
-  syncSaveState();
+
+  cancelBtn?.addEventListener("click", () => {
+    applyFormState(baselineForm);
+    writeStoredAvatarDataUrl(baselineLocalAvatarDataUrl || "");
+    const av = readStoredAvatarDataUrl();
+    const restored = av || baselineAvatarResolvedAtLoad || "";
+    const cur = getUser();
+    if (cur) {
+      cachedUser = { ...cur, avatarUrl: restored };
+      writeStoredUser(cachedUser);
+    }
+    updateSettingsAvatarVisual(av, baselineForm.fullName || getUser()?.name || "", baselineAvatarResolvedAtLoad);
+    syncGlobalAvatarImages(restored);
+    clearFieldErrors();
+    updateAuthUi();
+    updateProfileChromeFromUser(getUser());
+    syncDirty();
+  });
 
   saveBtn?.addEventListener("click", () => {
     form?.requestSubmit();
@@ -1012,11 +1211,19 @@ function bindProfileSettingsPage() {
     if (!(form instanceof HTMLFormElement)) {
       return;
     }
-    const fd = new FormData(form);
-    const fullName = String(fd.get("fullName") || "").trim();
-    const email = String(fd.get("email") || "").trim();
-    const national = String(fd.get("phoneNational") || "").replace(/\D/g, "");
-    const phoneFull = national ? `+36${national}` : "";
+    clearFieldErrors();
+    const st = getFormState();
+    const emailValidation = validateEmailFormat(st.email);
+    const phoneValidation = validateHuMobileNational(st.phoneNational);
+    showEmailError(emailValidation);
+    showPhoneError(phoneValidation);
+    if (emailValidation || phoneValidation) {
+      return;
+    }
+
+    const fullName = st.fullName;
+    const email = st.email;
+    const phoneFull = st.phoneNational ? `+36${st.phoneNational}` : "";
     const cur = readProfileFieldStore();
     const next = {
       ...cur,
@@ -1024,10 +1231,10 @@ function bindProfileSettingsPage() {
       firstName: fullName.split(/\s+/)[0] || "",
       lastName: fullName.split(/\s+/).slice(1).join(" ") || "",
       email,
-      city: String(fd.get("location") || ""),
+      city: st.location,
       phone: phoneFull,
-      bio: String(fd.get("bio") || "").slice(0, 300),
-      role: String(fd.get("role") || "Buyer")
+      bio: String(st.bio || "").slice(0, 300),
+      role: st.role
     };
     writeProfileFieldStore(next);
     const u = getUser();
@@ -1041,11 +1248,16 @@ function bindProfileSettingsPage() {
       };
       writeStoredUser(cachedUser);
     }
-    baseline = snapshot();
-    syncSaveState();
+    baselineForm = getFormState();
+    baselineLocalAvatarDataUrl = readStoredAvatarDataUrl();
+    baselineAvatarResolvedAtLoad = withMergedAvatar(getUser())?.avatarUrl || "";
+    syncDirty();
     updateAuthUi();
+    updateProfileChromeFromUser(getUser());
     showNuveloToast("Profile updated!");
   });
+
+  syncDirty();
 
   document.getElementById("signout-btn")?.addEventListener("click", () => void signOutNuvelo());
 }
