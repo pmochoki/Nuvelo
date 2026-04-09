@@ -30,7 +30,7 @@ const friendlyNetworkError = (err) => {
     /networkerror/i.test(msg) ||
     /load failed/i.test(msg)
   ) {
-    return "Could not connect. Check your connection and try again.";
+    return "Could not reach the sign-in service. Check your connection. If you’re not using email magic links (Supabase), the demo server may need up to a minute to wake up — try again shortly.";
   }
   return msg || "Something went wrong. Please try again.";
 };
@@ -257,6 +257,14 @@ userChip?.addEventListener("click", async () => {
 
 let authModalMode = "login";
 
+const syncAuthBackendHint = () => {
+  const el = document.getElementById("auth-backend-hint");
+  if (!el) {
+    return;
+  }
+  el.hidden = isSupabaseConfigured;
+};
+
 const openModal = (mode = "login") => {
   resetAuthModalMessages();
   authModalMode = mode;
@@ -309,6 +317,7 @@ const openModal = (mode = "login") => {
       mode === "signup" ? "Already have an account? Sign in" : "New here? Register";
   }
   loginModal.hidden = false;
+  syncAuthBackendHint();
   if (mode === "signup" && formEl && !formEl.hidden) {
     loginModal.querySelector("input[name='name']")?.focus();
   }
@@ -519,6 +528,9 @@ loginForm?.addEventListener("submit", async (e) => {
         });
       }
       showLoginSuccess("Enter the code we sent to your phone.");
+    } catch (err) {
+      console.error(err);
+      showLoginError(friendlyNetworkError(err));
     } finally {
       if (submitBtn) {
         submitBtn.disabled = false;
@@ -3227,5 +3239,6 @@ syncLocationCombobox(
 
 void (async () => {
   await initAuth();
+  syncAuthBackendHint();
   await render().catch((e) => console.error(e));
 })();

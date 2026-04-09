@@ -2853,6 +2853,15 @@ body.is-landing .jiji-hero {
   line-height: 1.45;
 }
 
+.auth-backend-hint {
+  margin: 0 0 0.65rem;
+  line-height: 1.45;
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(124, 58, 237, 0.12);
+  border: 1px solid var(--purple-border);
+}
+
 .modal__close-x {
   position: absolute;
   top: 0.65rem;
