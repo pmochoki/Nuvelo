@@ -40,8 +40,19 @@ export function setDonationClaimed(listingId, claimed) {
   }
 }
 
-const DEFAULT_API_URL = "https://nuvelo-backend.onrender.com";
-const API_URL = (import.meta.env.VITE_API_URL || DEFAULT_API_URL).replace(/\/+$/, "");
+const DEFAULT_REMOTE_API = "https://nuvelo-backend.onrender.com";
+
+/**
+ * When VITE_API_URL is unset or empty, use same-origin `/api` (Vercel serverless proxy).
+ * When set to a full URL, call that backend directly.
+ */
+function getApiBase() {
+  const raw = import.meta.env.VITE_API_URL;
+  if (raw == null || String(raw).trim() === "") {
+    return "/api";
+  }
+  return String(raw).trim().replace(/\/+$/, "");
+}
 
 /** Set VITE_DEMO_LISTINGS=false in Vercel to hide sample ads in production. */
 function demosEnabled() {
@@ -49,14 +60,28 @@ function demosEnabled() {
 }
 
 async function apiFetch(path, options = {}) {
-  const url = `${API_URL}${path.startsWith("/") ? path : `/${path}`}`;
-  const res = await fetch(url, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    }
-  });
+  const base = getApiBase();
+  const pathPart = path.startsWith("/") ? path : `/${path}`;
+  const url = base.startsWith("http") ? `${base}${pathPart}` : `${base}${pathPart}`;
+
+  let res;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      }
+    });
+  } catch (err) {
+    const name = err?.name || "Error";
+    const msg = err?.message || String(err);
+    const hint =
+      base.startsWith("http")
+        ? `Tried ${url}. Check CORS, SSL, and that the server is running.`
+        : `Tried ${url}. For local dev, use Vite proxy to a backend, or set VITE_API_URL=${DEFAULT_REMOTE_API}`;
+    throw new Error(`Nuvelo API request failed (${name}): ${msg}. ${hint}`);
+  }
   const text = await res.text();
   let payload = null;
   if (text) {

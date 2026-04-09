@@ -1,6 +1,13 @@
 import "./admin.css";
 
-const API_URL = (import.meta.env.VITE_API_URL || "https://nuvelo-backend.onrender.com").replace(/\/+$/, "");
+function getApiBase() {
+  const raw = import.meta.env.VITE_API_URL;
+  if (raw == null || String(raw).trim() === "") {
+    return "/api";
+  }
+  return String(raw).trim().replace(/\/+$/, "");
+}
+
 const root = document.getElementById("admin-root");
 
 const esc = (s) => {
@@ -17,13 +24,22 @@ const headerHtml = () => `
 `;
 
 async function apiFetch(path, options = {}) {
-  const res = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {})
-    }
-  });
+  const base = getApiBase();
+  const pathPart = path.startsWith("/") ? path : `/${path}`;
+  const url = base.startsWith("http") ? `${base}${pathPart}` : `${base}${pathPart}`;
+  let res;
+  try {
+    res = await fetch(url, {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {})
+      }
+    });
+  } catch (err) {
+    const msg = err?.message || String(err);
+    throw new Error(`Admin API network error (${url}): ${msg}`);
+  }
   const txt = await res.text();
   const data = txt ? JSON.parse(txt) : null;
   if (!res.ok) {
@@ -70,7 +86,7 @@ async function renderDashboard() {
       <div class="admin-toolbar">
         <button type="button" id="admin-refresh">Refresh</button>
         <a href="/" style="margin-left:12px;color:var(--orange);align-self:center">← Marketplace</a>
-        <a href="${API_URL}/health" target="_blank" rel="noopener noreferrer" style="margin-left:12px;align-self:center;font-size:0.85rem">API health</a>
+        <a href="${getApiBase().startsWith("http") ? `${getApiBase()}/health` : "/api/health"}" target="_blank" rel="noopener noreferrer" style="margin-left:12px;align-self:center;font-size:0.85rem">API health</a>
       </div>
       <section>
         <h2>Snapshot</h2>

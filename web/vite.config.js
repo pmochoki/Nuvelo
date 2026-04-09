@@ -29,6 +29,15 @@ export default defineConfig({
   root: ".",
   publicDir: "public",
   plugins: [moveModuleScriptToBody()],
+  server: {
+    proxy: {
+      "/api": {
+        target: "https://nuvelo-backend.onrender.com",
+        changeOrigin: true,
+        rewrite: (p) => p.replace(/^\/api/, "")
+      }
+    }
+  },
   build: {
     outDir: "dist",
     emptyOutDir: true,

@@ -23,7 +23,9 @@ import { renderProfilePage } from "./pages/ProfilePage.js";
 import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
 
 if (!import.meta.env.VITE_API_URL) {
-  console.error("[Nuvelo] VITE_API_URL is not set! Auth and API calls will fail.");
+  console.info(
+    "[Nuvelo] VITE_API_URL is unset — using same-origin /api (Vercel proxy or Vite dev proxy to Render)."
+  );
 }
 
 /** Maps browser network failures (e.g. TypeError: Failed to fetch) to a clear message. */
