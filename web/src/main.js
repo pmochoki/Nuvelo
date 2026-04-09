@@ -803,6 +803,7 @@ const buildProfileSettingsUser = (baseUser) => {
   };
 };
 
+/** Wire settings form, avatar picker, save, and log out (hash-router companion to renderSettingsPage). */
 function bindProfileSettingsPage() {
   const updateCount = (input) => {
     const id = input.getAttribute("data-char-target");
@@ -880,6 +881,8 @@ function bindProfileSettingsPage() {
 
   document.getElementById("signout-btn")?.addEventListener("click", () => void signOutNuvelo());
 }
+
+const initSettingsHandlers = bindProfileSettingsPage;
 
 const ensureAnonEventUser = () => {
   const existing = localStorage.getItem(EVENTS_ANON_KEY);
@@ -2809,6 +2812,7 @@ const renderProfile = async (section) => {
   };
   const title = titles[section] || titles.adverts;
   if (!user) {
+    openModal("signin");
     appEl.innerHTML = `
       <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
         <h1 style="margin:0 0 0.5rem">${esc(title)}</h1>
@@ -2865,6 +2869,7 @@ const renderProfileSettings = async (settingsSection) => {
   }
   const user = getUser();
   if (!user) {
+    openModal("signin");
     appEl.innerHTML = `
       <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
         <h1 style="margin:0 0 0.5rem">Settings</h1>
@@ -2879,7 +2884,7 @@ const renderProfileSettings = async (settingsSection) => {
   }
   const profileUser = buildProfileSettingsUser(user);
   appEl.innerHTML = renderSettingsPage(profileUser, settingsSection);
-  bindProfileSettingsPage();
+  initSettingsHandlers();
 };
 
 const renderStaticPage = async (slug) => {
@@ -3420,6 +3425,8 @@ const render = async () => {
   setNavDrawerOpen(false);
   updateAuthUi();
   const route = parseHash();
+  /** Normalized hash for prefix checks (supports `#!/…` and `#/…`). */
+  const hash = (window.location.hash || "#/").replace(/^#!\/?/, "#/");
   document.body.classList.toggle("is-landing", route.view === "landing");
   syncHeaderChrome(route);
   const appEl = mainShell();
@@ -3443,6 +3450,21 @@ const render = async () => {
         <span class="page-loading__text">Loading…</span>
       </div>
     `;
+    /*
+     * Profile routes (hash router pattern):
+     *   import { renderProfilePage } from './pages/ProfilePage.js';
+     *   import { renderSettingsPage } from './pages/ProfileSettingsPage.js';
+     * Check #/profile/settings BEFORE #/profile — settings is a prefix of profile/settings.
+     * renderProfile* load data, set app.innerHTML, then initSettingsHandlers / sign-out binds.
+     */
+    if (hash.startsWith("#/profile/settings") && route.view === "profileSettings") {
+      await renderProfileSettings(route.settingsSection);
+      return;
+    }
+    if (hash.startsWith("#/profile") && route.view === "profile") {
+      await renderProfile(route.section);
+      return;
+    }
     if (route.view === "detail") {
       await renderDetail(route.id);
       return;
@@ -3461,14 +3483,6 @@ const render = async () => {
     }
     if (route.view === "static") {
       await renderStaticPage(route.page);
-      return;
-    }
-    if (route.view === "profile") {
-      await renderProfile(route.section);
-      return;
-    }
-    if (route.view === "profileSettings") {
-      await renderProfileSettings(route.settingsSection);
       return;
     }
     await renderList();
