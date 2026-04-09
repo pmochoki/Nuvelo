@@ -3208,7 +3208,7 @@ const renderDetail = async (id) => {
     loadFailed = true;
   }
   if (loadFailed) {
-    appEl.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>
+    appEl.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTING_DETAIL_UNAVAILABLE_MSG)}</p>
       <p><a href="/browse">← Back to listings</a></p>`;
     return;
   }
