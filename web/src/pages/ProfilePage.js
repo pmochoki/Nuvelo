@@ -12,7 +12,11 @@ export function getProfileSectionFromHash(hash = typeof location !== "undefined"
   if (parts[0] !== "profile") {
     return "adverts";
   }
-  return parts[1] || "adverts";
+  const sub = parts[1] || "adverts";
+  if (sub === "statistics") {
+    return "performance";
+  }
+  return sub;
 }
 
 function listingThumb(listing) {
@@ -37,32 +41,87 @@ function formatShortTime(iso) {
   });
 }
 
-const MOCK_MESSAGE_THREADS = [
+/** Mock chat threads — Hungary marketplace; at least 2 with unread > 0 */
+export const MOCK_MESSAGE_THREADS = [
   {
-    id: "mock-peter",
-    name: "Péter",
-    initial: "P",
-    preview: "Is this still available?",
-    time: "Today · 2:14 PM",
-    unread: 2
+    id: "mock-dog",
+    name: "Krisztina M.",
+    listingTitle: "Dog walking — Újbuda, flexible hours",
+    thumb: "https://images.unsplash.com/photo-1601758228041-f3b2795255f1?w=120&h=120&fit=crop&q=80",
+    preview: "Is this still available for next week?",
+    dateLabel: "8 Apr",
+    unread: 2,
+    spam: false,
+    messages: [
+      { from: "them", text: "Hi! Is this still available for next week?", time: "14:02" },
+      { from: "me", text: "Yes, I’m free Tue–Thu afternoons.", time: "14:18" },
+      { from: "them", text: "Perfect — could we meet near Kosztolányi tér?", time: "14:20" }
+    ]
   },
   {
-    id: "mock-anna",
-    name: "Anna",
-    initial: "A",
-    preview: "I can pick it up tomorrow, what time works?",
-    time: "Yesterday · 6:02 PM",
-    unread: 0
+    id: "mock-flat",
+    name: "András T.",
+    listingTitle: "2 BR apartment · near Nyugati",
+    thumb: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=120&h=120&fit=crop&q=80",
+    preview: "Can we schedule a viewing on Saturday morning?",
+    dateLabel: "7 Apr",
+    unread: 0,
+    spam: false,
+    messages: [
+      { from: "them", text: "Can we schedule a viewing on Saturday morning?", time: "10:05" },
+      { from: "me", text: "Saturday works — 10:30?", time: "10:12" },
+      { from: "them", text: "Yes, see you at the building entrance.", time: "10:14" }
+    ]
   },
   {
-    id: "mock-zsofi",
-    name: "Zsófi",
-    initial: "Z",
-    preview: "Thanks — sending photos now.",
-    time: "Mon · 10:22 AM",
-    unread: 1
+    id: "mock-car",
+    name: "Péter K.",
+    listingTitle: "VW Golf 7 — low mileage, HUF negotiable",
+    thumb: "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=120&h=120&fit=crop&q=80",
+    preview: "Still interested if the service book is complete.",
+    dateLabel: "6 Apr",
+    unread: 1,
+    spam: false,
+    messages: [
+      { from: "them", text: "Still interested if the service book is complete.", time: "18:40" },
+      { from: "me", text: "Full VW history, two keys. Want photos of the underside?", time: "18:55" }
+    ]
+  },
+  {
+    id: "mock-bike",
+    name: "Anna L.",
+    listingTitle: "City bike 28″ — lights included",
+    thumb: "https://images.unsplash.com/photo-1485965120184-e220f721d03e?w=120&h=120&fit=crop&q=80",
+    preview: "I can pick it up tomorrow — what time works?",
+    dateLabel: "5 Apr",
+    unread: 0,
+    spam: false,
+    messages: [
+      { from: "them", text: "I can pick it up tomorrow — what time works?", time: "19:12" },
+      { from: "me", text: "After 17:00 near Blaha Lujza tér works for me.", time: "19:30" }
+    ]
+  },
+  {
+    id: "mock-spam",
+    name: "Promo Deals",
+    listingTitle: "WIN IPHONE CLICK HERE!!!",
+    thumb: "",
+    preview: "Congratulations! Claim your prize now…",
+    dateLabel: "3 Apr",
+    unread: 0,
+    spam: true,
+    messages: [{ from: "them", text: "Congratulations! Claim your prize now…", time: "08:00" }]
   }
 ];
+
+/** Sum of unread counts for nav badge (demo) */
+export function getMockUnreadMessageTotal() {
+  return MOCK_MESSAGE_THREADS.filter((t) => !t.spam).reduce((sum, t) => sum + (t.unread || 0), 0);
+}
+
+export function getMockUnreadThreadCount() {
+  return MOCK_MESSAGE_THREADS.filter((t) => !t.spam && t.unread > 0).length;
+}
 
 const MOCK_NOTIFICATIONS = [
   {
@@ -194,103 +253,288 @@ function renderMyAdvertRowsWithStatus(listings, { demo = false } = {}) {
 }
 
 /**
+ * Mobile-only horizontal nav (mirrors sidebar links).
+ * @param {string} activeSection
+ */
+export function renderProfileMobileTabs(activeSection) {
+  const item = (href, key, label) => {
+    const active = activeSection === key ? " profile-mobile-tabs__link--active" : "";
+    return `<a href="${href}" class="profile-mobile-tabs__link${active}" data-profile-tab="${esc(key)}">${esc(label)}</a>`;
+  };
+  return `
+  <nav class="profile-mobile-tabs" aria-label="Profile" data-profile-mobile-tabs>
+    ${item("#/profile/adverts", "adverts", "Ads")}
+    ${item("#/profile/messages", "messages", "Messages")}
+    ${item("#/profile/saved", "saved", "Saved")}
+    ${item("#/profile/performance", "performance", "Stats")}
+    ${item("#/profile/notifications", "notifications", "Alerts")}
+    ${item("#/profile/feedback", "feedback", "Feedback")}
+    ${item("#/profile/settings", "settings", "Settings")}
+  </nav>`;
+}
+
+/**
+ * Shared left column for all profile routes (Jiji-style card + nav).
+ * @param {object} user
+ * @param {string} section — active profile section key
+ */
+export function renderProfileSidebar(user, section) {
+  const name = user.name || "Member";
+  const phone = user.phone || "Add phone in Settings";
+  const avatar = user.avatarUrl || "/default-avatar.svg";
+  const navItem = (href, key, label, emoji) => {
+    const active = section === key ? " active" : "";
+    return `<a href="${href}" class="profile-sidenav-item${active}">
+      <span class="profile-sidenav-item__emoji" aria-hidden="true">${emoji}</span>
+      <span class="profile-sidenav-item__label">${esc(label)}</span>
+    </a>`;
+  };
+
+  return `
+  <aside class="profile-sidebar profile-sidebar--jiji" data-profile-sidebar>
+    <div class="profile-sidebar-card">
+      <div class="profile-sidebar-card__head">
+        <a href="#/profile/settings" class="profile-settings-pill${section === "settings" ? " profile-settings-pill--active" : ""}" title="Settings">
+          <span>SETTINGS</span>
+          <span class="profile-settings-pill__ico" aria-hidden="true">⚙️</span>
+        </a>
+      </div>
+      <div class="profile-identity">
+        <button type="button" class="profile-avatar-ring" id="profile-sidebar-avatar-btn" aria-label="Change profile photo">
+          <img src="${esc(avatar)}" alt="" class="profile-avatar-large" id="profile-sidebar-avatar-img" width="96" height="96" decoding="async" />
+          <span class="profile-avatar-ring__camera" aria-hidden="true">📷</span>
+        </button>
+        <input type="file" id="profile-sidebar-avatar-input" accept="image/*" hidden />
+        <h2 class="profile-name profile-name--jiji">${esc(name)}</h2>
+        <p class="profile-phone profile-phone--accent">${esc(phone)}</p>
+      </div>
+      <nav class="profile-sidenav profile-sidenav--jiji">
+        ${navItem("#/post", "promo", "Boost your reach", "😍")}
+        ${navItem("#/profile/followers", "followers", "Followers", "👥")}
+        ${navItem("#/profile/adverts", "adverts", "My adverts", "📋")}
+        ${navItem("#/profile/feedback", "feedback", "Feedback", "😊")}
+        ${navItem("#/faq", "faq", "Frequently Asked Questions", "❓")}
+      </nav>
+      <div class="profile-sidenav-extra muted small">
+        <p class="profile-sidenav-extra__title">Quick links</p>
+        ${navItem("#/profile/messages", "messages", "Messages", "💬")}
+        ${navItem("#/profile/saved", "saved", "Saved ads", "🔖")}
+        ${navItem("#/profile/notifications", "notifications", "Notifications", "🔔")}
+        ${navItem("#/profile/performance", "performance", "Performance", "📊")}
+      </div>
+      <div class="profile-sidebar__foot">
+        <button type="button" class="btn btn--pill btn--signin profile-sign-out-btn" id="profile-sign-out">
+          Sign out
+        </button>
+      </div>
+    </div>
+  </aside>`;
+}
+
+function renderMessagesLayout() {
+  const unreadThreads = getMockUnreadThreadCount();
+  const threads = MOCK_MESSAGE_THREADS.filter((t) => !t.spam);
+  const spamThreads = MOCK_MESSAGE_THREADS.filter((t) => t.spam);
+
+  const threadRow = (t) => {
+    const thumb = t.thumb
+      ? `<img src="${esc(t.thumb)}" alt="" width="56" height="56" loading="lazy" />`
+      : `<div class="msg-row__ph" aria-hidden="true"></div>`;
+    const badge =
+      t.unread > 0
+        ? `<span class="msg-row__unread-badge" aria-label="${t.unread} unread">${esc(t.unread > 9 ? "9+" : String(t.unread))}</span>`
+        : "";
+    return `
+    <button type="button" class="msg-row${t.unread ? " msg-row--unread" : ""}" data-thread-id="${esc(t.id)}" data-thread-spam="${t.spam ? "1" : ""}">
+      <div class="msg-row__thumb">${thumb}</div>
+      <div class="msg-row__body">
+        <div class="msg-row__top">
+          <span class="msg-row__name">${esc(t.name)}</span>
+          <time class="msg-row__date" datetime="">${esc(t.dateLabel)}</time>
+        </div>
+        <p class="msg-row__listing">${esc(t.listingTitle)}</p>
+        <div class="msg-row__bottom">
+          <span class="msg-row__preview">${esc(t.preview)}</span>
+          ${badge}
+        </div>
+      </div>
+    </button>`;
+  };
+
+  const listHtml = threads.map(threadRow).join("");
+  const spamHtml = spamThreads.map(threadRow).join("");
+
+  return `
+    <div class="messages-jiji" data-messages-root>
+      <div class="messages-jiji__left">
+        <h2 class="messages-jiji__title">My messages</h2>
+        <label class="messages-jiji__search-wrap">
+          <span class="messages-jiji__search-icon" aria-hidden="true">⌕</span>
+          <input type="search" class="messages-jiji__search" placeholder="Search messages" data-msg-search autocomplete="off" />
+        </label>
+        <div class="messages-jiji__tabs" role="tablist" data-msg-tabs>
+          <button type="button" class="messages-jiji__tab is-active" role="tab" aria-selected="true" data-msg-tab="all">All</button>
+          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">Unread (${unreadThreads})</button>
+          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">Spam (${spamThreads.length})</button>
+        </div>
+        <div class="messages-jiji__list" data-msg-list-all role="list">${listHtml}</div>
+        <div class="messages-jiji__list" data-msg-list-unread hidden role="list">${threads.filter((t) => t.unread > 0).map(threadRow).join("")}</div>
+        <div class="messages-jiji__list" data-msg-list-spam hidden role="list">${spamHtml}</div>
+      </div>
+      <div class="messages-jiji__right" data-msg-pane>
+        <div class="messages-jiji__empty" data-msg-empty>
+          <div class="messages-jiji__empty-illus" aria-hidden="true">💬</div>
+          <p class="messages-jiji__empty-title">Select a chat to start messaging</p>
+        </div>
+        <div class="messages-jiji__chat" data-msg-chat hidden></div>
+      </div>
+    </div>`;
+}
+
+function renderChatPanel(threadId) {
+  const t = MOCK_MESSAGE_THREADS.find((x) => x.id === threadId);
+  if (!t) {
+    return "";
+  }
+  const bubbles = (t.messages || [])
+    .map((m) => {
+      const cls = m.from === "me" ? "chat-bubble chat-bubble--me" : "chat-bubble chat-bubble--them";
+      return `<div class="${cls}">
+        <p class="chat-bubble__text">${esc(m.text)}</p>
+        <time class="chat-bubble__time">${esc(m.time)}</time>
+      </div>`;
+    })
+    .join("");
+  const thumb = t.thumb
+    ? `<img src="${esc(t.thumb)}" alt="" width="40" height="40" />`
+    : `<div class="chat-head__ph"></div>`;
+  return `
+    <header class="chat-head">
+      <div class="chat-head__thumb">${thumb}</div>
+      <div class="chat-head__meta">
+        <p class="chat-head__name">${esc(t.name)}</p>
+        <p class="chat-head__listing">${esc(t.listingTitle)}</p>
+      </div>
+    </header>
+    <div class="chat-scroll" role="log">${bubbles}</div>
+    <footer class="chat-compose">
+      <input type="text" class="chat-compose__input" disabled placeholder="Replies coming soon…" aria-label="Message" />
+      <button type="button" class="btn btn--primary chat-compose__send" disabled>Send</button>
+    </footer>`;
+}
+
+function renderPerformanceSection() {
+  const metrics = [
+    { icon: "🖤", label: "Traffic", value: "142" },
+    { icon: "🟣", label: "Visitors", value: "87" },
+    { icon: "🟢", label: "Contact views", value: "34" },
+    { icon: "🟠", label: "Chats", value: "12" },
+    { icon: "🔵", label: "Spent on Pro Sales", value: "HUF 0" }
+  ];
+  const metricCards = metrics
+    .map(
+      (m) => `
+    <div class="perf-metric-card">
+      <span class="perf-metric-card__icon" aria-hidden="true">${m.icon}</span>
+      <div class="perf-metric-card__body">
+        <span class="perf-metric-card__label">${esc(m.label)}</span>
+        <span class="perf-metric-card__value">${esc(m.value)}</span>
+      </div>
+    </div>`
+    )
+    .join("");
+
+  return `
+    <div class="perf-page" data-perf-root>
+      <div class="perf-page__header">
+        <h2 class="perf-page__title">Performance</h2>
+        <div class="perf-page__toggles" role="group" aria-label="Period" data-perf-period>
+          <button type="button" class="perf-toggle is-active" data-perf="daily">Daily ✓</button>
+          <button type="button" class="perf-toggle" data-perf="weekly">Weekly</button>
+          <button type="button" class="perf-toggle" data-perf="monthly">Monthly</button>
+        </div>
+      </div>
+      <p class="perf-page__range" data-perf-range>01/04/2026 – 09/04/2026</p>
+      <div class="perf-chart-wrap">
+        <svg class="perf-chart" viewBox="0 0 320 120" preserveAspectRatio="none" aria-hidden="true" data-perf-chart>
+          <defs>
+            <linearGradient id="perfGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="var(--orange)" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="var(--orange)" stop-opacity="0"/>
+            </linearGradient>
+          </defs>
+          <polygon fill="url(#perfGrad)" points="0,120 0,45 40,52 80,38 120,55 160,42 200,48 240,35 280,50 320,40 320,120"/>
+          <polyline fill="none" stroke="var(--orange)" stroke-width="2.5" points="0,45 40,52 80,38 120,55 160,42 200,48 240,35 280,50 320,40"/>
+        </svg>
+      </div>
+      <div class="perf-metrics-grid">${metricCards}</div>
+      <div class="perf-summary-row">
+        <a href="#/profile/followers" class="perf-summary-card">
+          <span>New visitors</span>
+          <span class="perf-summary-card__arrow" aria-hidden="true">›</span>
+        </a>
+        <a href="#/profile/messages" class="perf-summary-card">
+          <span>New chats</span>
+          <span class="perf-summary-card__arrow" aria-hidden="true">›</span>
+        </a>
+      </div>
+    </div>`;
+}
+
+function renderFeedbackSection(user) {
+  const uid = esc(user.id || "me");
+  const profileLink = `${typeof location !== "undefined" ? location.origin : ""}${typeof location !== "undefined" ? location.pathname : "/"}#/profile/adverts?ref=${uid}`;
+  return `
+    <div class="feedback-jiji" data-feedback-root>
+      <div class="feedback-jiji__header">
+        <h2 class="feedback-jiji__title">Feedback</h2>
+        <div class="feedback-jiji__toggles" role="group">
+          <button type="button" class="feedback-toggle is-active" data-fb-tab="received">Received (0)</button>
+          <button type="button" class="feedback-toggle" data-fb-tab="sent">Sent (0)</button>
+        </div>
+      </div>
+      <div class="feedback-jiji__panel" data-fb-panel="received">
+        <div class="feedback-empty">
+          <div class="feedback-empty__art" aria-hidden="true">
+            <svg width="120" height="100" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="60" cy="88" rx="40" ry="8" fill="#e2e8f0"/>
+              <path d="M30 48c0-16 13-29 30-29s30 13 30 29v12H30V48z" fill="#f1f5f9" stroke="#cbd5e1" stroke-width="2"/>
+              <circle cx="48" cy="44" r="4" fill="#64748b"/>
+              <circle cx="72" cy="44" r="4" fill="#64748b"/>
+              <path d="M48 58c6 6 18 6 24 0" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <p class="feedback-empty__text">There are no feedbacks yet. Ask your customers to leave feedback about you. Copy the link and send them.</p>
+          <button type="button" class="btn btn--primary feedback-copy-btn" data-copy-feedback-link data-link="${esc(profileLink)}">
+            Copy my link
+          </button>
+        </div>
+      </div>
+      <div class="feedback-jiji__panel" data-fb-panel="sent" hidden>
+        <div class="feedback-empty">
+          <p class="feedback-empty__text muted">No sent feedback yet.</p>
+        </div>
+      </div>
+    </div>`;
+}
+
+/**
  * @param {object} user — { name, phone, avatarUrl, role, adverts?, savedAds? }
  * @param {string} [sectionFromRoute] — from router; falls back to hash
  */
 export function renderProfilePage(user, sectionFromRoute) {
   const section = sectionFromRoute || getProfileSectionFromHash();
+  const mainExtra = section === "messages" ? " profile-content--messages" : "";
 
   return `
-<div class="profile-layout">
-
-  <aside class="profile-sidebar">
-    <div class="profile-sidebar-header">
-      <a href="#/profile/settings" class="profile-settings-link" title="Settings">
-        <span>SETTINGS</span>
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3"/>
-          <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-        </svg>
-      </a>
-    </div>
-
-    <div class="profile-avatar-block">
-      <img src="${esc(user.avatarUrl || "/default-avatar.svg")}"
-           alt="${esc(user.name)}"
-           class="profile-avatar-large"/>
-      <h2 class="profile-name">${esc(user.name)}</h2>
-      <p class="profile-phone">${esc(user.phone || "")}</p>
-    </div>
-
-    <nav class="profile-sidenav">
-      <a href="#/profile/saved" class="profile-sidenav-item ${section === "saved" ? "active" : ""}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
-        </svg>
-        Saved ads
-      </a>
-
-      <a href="#/profile/messages" class="profile-sidenav-item ${section === "messages" ? "active" : ""}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-        </svg>
-        Messages
-      </a>
-
-      <a href="#/profile/notifications" class="profile-sidenav-item ${section === "notifications" ? "active" : ""}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-          <path d="M13.73 21a2 2 0 01-3.46 0"/>
-        </svg>
-        Notifications
-      </a>
-
-      <a href="#/profile/adverts" class="profile-sidenav-item ${section === "adverts" ? "active" : ""}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <line x1="3" y1="9" x2="21" y2="9"/>
-          <line x1="9" y1="3" x2="9" y2="21"/>
-        </svg>
-        My adverts
-      </a>
-
-      <a href="#/profile/followers" class="profile-sidenav-item ${section === "followers" ? "active" : ""}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/>
-        </svg>
-        Followers
-      </a>
-
-      <a href="#/profile/feedback" class="profile-sidenav-item ${section === "feedback" ? "active" : ""}">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01"/>
-        </svg>
-        Feedback
-      </a>
-
-      <a href="#/faq" class="profile-sidenav-item">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/>
-          <path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3M12 17h.01"/>
-        </svg>
-        Frequently Asked Questions
-      </a>
-    </nav>
-
-    <div class="profile-sidebar__foot">
-      <button type="button" class="btn btn--pill btn--signin profile-sign-out-btn" id="profile-sign-out">
-        Sign out
-      </button>
-    </div>
-  </aside>
-
-  <main class="profile-content">
-    ${renderProfileSection(section, user)}
-  </main>
-
+<div class="profile-shell">
+  ${renderProfileMobileTabs(section)}
+  <div class="profile-layout profile-layout--jiji">
+    ${renderProfileSidebar(user, section === "settings" ? "adverts" : section)}
+    <main class="profile-content profile-content--jiji${mainExtra}">
+      ${renderProfileSection(section, user)}
+    </main>
+  </div>
 </div>`;
 }
 
@@ -301,13 +545,15 @@ function renderProfileSection(section, user) {
     case "saved":
       return renderSavedAds(user);
     case "messages":
-      return renderMessages(user);
+      return renderMessagesLayout();
     case "notifications":
       return renderNotifications(user);
     case "followers":
       return renderFollowers(user);
     case "feedback":
-      return renderFeedback(user);
+      return renderFeedbackSection(user);
+    case "performance":
+      return renderPerformanceSection();
     default:
       return renderMyAdverts(user);
   }
@@ -345,31 +591,6 @@ function renderSavedAds(user) {
     }`;
 }
 
-function renderMessages() {
-  const rows = MOCK_MESSAGE_THREADS.map(
-    (t) => `
-    <button type="button" class="msg-thread${t.unread ? " msg-thread--unread" : ""}">
-      <span class="msg-thread__avatar" aria-hidden="true">${esc(t.initial)}</span>
-      <span class="msg-thread__main">
-        <span class="msg-thread__top">
-          <span class="msg-thread__name">${esc(t.name)}</span>
-          <time class="msg-thread__time">${esc(t.time)}</time>
-        </span>
-        <span class="msg-thread__preview">${esc(t.preview)}</span>
-      </span>
-      ${
-        t.unread
-          ? `<span class="msg-thread__badge" aria-label="${t.unread} unread">${esc(String(t.unread > 9 ? "9+" : t.unread))}</span>`
-          : ""
-      }
-    </button>`
-  ).join("");
-  return `
-    <div class="profile-section-header"><h2>Messages</h2></div>
-    <div class="messages-inbox" role="list">${rows}</div>
-    <p class="muted small profile-hint">Preview threads — full chat is coming soon.</p>`;
-}
-
 function renderNotifications() {
   const items = MOCK_NOTIFICATIONS.map(
     (n) => `
@@ -393,11 +614,7 @@ function renderFollowers() {
     <div class="profile-empty-state"><p>No followers yet.</p></div>`;
 }
 
-function renderFeedback() {
-  return `
-    <div class="profile-section-header"><h2>Feedback</h2></div>
-    <div class="profile-empty-state">
-      <p>We’d love to hear from you. A feedback form will be available here soon.</p>
-      <p><a href="#/contact" class="btn btn--primary">Contact us</a></p>
-    </div>`;
+/** Expose chat HTML for client-side thread switching */
+export function getMessageChatHtml(threadId) {
+  return renderChatPanel(threadId);
 }

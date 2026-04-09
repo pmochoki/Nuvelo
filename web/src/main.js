@@ -19,7 +19,11 @@ import {
   donationConditionLabel,
   donationCollectionMeta
 } from "./data/donationConstants.js";
-import { renderProfilePage } from "./pages/ProfilePage.js";
+import {
+  getMessageChatHtml,
+  getMockUnreadMessageTotal,
+  renderProfilePage
+} from "./pages/ProfilePage.js";
 import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
 
 if (!import.meta.env.VITE_API_URL) {
@@ -91,6 +95,7 @@ const showOAuthUnavailable = (providerLabel) => {
 const LISTINGS_UNAVAILABLE_MSG = "Listings are loading, please try again shortly.";
 const USER_STORE_KEY = "nuvelo_user";
 const PROFILE_FIELDS_KEY = "nuvelo_profile_fields";
+const AVATAR_DATAURL_KEY = "nuvelo_avatar_dataurl";
 const EVENTS_STORE_KEY = "nuvelo_events_custom";
 const EVENTS_RSVP_KEY = "nuvelo_events_rsvp";
 const EVENTS_ANON_KEY = "nuvelo_events_anon";
@@ -278,17 +283,25 @@ async function initAuth() {
 }
 
 const syncAuthFromStoredUser = () => {
-  cachedUser = readStoredUser();
+  const u = readStoredUser();
+  if (!u) {
+    cachedUser = null;
+    updateAuthUi();
+    return;
+  }
+  const av = readStoredAvatarDataUrl();
+  cachedUser = av ? { ...u, avatarUrl: av } : { ...u };
   updateAuthUi();
 };
 
 const getNavBadgeCounts = () => {
   try {
     const savedCount = readSavedListingIds().length;
-    const unreadMessages = Math.max(
-      0,
-      Math.floor(Number(localStorage.getItem("nuvelo_unread_messages") || "0"))
-    );
+    const raw = localStorage.getItem("nuvelo_unread_messages");
+    const unreadMessages =
+      raw === null || raw === ""
+        ? getMockUnreadMessageTotal()
+        : Math.max(0, Math.floor(Number(raw)));
     return { savedCount, unreadMessages };
   } catch {
     return { savedCount: 0, unreadMessages: 0 };
@@ -301,8 +314,8 @@ const syncNavUserIcons = () => {
   if (!nav) {
     return;
   }
-  const user = getUser();
-  if (!user) {
+  const user = withMergedAvatar(getUser());
+  if (!getUser()) {
     nav.hidden = true;
     if (typeof window !== "undefined") {
       window.__nuveloUser = null;
@@ -320,7 +333,7 @@ const syncNavUserIcons = () => {
   }
   if (avatarEl) {
     const name = user.name || "Member";
-    avatarEl.src = user.avatarUrl || "/default-avatar.svg";
+    avatarEl.src = user?.avatarUrl || "/default-avatar.svg";
     avatarEl.alt = name;
   }
   const { savedCount, unreadMessages } = getNavBadgeCounts();
@@ -803,6 +816,39 @@ const readProfileFieldStore = () => readJsonStore(PROFILE_FIELDS_KEY, {});
 
 const writeProfileFieldStore = (obj) => writeJsonStore(PROFILE_FIELDS_KEY, obj);
 
+const readStoredAvatarDataUrl = () => {
+  try {
+    const u = localStorage.getItem(AVATAR_DATAURL_KEY);
+    return typeof u === "string" && u.startsWith("data:image/") ? u : "";
+  } catch {
+    return "";
+  }
+};
+
+const writeStoredAvatarDataUrl = (dataUrl) => {
+  try {
+    if (dataUrl && typeof dataUrl === "string") {
+      localStorage.setItem(AVATAR_DATAURL_KEY, dataUrl);
+    } else {
+      localStorage.removeItem(AVATAR_DATAURL_KEY);
+    }
+  } catch {
+    /* ignore quota */
+  }
+};
+
+/** Merge local avatar override into user snapshot for UI. */
+const withMergedAvatar = (user) => {
+  if (!user) {
+    return user;
+  }
+  const local = readStoredAvatarDataUrl();
+  if (local) {
+    return { ...user, avatarUrl: local };
+  }
+  return user;
+};
+
 const deriveNameParts = (user, stored) => {
   if (stored && (stored.firstName != null || stored.lastName != null)) {
     return {
@@ -821,32 +867,90 @@ const deriveNameParts = (user, stored) => {
 const buildProfileSettingsUser = (baseUser) => {
   const stored = readProfileFieldStore();
   const parts = deriveNameParts(baseUser, stored);
+  const fullName = String(stored.fullName || "").trim() || [parts.firstName, parts.lastName].filter(Boolean).join(" ").trim() || baseUser.name || "";
   return {
-    ...baseUser,
+    ...withMergedAvatar(baseUser),
     firstName: parts.firstName,
     lastName: parts.lastName,
+    fullName,
     city: stored.city || "",
     birthday: stored.birthday || "",
     sex: stored.sex || "",
-    phone: baseUser.phone || stored.phone || ""
+    phone: stored.phone || baseUser.phone || "",
+    email: stored.email || baseUser.email || "",
+    bio: stored.bio || "",
+    role: stored.role || baseUser.role || "Buyer"
   };
 };
 
-/** Wire settings form, avatar picker, save, and log out (hash-router companion to renderSettingsPage). */
+function showNuveloToast(message) {
+  let el = document.getElementById("nuvelo-toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "nuvelo-toast";
+    el.className = "nuvelo-toast";
+    el.setAttribute("role", "status");
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  el.hidden = false;
+  el.classList.add("nuvelo-toast--visible");
+  window.clearTimeout(el._nuveloToastT);
+  el._nuveloToastT = window.setTimeout(() => {
+    el.classList.remove("nuvelo-toast--visible");
+    el.hidden = true;
+  }, 2600);
+}
+
+function persistAvatarFromFile(file) {
+  if (!file?.type.startsWith("image/")) {
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = () => {
+    const dataUrl = reader.result;
+    if (typeof dataUrl !== "string") {
+      return;
+    }
+    writeStoredAvatarDataUrl(dataUrl);
+    const u = getUser();
+    if (u) {
+      cachedUser = { ...u, avatarUrl: dataUrl };
+      writeStoredUser(cachedUser);
+    }
+    const preview = document.getElementById("avatar-preview");
+    if (preview instanceof HTMLImageElement) {
+      preview.src = dataUrl;
+    }
+    const side = document.getElementById("profile-sidebar-avatar-img");
+    if (side instanceof HTMLImageElement) {
+      side.src = dataUrl;
+    }
+    const nav = document.getElementById("nav-user-avatar");
+    if (nav instanceof HTMLImageElement) {
+      nav.src = dataUrl;
+    }
+    updateAuthUi();
+  };
+  reader.readAsDataURL(file);
+}
+
+/** Wire settings form (Jiji-style contact details), avatar, save. */
 function bindProfileSettingsPage() {
   const updateCount = (input) => {
     const id = input.getAttribute("data-char-target");
-    const max = Number(input.getAttribute("data-char-max") || "20");
+    const max = Number(input.getAttribute("data-char-max") || "300");
     const el = id ? document.getElementById(id) : null;
     if (el) {
       el.textContent = `${input.value.length} / ${max}`;
     }
   };
   document.querySelectorAll("[data-char-target]").forEach((el) => {
-    if (!(el instanceof HTMLInputElement)) {
+    if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) {
       return;
     }
     el.addEventListener("input", () => updateCount(el));
+    updateCount(el);
   });
 
   document.getElementById("avatar-edit-btn")?.addEventListener("click", () => {
@@ -858,57 +962,309 @@ function bindProfileSettingsPage() {
       return;
     }
     const f = t.files?.[0];
-    if (!f?.type.startsWith("image/")) {
+    if (f) {
+      persistAvatarFromFile(f);
+    }
+  });
+
+  const saveBtn = document.getElementById("save-profile-btn");
+  const form = document.getElementById("profile-settings-form");
+
+  const snapshot = () => {
+    if (!(form instanceof HTMLFormElement)) {
+      return "";
+    }
+    const fd = new FormData(form);
+    const bits = [
+      String(fd.get("fullName") || ""),
+      String(fd.get("email") || ""),
+      String(fd.get("phoneNational") || ""),
+      String(fd.get("location") || ""),
+      String(fd.get("bio") || ""),
+      String(fd.get("role") || "")
+    ];
+    return JSON.stringify(bits);
+  };
+
+  let baseline = snapshot();
+
+  const syncSaveState = () => {
+    if (!(saveBtn instanceof HTMLButtonElement)) {
       return;
     }
-    const url = URL.createObjectURL(f);
-    const img = document.getElementById("avatar-preview");
-    if (img instanceof HTMLImageElement) {
-      img.src = url;
-    }
+    const dirty = snapshot() !== baseline;
+    saveBtn.disabled = !dirty;
+    saveBtn.classList.toggle("btn--settings-ready", dirty);
+  };
+
+  form?.querySelectorAll("[data-settings-track]").forEach((el) => {
+    el.addEventListener("input", syncSaveState);
+    el.addEventListener("change", syncSaveState);
+  });
+  syncSaveState();
+
+  saveBtn?.addEventListener("click", () => {
+    form?.requestSubmit();
   });
 
-  document.getElementById("save-profile-btn")?.addEventListener("click", () => {
-    document.getElementById("profile-settings-form")?.requestSubmit();
-  });
-
-  document.getElementById("profile-settings-form")?.addEventListener("submit", (e) => {
+  form?.addEventListener("submit", (e) => {
     e.preventDefault();
-    const form = e.target;
     if (!(form instanceof HTMLFormElement)) {
       return;
     }
     const fd = new FormData(form);
+    const fullName = String(fd.get("fullName") || "").trim();
+    const email = String(fd.get("email") || "").trim();
+    const national = String(fd.get("phoneNational") || "").replace(/\D/g, "");
+    const phoneFull = national ? `+36${national}` : "";
     const cur = readProfileFieldStore();
     const next = {
       ...cur,
-      firstName: String(fd.get("firstName") || "").trim(),
-      lastName: String(fd.get("lastName") || "").trim(),
+      fullName,
+      firstName: fullName.split(/\s+/)[0] || "",
+      lastName: fullName.split(/\s+/).slice(1).join(" ") || "",
+      email,
       city: String(fd.get("location") || ""),
-      birthday: String(fd.get("birthday") || ""),
-      sex: String(fd.get("sex") || ""),
-      phone: String(fd.get("phone") || "").trim()
+      phone: phoneFull,
+      bio: String(fd.get("bio") || "").slice(0, 300),
+      role: String(fd.get("role") || "Buyer")
     };
     writeProfileFieldStore(next);
-    const fullName = [next.firstName, next.lastName].filter(Boolean).join(" ");
     const u = getUser();
     if (u) {
       cachedUser = {
         ...u,
         name: fullName || u.name,
-        phone: next.phone || u.phone
+        phone: phoneFull,
+        email: email || u.email,
+        role: next.role
       };
       writeStoredUser(cachedUser);
     }
+    baseline = snapshot();
+    syncSaveState();
     updateAuthUi();
-    const msg = document.getElementById("profile-settings-saved-msg");
-    if (msg) {
-      msg.hidden = false;
-      msg.textContent = "Saved.";
-    }
+    showNuveloToast("Profile updated!");
   });
 
   document.getElementById("signout-btn")?.addEventListener("click", () => void signOutNuvelo());
+}
+
+function bindProfileSidebarAvatar() {
+  document.getElementById("profile-sidebar-avatar-btn")?.addEventListener("click", () => {
+    document.getElementById("profile-sidebar-avatar-input")?.click();
+  });
+  document.getElementById("profile-sidebar-avatar-input")?.addEventListener("change", (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLInputElement)) {
+      return;
+    }
+    const f = t.files?.[0];
+    if (f) {
+      persistAvatarFromFile(f);
+    }
+    t.value = "";
+  });
+}
+
+function initMessagesPageUi() {
+  const root = document.querySelector("[data-messages-root]");
+  if (!root) {
+    return;
+  }
+  const search = root.querySelector("[data-msg-search]");
+  const empty = root.querySelector("[data-msg-empty]");
+  const chat = root.querySelector("[data-msg-chat]");
+
+  const tabBtns = root.querySelectorAll("[data-msg-tab]");
+  const lists = {
+    all: root.querySelector("[data-msg-list-all]"),
+    unread: root.querySelector("[data-msg-list-unread]"),
+    spam: root.querySelector("[data-msg-list-spam]")
+  };
+
+  const filterRows = () => {
+    const ql = search instanceof HTMLInputElement ? String(search.value || "").trim().toLowerCase() : "";
+    const activeList =
+      lists.all && !lists.all.hidden
+        ? lists.all
+        : lists.unread && !lists.unread.hidden
+          ? lists.unread
+          : lists.spam;
+    const scope = activeList || root;
+    scope.querySelectorAll(".msg-row").forEach((row) => {
+      if (!(row instanceof HTMLElement)) {
+        return;
+      }
+      if (!ql) {
+        row.hidden = false;
+        return;
+      }
+      const text = row.textContent?.toLowerCase() || "";
+      row.hidden = !text.includes(ql);
+    });
+  };
+
+  search?.addEventListener("input", filterRows);
+
+  const showTab = (name) => {
+    tabBtns.forEach((b) => {
+      const on = b.getAttribute("data-msg-tab") === name;
+      b.classList.toggle("is-active", on);
+      b.setAttribute("aria-selected", on ? "true" : "false");
+    });
+    if (lists.all) {
+      lists.all.hidden = name !== "all";
+    }
+    if (lists.unread) {
+      lists.unread.hidden = name !== "unread";
+    }
+    if (lists.spam) {
+      lists.spam.hidden = name !== "spam";
+    }
+    root.querySelectorAll(".msg-row").forEach((row) => {
+      row.hidden = false;
+    });
+    filterRows();
+  };
+
+  tabBtns.forEach((btn) => {
+    btn.addEventListener("click", () => showTab(btn.getAttribute("data-msg-tab") || "all"));
+  });
+
+  const openThread = (id) => {
+    if (!chat || !empty) {
+      return;
+    }
+    chat.innerHTML = getMessageChatHtml(id);
+    empty.hidden = true;
+    chat.hidden = false;
+    root.querySelectorAll(".msg-row").forEach((row) => {
+      row.classList.toggle("msg-row--selected", row.getAttribute("data-thread-id") === id);
+    });
+  };
+
+  root.querySelectorAll("[data-thread-id]").forEach((btn) => {
+    btn.addEventListener("click", () => openThread(btn.getAttribute("data-thread-id") || ""));
+  });
+}
+
+function initFeedbackPageUi() {
+  const root = document.querySelector("[data-feedback-root]");
+  if (!root) {
+    return;
+  }
+  root.querySelectorAll("[data-fb-tab]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const tab = btn.getAttribute("data-fb-tab");
+      root.querySelectorAll("[data-fb-tab]").forEach((b) => b.classList.toggle("is-active", b === btn));
+      root.querySelectorAll("[data-fb-panel]").forEach((p) => {
+        if (!(p instanceof HTMLElement)) {
+          return;
+        }
+        p.hidden = p.getAttribute("data-fb-panel") !== tab;
+      });
+    });
+  });
+  root.querySelector("[data-copy-feedback-link]")?.addEventListener("click", async () => {
+    const el = root.querySelector("[data-copy-feedback-link]");
+    const link =
+      el?.getAttribute("data-link") || `${window.location.origin}${window.location.pathname}#/profile/adverts`;
+    try {
+      await navigator.clipboard.writeText(link);
+      showNuveloToast("Link copied!");
+    } catch {
+      showNuveloToast("Could not copy — try again.");
+    }
+  });
+}
+
+function initPerformancePageUi() {
+  const root = document.querySelector("[data-perf-root]");
+  if (!root) {
+    return;
+  }
+  const chart = root.querySelector("[data-perf-chart]");
+  const rangeEl = root.querySelector("[data-perf-range]");
+  const paths = {
+    daily: "0,120 0,45 40,52 80,38 120,55 160,42 200,48 240,35 280,50 320,40",
+    weekly: "0,120 0,60 53,48 107,62 160,40 213,55 267,50 320,45",
+    monthly: "0,120 0,70 64,55 128,65 192,48 256,58 320,52"
+  };
+  const labels = { daily: "Daily", weekly: "Weekly", monthly: "Monthly" };
+  root.querySelectorAll("[data-perf]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const p = btn.getAttribute("data-perf") || "daily";
+      root.querySelectorAll("[data-perf]").forEach((b) => b.classList.toggle("is-active", b === btn));
+      const pts = paths[p] || paths.daily;
+      if (chart) {
+        const poly = chart.querySelector("polygon");
+        const line = chart.querySelector("polyline");
+        const fillPts = `0,120 ${pts} 320,120`;
+        if (poly) {
+          poly.setAttribute("points", fillPts);
+        }
+        if (line) {
+          line.setAttribute("points", pts);
+        }
+      }
+      if (rangeEl) {
+        rangeEl.textContent =
+          p === "weekly"
+            ? "Week of 31/03 – 06/04/2026"
+            : p === "monthly"
+              ? "01/04/2026 – 30/04/2026"
+              : "01/04/2026 – 09/04/2026";
+      }
+      root.querySelectorAll("[data-perf]").forEach((b) => {
+        const k = b.getAttribute("data-perf");
+        if (!k || !labels[k]) {
+          return;
+        }
+        b.textContent = k === p ? `${labels[k]} ✓` : labels[k];
+      });
+    });
+  });
+}
+
+function initProfileRouteFeatures(section) {
+  bindProfileSidebarAvatar();
+  if (section === "messages") {
+    initMessagesPageUi();
+  }
+  if (section === "feedback") {
+    initFeedbackPageUi();
+  }
+  if (section === "performance") {
+    initPerformancePageUi();
+  }
+}
+
+function ensureNavUserDropdown() {
+  const wrap = document.getElementById("nav-user-menu");
+  const trigger = document.getElementById("nav-user-menu-trigger");
+  const dd = document.getElementById("nav-user-dropdown");
+  if (!wrap || !trigger || !dd || wrap.dataset.bound === "1") {
+    return;
+  }
+  wrap.dataset.bound = "1";
+  trigger.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const willOpen = dd.hidden;
+    dd.hidden = !willOpen;
+    trigger.setAttribute("aria-expanded", willOpen ? "true" : "false");
+  });
+  document.addEventListener("click", (e) => {
+    if (dd.hidden || !(e.target instanceof Node)) {
+      return;
+    }
+    if (!wrap.contains(e.target)) {
+      dd.hidden = true;
+      trigger.setAttribute("aria-expanded", "false");
+    }
+  });
+  document.getElementById("nav-dropdown-signout")?.addEventListener("click", () => void signOutNuvelo());
 }
 
 const initSettingsHandlers = bindProfileSettingsPage;
@@ -1587,14 +1943,18 @@ const parseHash = () => {
       const settingsSection = settingsAllowed.includes(key) ? key : "personal";
       return { view: "profileSettings", settingsSection };
     }
-    const sub = parts[1] || "adverts";
+    let sub = parts[1] || "adverts";
+    if (sub === "statistics") {
+      sub = "performance";
+    }
     const allowed = [
       "saved",
       "messages",
       "notifications",
       "adverts",
       "followers",
-      "feedback"
+      "feedback",
+      "performance"
     ];
     if (allowed.includes(sub)) {
       return { view: "profile", section: sub };
@@ -2880,7 +3240,8 @@ const renderProfile = async (section) => {
     messages: "Messages",
     notifications: "Notifications",
     followers: "Followers",
-    feedback: "Feedback"
+    feedback: "Feedback",
+    performance: "Performance"
   };
   const title = titles[section] || titles.adverts;
   if (!user) {
@@ -2915,7 +3276,7 @@ const renderProfile = async (section) => {
     );
     const savedAds = savedResults.filter(Boolean);
     const profileUser = {
-      ...user,
+      ...withMergedAvatar(user),
       adverts,
       savedAds
     };
@@ -2932,6 +3293,7 @@ const renderProfile = async (section) => {
     return;
   }
   document.getElementById("profile-sign-out")?.addEventListener("click", () => void signOutNuvelo());
+  initProfileRouteFeatures(section);
 };
 
 const renderProfileSettings = async (settingsSection) => {
@@ -2957,6 +3319,7 @@ const renderProfileSettings = async (settingsSection) => {
   const profileUser = buildProfileSettingsUser(user);
   appEl.innerHTML = renderSettingsPage(profileUser, settingsSection);
   initSettingsHandlers();
+  bindProfileSidebarAvatar();
 };
 
 const renderStaticPage = async (slug) => {
@@ -3567,6 +3930,16 @@ const render = async () => {
         <p><a href="#/">Go to home</a> · <a href="#/browse">Browse listings</a></p>
       </section>
     `;
+  } finally {
+    const dd = document.getElementById("nav-user-dropdown");
+    const tr = document.getElementById("nav-user-menu-trigger");
+    if (dd) {
+      dd.hidden = true;
+    }
+    if (tr) {
+      tr.setAttribute("aria-expanded", "false");
+    }
+    ensureNavUserDropdown();
   }
 };
 

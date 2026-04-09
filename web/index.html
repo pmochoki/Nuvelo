@@ -136,17 +136,49 @@
               <line x1="9" y1="3" x2="9" y2="21" />
             </svg>
           </a>
-          <a href="#/profile" class="nav-avatar-btn" title="My profile" aria-label="My profile">
-            <img
-              src="/default-avatar.svg"
-              alt=""
-              class="nav-avatar"
-              id="nav-user-avatar"
-              width="36"
-              height="36"
-              decoding="async"
-            />
-          </a>
+          <div class="nav-user-menu" id="nav-user-menu">
+            <button
+              type="button"
+              class="nav-avatar-btn"
+              id="nav-user-menu-trigger"
+              title="Account menu"
+              aria-label="Account menu"
+              aria-expanded="false"
+              aria-haspopup="true"
+            >
+              <img
+                src="/default-avatar.svg"
+                alt=""
+                class="nav-avatar"
+                id="nav-user-avatar"
+                width="36"
+                height="36"
+                decoding="async"
+              />
+            </button>
+            <div class="nav-user-dropdown" id="nav-user-dropdown" hidden role="menu">
+              <a href="#/profile/adverts" class="nav-user-dropdown__item" role="menuitem">
+                <span class="nav-user-dropdown__ico" aria-hidden="true">🏪</span>
+                My shop / My profile
+              </a>
+              <a href="#/profile/feedback" class="nav-user-dropdown__item" role="menuitem">
+                <span class="nav-user-dropdown__ico" aria-hidden="true">😊</span>
+                Feedback
+              </a>
+              <a href="#/profile/performance" class="nav-user-dropdown__item" role="menuitem">
+                <span class="nav-user-dropdown__ico" aria-hidden="true">📈</span>
+                Performance
+              </a>
+              <a href="#/profile/settings" class="nav-user-dropdown__item" role="menuitem">
+                <span class="nav-user-dropdown__ico" aria-hidden="true">⚙️</span>
+                Settings
+              </a>
+              <button type="button" class="nav-user-dropdown__item nav-user-dropdown__item--danger" id="nav-dropdown-signout" role="menuitem">
+                <span class="nav-user-dropdown__ico" aria-hidden="true">⎋</span>
+                Log out
+              </button>
+            </div>
+          </div>
         </nav>
         <div class="jiji-header__actions" id="nav-actions">
           <a class="jiji-header__text-link" href="#/events">Events</a>

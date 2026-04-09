@@ -1,4 +1,5 @@
 import { HUNGARIAN_LOCATIONS } from "../data/hungarianLocations.js";
+import { renderProfileMobileTabs, renderProfileSidebar } from "./ProfilePage.js";
 
 const esc = (s) => {
   const d = document.createElement("div");
@@ -14,189 +15,117 @@ function cityOptionsHtml(selectedCity) {
   return `<option value="">Select city…</option>${opts.join("")}`;
 }
 
-function sidebarNav(settingsSection) {
-  const item = (href, key, label, extra = "") => {
-    const active = settingsSection === key ? " active" : "";
-    return `<a href="${href}" class="profile-sidenav-item${active}">${esc(label)}${extra}</a>`;
-  };
+const ROLE_OPTIONS = ["Buyer", "Tenant", "Seller", "Agent", "Landlord"];
+
+/**
+ * @param {object} user — extended with profile fields
+ */
+function renderContactDetailsForm(user) {
+  const fullName = String(user.fullName || user.name || "").trim();
+  const email = String(user.email || "").trim();
+  const phone = String(user.phone || "").trim();
+  const phoneRest = phone
+    .replace(/^\+\s*36\s*/i, "")
+    .replace(/[^\d]/g, "");
+  const city = user.city || "";
+  const bio = String(user.bio || "").trim();
+  const role = String(user.role || "Buyer").trim();
+  const avatar = user.avatarUrl || "/default-avatar.svg";
+  const bioLen = bio.length;
+
+  const roleOpts = ROLE_OPTIONS.map(
+    (r) => `<option value="${esc(r)}"${role === r ? " selected" : ""}>${esc(r)}</option>`
+  ).join("");
 
   return `
-    <nav class="profile-sidenav settings-sidenav">
-      ${item("#/profile/settings", "personal", "Personal details")}
-      <a href="#/profile/settings/business" class="profile-sidenav-item settings-sidenav-item--row${settingsSection === "business" ? " active" : ""}">
-        <span>Business details</span>
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <polyline points="9 18 15 12 9 6"/>
-        </svg>
-      </a>
-      ${item("#/profile/settings/verify", "verify", "Verify your details")}
-      ${item("#/profile/settings/phone", "phone", "Change phone number")}
-      ${item("#/profile/settings/email", "email", "Change email")}
-      ${item("#/profile/settings/password", "password", "Change password")}
-      <button type="button" class="profile-sidenav-item signout-btn" id="signout-btn">Log out</button>
-    </nav>`;
-}
-
-function renderPersonalForm(user) {
-  const fnLen = String(user.firstName || "").length;
-  const lnLen = String(user.lastName || "").length;
-
-  return `
-    <main class="profile-content">
-      <div class="profile-section-header profile-section-header--settings">
-        <h2>Personal details</h2>
-        <button type="button" class="btn-saved" id="save-profile-btn" aria-label="Save profile">Save</button>
+    <div class="settings-jiji">
+      <div class="profile-section-header profile-section-header--settings-jiji">
+        <h2>Contact details</h2>
       </div>
+      <div class="settings-jiji__body">
+        <form class="settings-jiji-form" id="profile-settings-form" novalidate>
+          <section class="settings-jiji-section">
+            <h3 class="settings-jiji-section__title">Contact details</h3>
+            <div class="form-field">
+              <label class="form-label" for="settings-full-name">Full name</label>
+              <input type="text" id="settings-full-name" name="fullName" class="form-input" value="${esc(fullName)}" required maxlength="120" autocomplete="name" data-settings-track />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settings-email">Email address</label>
+              <input type="email" id="settings-email" name="email" class="form-input" value="${esc(email)}" required maxlength="120" autocomplete="email" data-settings-track />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settings-phone">Phone number</label>
+              <div class="phone-prefix-field">
+                <span class="phone-prefix-field__pre" aria-hidden="true">+36</span>
+                <input type="tel" id="settings-phone" name="phoneNational" class="form-input phone-prefix-field__input" value="${esc(phoneRest)}" inputmode="tel" autocomplete="tel-national" placeholder="20 123 4567" data-settings-track />
+              </div>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settings-location">Location / city</label>
+              <select id="settings-location" name="location" class="form-input form-select" data-settings-track>
+                ${cityOptionsHtml(city)}
+              </select>
+            </div>
+          </section>
 
-      <div class="settings-form-wrap">
-        <div class="avatar-upload-block">
-          <div class="avatar-upload-wrap">
-            <img src="${esc(user.avatarUrl || "/default-avatar.svg")}"
-                 alt="${esc(user.name)}"
-                 class="profile-avatar-large"
-                 id="avatar-preview"/>
-            <button type="button" class="avatar-edit-btn" id="avatar-edit-btn" title="Change photo" aria-label="Change photo">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
-                <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
-              </svg>
-            </button>
-            <input type="file" id="avatar-input" accept="image/*" hidden/>
+          <section class="settings-jiji-section">
+            <h3 class="settings-jiji-section__title">Profile photo</h3>
+            <div class="settings-photo-row">
+              <div class="avatar-upload-wrap settings-avatar-wrap">
+                <img src="${esc(avatar)}" alt="" class="profile-avatar-large" id="avatar-preview" width="96" height="96" decoding="async" />
+                <button type="button" class="avatar-edit-btn avatar-edit-btn--large" id="avatar-edit-btn" title="Upload photo" aria-label="Upload photo">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                    <circle cx="12" cy="13" r="4"/>
+                  </svg>
+                </button>
+                <input type="file" id="avatar-input" accept="image/*" hidden />
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-jiji-section">
+            <h3 class="settings-jiji-section__title">About me</h3>
+            <div class="form-field">
+              <label class="form-label" for="settings-bio">Bio</label>
+              <span class="char-count" id="bio-count" aria-live="polite">${bioLen} / 300</span>
+              <textarea id="settings-bio" name="bio" class="form-input form-textarea" rows="4" maxlength="300" data-char-target="bio-count" data-char-max="300" data-settings-track>${esc(bio)}</textarea>
+            </div>
+          </section>
+
+          <section class="settings-jiji-section">
+            <h3 class="settings-jiji-section__title">Role</h3>
+            <div class="form-field">
+              <label class="form-label" for="settings-role">How you use Nuvelo</label>
+              <select id="settings-role" name="role" class="form-input form-select" data-settings-track>
+                ${roleOpts}
+              </select>
+            </div>
+          </section>
+
+          <div class="settings-jiji-actions">
+            <button type="submit" class="btn btn--primary settings-save-btn" id="save-profile-btn" disabled>Save changes</button>
           </div>
-        </div>
-
-        <form class="settings-form" id="profile-settings-form">
-          <div class="form-field">
-            <label class="form-label" for="firstName">First Name*</label>
-            <span class="char-count" id="fn-count" aria-live="polite">${fnLen} / 20</span>
-            <input type="text" id="firstName" name="firstName"
-                   value="${esc(user.firstName || "")}"
-                   maxlength="20"
-                   class="form-input"
-                   data-char-target="fn-count"
-                   data-char-max="20"/>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="lastName">Last Name*</label>
-            <span class="char-count" id="ln-count" aria-live="polite">${lnLen} / 20</span>
-            <input type="text" id="lastName" name="lastName"
-                   value="${esc(user.lastName || "")}"
-                   maxlength="20"
-                   class="form-input"
-                   data-char-target="ln-count"
-                   data-char-max="20"/>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="location">Location*</label>
-            <select id="location" name="location" class="form-input form-select">
-              ${cityOptionsHtml(user.city)}
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="birthday">Birthday</label>
-            <input type="date" id="birthday" name="birthday"
-                   value="${esc(user.birthday || "")}"
-                   class="form-input"/>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="sex">Sex</label>
-            <select id="sex" name="sex" class="form-input form-select">
-              <option value="">Prefer not to say</option>
-              <option value="male"${user.sex === "male" ? " selected" : ""}>Male</option>
-              <option value="female"${user.sex === "female" ? " selected" : ""}>Female</option>
-            </select>
-          </div>
-
-          <div class="form-field">
-            <label class="form-label" for="phone">Phone</label>
-            <input type="tel" id="phone" name="phone"
-                   value="${esc(user.phone || "")}"
-                   class="form-input"
-                   placeholder="+36…"/>
-          </div>
-
-          <button type="submit" class="btn btn--primary save-btn">Save changes</button>
         </form>
-        <p id="profile-settings-saved-msg" class="settings-saved-msg muted" hidden role="status"></p>
+        <p id="profile-settings-saved-msg" class="settings-saved-msg nuvelo-toast-placeholder" hidden role="status"></p>
       </div>
-    </main>`;
-}
-
-function renderSubPlaceholder(title, blurb) {
-  return `
-    <main class="profile-content">
-      <div class="profile-section-header">
-        <h2>${esc(title)}</h2>
-      </div>
-      <div class="profile-empty-state">
-        <p>${esc(blurb)}</p>
-      </div>
-    </main>`;
-}
-
-function mainPanel(settingsSection, user) {
-  switch (settingsSection) {
-    case "personal":
-      return renderPersonalForm(user);
-    case "business":
-      return renderSubPlaceholder(
-        "Business details",
-        "Business profile and tax details will be available here soon."
-      );
-    case "verify":
-      return renderSubPlaceholder(
-        "Verify your details",
-        "Identity verification will be available here soon."
-      );
-    case "phone":
-      return renderSubPlaceholder(
-        "Change phone number",
-        "Phone number changes will be handled through a secure verification flow soon."
-      );
-    case "email":
-      return renderSubPlaceholder(
-        "Change email",
-        "Email updates will be available here soon."
-      );
-    case "password":
-      return renderSubPlaceholder(
-        "Change password",
-        "Password management will be available here soon."
-      );
-    default:
-      return renderPersonalForm(user);
-  }
+    </div>`;
 }
 
 /**
- * @param {object} user — extended with firstName, lastName, city, birthday, sex, avatarUrl, phone, name
- * @param {string} settingsSection — personal | business | verify | phone | email | password
+ * @param {object} user
+ * @param {string} _settingsSection — reserved for future sub-routes
  */
-export function renderSettingsPage(user, settingsSection) {
-  const sec = settingsSection || "personal";
-
+export function renderSettingsPage(user, _settingsSection) {
   return `
-<div class="profile-layout profile-layout--settings">
-
-  <aside class="profile-sidebar">
-    <div class="profile-sidebar-header">
-      <a href="#/profile/adverts" class="back-link">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-          <polyline points="15 18 9 12 15 6"/>
-        </svg>
-        Settings
-      </a>
-    </div>
-
-    ${sidebarNav(sec)}
-
-  </aside>
-
-  ${mainPanel(sec, user)}
-
+<div class="profile-shell">
+  ${renderProfileMobileTabs("settings")}
+  <div class="profile-layout profile-layout--jiji profile-layout--settings-jiji">
+    ${renderProfileSidebar(user, "settings")}
+    <main class="profile-content profile-content--jiji">
+      ${renderContactDetailsForm(user)}
+    </main>
+  </div>
 </div>`;
 }
