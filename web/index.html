@@ -248,6 +248,11 @@
             Phone (optional — SMS code, E.164 e.g. +36301234567)
             <input name="phone" type="tel" autocomplete="tel" placeholder="+36 …" />
           </label>
+          <p id="auth-sms-steps" class="auth-sms-hint muted small">
+            <strong>SMS sign-in:</strong> leave email empty, enter your phone (+36…), then tap
+            <strong>Continue</strong> to receive a text. Then type the code and tap
+            <strong>Verify code</strong>.
+          </p>
           <div id="auth-phone-verify" class="auth-phone-verify stack" hidden>
             <p class="muted small" style="margin: 0 0 0.5rem">Enter the code we sent to your phone.</p>
             <label>
@@ -262,7 +267,12 @@
                 placeholder="123456"
               />
             </label>
-            <button type="button" class="btn btn--primary auth-submit-full" id="auth-phone-verify-btn">
+            <button
+              type="button"
+              class="btn btn--primary auth-submit-full"
+              id="auth-phone-verify-btn"
+              aria-describedby="auth-sms-steps"
+            >
               Verify code
             </button>
           </div>

@@ -2842,6 +2842,15 @@ body.is-landing .jiji-hero {
 .modal__panel--jiji {
   width: min(420px, 100%);
   padding-top: 2.5rem;
+  max-height: min(92vh, 100dvh);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+}
+
+.auth-sms-hint {
+  margin: 0.35rem 0 0.65rem;
+  line-height: 1.45;
 }
 
 .modal__close-x {

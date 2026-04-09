@@ -458,6 +458,14 @@ loginForm?.addEventListener("submit", async (e) => {
     return;
   }
 
+  /* Email branch runs first; both filled would skip SMS and leave phoneOtpPending unset */
+  if (email && phone) {
+    showLoginError(
+      "Use email or phone — not both at once. For SMS: clear the email field, enter phone (+36…), then tap Continue."
+    );
+    return;
+  }
+
   if (authModalMode === "signup" && (!name || name.length < 2)) {
     showLoginError("Enter your display name (at least 2 characters).");
     return;
@@ -506,6 +514,9 @@ loginForm?.addEventListener("submit", async (e) => {
       const pv = document.getElementById("auth-phone-verify");
       if (pv) {
         pv.hidden = false;
+        requestAnimationFrame(() => {
+          pv.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        });
       }
       showLoginSuccess("Enter the code we sent to your phone.");
     } finally {
@@ -543,7 +554,11 @@ loginForm?.addEventListener("submit", async (e) => {
 
 document.getElementById("auth-phone-verify-btn")?.addEventListener("click", async () => {
   if (!supabase || !phoneOtpPending) {
-    showLoginError("Request an SMS code first.");
+    showLoginError(
+      supabase
+        ? "No SMS was sent yet. Enter your phone (+36…), leave email empty, tap Continue, wait for the text, then enter the code here."
+        : "SMS sign-in requires Supabase to be configured."
+    );
     return;
   }
   const token = String(document.getElementById("auth-phone-otp-input")?.value || "").trim();
