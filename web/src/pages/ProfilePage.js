@@ -20,6 +20,104 @@ function listingThumb(listing) {
   return typeof u === "string" && /^https?:\/\//i.test(u) ? u : "";
 }
 
+function formatShortTime(iso) {
+  if (!iso) {
+    return "—";
+  }
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) {
+    return "—";
+  }
+  return d.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
+
+const MOCK_MESSAGE_THREADS = [
+  {
+    id: "mock-peter",
+    name: "Péter",
+    initial: "P",
+    preview: "Is this still available?",
+    time: "Today · 2:14 PM",
+    unread: 2
+  },
+  {
+    id: "mock-anna",
+    name: "Anna",
+    initial: "A",
+    preview: "I can pick it up tomorrow, what time works?",
+    time: "Yesterday · 6:02 PM",
+    unread: 0
+  },
+  {
+    id: "mock-zsofi",
+    name: "Zsófi",
+    initial: "Z",
+    preview: "Thanks — sending photos now.",
+    time: "Mon · 10:22 AM",
+    unread: 1
+  }
+];
+
+const MOCK_NOTIFICATIONS = [
+  {
+    id: "n1",
+    text: "Your ad “Dog Walking” has been approved.",
+    time: "Today · 9:05 AM",
+    unread: true
+  },
+  {
+    id: "n2",
+    text: "Péter sent you a message.",
+    time: "Today · 2:14 PM",
+    unread: true
+  },
+  {
+    id: "n3",
+    text: "Your ad has 5 new views.",
+    time: "Yesterday · 4:40 PM",
+    unread: false
+  }
+];
+
+const MOCK_MY_ADVERTS = [
+  {
+    id: "demo-my-1",
+    title: "Vintage desk lamp",
+    categoryLabel: "Electronics",
+    status: "Active",
+    createdAt: "2026-04-06T14:20:00.000Z",
+    location: "Budapest",
+    price: 12000,
+    images: ["https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=200&q=80"]
+  },
+  {
+    id: "demo-my-2",
+    title: "Mountain bike 29″",
+    categoryLabel: "Vehicles",
+    status: "Pending review",
+    createdAt: "2026-04-07T09:00:00.000Z",
+    location: "Debrecen",
+    price: 85000,
+    images: ["https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=200&q=80"]
+  },
+  {
+    id: "demo-my-3",
+    title: "Hungarian lesson — 1h",
+    categoryLabel: "Services",
+    status: "Active",
+    createdAt: "2026-03-28T11:30:00.000Z",
+    location: "Szeged",
+    price: 4500,
+    images: []
+  }
+];
+
 function priceLineForListing(listing) {
   if (listing.categoryId === DONATIONS_CATEGORY_ID) {
     return "FREE";
@@ -39,7 +137,7 @@ function renderAdvertRows(listings) {
   return listings
     .map(
       (ad) => `
-    <a href="#/listing/${encodeURIComponent(String(ad.id))}" class="advert-row">
+    <a href="#/listing/${encodeURIComponent(String(ad.id))}" class="advert-row advert-row--saved-card">
       <div class="advert-row__media">
         ${
           listingThumb(ad)
@@ -54,6 +152,44 @@ function renderAdvertRows(listings) {
       </div>
     </a>`
     )
+    .join("");
+}
+
+function statusClassForAdvert(status) {
+  const s = String(status || "active").toLowerCase().replace(/\s+/g, "-");
+  if (s.includes("pending")) {
+    return "pending";
+  }
+  if (s.includes("reject")) {
+    return "rejected";
+  }
+  return "active";
+}
+
+function renderMyAdvertRowsWithStatus(listings, { demo = false } = {}) {
+  return listings
+    .map((ad) => {
+      const status = ad.status || (demo ? "Active" : "Approved");
+      const sc = statusClassForAdvert(status);
+      const cat = esc(ad.categoryLabel || ad.categoryId || "—");
+      const posted = formatShortTime(ad.createdAt);
+      const thumb = listingThumb(ad);
+      const media = thumb
+        ? `<img src="${esc(thumb)}" alt="" width="96" height="96" loading="lazy" />`
+        : `<div class="advert-row__ph" aria-hidden="true"></div>`;
+      const body = `
+      <div class="advert-row__media">${media}</div>
+      <div class="advert-row__body">
+        <span class="advert-status advert-status--${esc(sc)}">${esc(status)}</span>
+        <h3 class="advert-row__title">${esc(ad.title)}</h3>
+        <p class="advert-row__meta">${cat}</p>
+        <p class="advert-row__posted">${esc(posted)}</p>
+      </div>`;
+      if (demo) {
+        return `<div class="advert-row advert-row--demo" role="article">${body}</div>`;
+      }
+      return `<a href="#/listing/${encodeURIComponent(String(ad.id))}" class="advert-row my-advert-row">${body}</a>`;
+    })
     .join("");
 }
 
@@ -178,19 +314,23 @@ function renderProfileSection(section, user) {
 }
 
 function renderMyAdverts(user) {
-  const ads = user.adverts || [];
+  const real = user.adverts || [];
+  const useDemo = real.length === 0;
+  const display = useDemo ? MOCK_MY_ADVERTS : real;
   return `
-    <div class="profile-section-header">
+    <div class="profile-section-header profile-section-header--row">
       <h2>My adverts</h2>
+      ${useDemo ? `<span class="profile-pill profile-pill--demo">Sample</span>` : ""}
     </div>
     ${
-      ads.length === 0
-        ? `<div class="profile-empty-state">
-           <p>There are no adverts yet. Create new one now!</p>
-           <a href="#/post" class="btn btn--primary">Post an ad</a>
-         </div>`
-        : `<div class="advert-row-list">${renderAdvertRows(ads)}</div>`
-    }`;
+      useDemo
+        ? `<p class="muted small profile-hint">These are example listings. Post your own ad to manage it here.</p>`
+        : ""
+    }
+    <div class="advert-row-list my-adverts-list">${renderMyAdvertRowsWithStatus(display, { demo: useDemo })}</div>
+    <div class="profile-cta-row">
+      <a href="#/post" class="btn btn--primary">Post an ad</a>
+    </div>`;
 }
 
 function renderSavedAds(user) {
@@ -199,22 +339,52 @@ function renderSavedAds(user) {
     <div class="profile-section-header"><h2>Saved ads</h2></div>
     ${
       saved.length === 0
-        ? `<div class="profile-empty-state"><p>No saved ads yet. Browse and save listings you like.</p>
+        ? `<div class="profile-empty-state"><p>No saved ads yet. Tap the heart on any listing to save it here.</p>
            <p><a href="#/browse" class="btn btn--primary">Browse ads</a></p></div>`
-        : `<div class="advert-row-list">${renderAdvertRows(saved)}</div>`
+        : `<div class="profile-saved-grid">${renderAdvertRows(saved)}</div>`
     }`;
 }
 
 function renderMessages() {
+  const rows = MOCK_MESSAGE_THREADS.map(
+    (t) => `
+    <button type="button" class="msg-thread${t.unread ? " msg-thread--unread" : ""}">
+      <span class="msg-thread__avatar" aria-hidden="true">${esc(t.initial)}</span>
+      <span class="msg-thread__main">
+        <span class="msg-thread__top">
+          <span class="msg-thread__name">${esc(t.name)}</span>
+          <time class="msg-thread__time">${esc(t.time)}</time>
+        </span>
+        <span class="msg-thread__preview">${esc(t.preview)}</span>
+      </span>
+      ${
+        t.unread
+          ? `<span class="msg-thread__badge" aria-label="${t.unread} unread">${esc(String(t.unread > 9 ? "9+" : t.unread))}</span>`
+          : ""
+      }
+    </button>`
+  ).join("");
   return `
     <div class="profile-section-header"><h2>Messages</h2></div>
-    <div class="profile-empty-state"><p>No messages yet.</p></div>`;
+    <div class="messages-inbox" role="list">${rows}</div>
+    <p class="muted small profile-hint">Preview threads — full chat is coming soon.</p>`;
 }
 
 function renderNotifications() {
+  const items = MOCK_NOTIFICATIONS.map(
+    (n) => `
+    <div class="notif-item${n.unread ? " notif-item--unread" : ""}" role="listitem">
+      <span class="notif-item__dot" aria-hidden="true"></span>
+      <div class="notif-item__body">
+        <p class="notif-item__text">${esc(n.text)}</p>
+        <time class="notif-item__time">${esc(n.time)}</time>
+      </div>
+    </div>`
+  ).join("");
   return `
     <div class="profile-section-header"><h2>Notifications</h2></div>
-    <div class="profile-empty-state"><p>No notifications yet.</p></div>`;
+    <div class="notif-list" role="list">${items}</div>
+    <p class="muted small profile-hint">Sample notifications — preferences will be configurable later.</p>`;
 }
 
 function renderFollowers() {

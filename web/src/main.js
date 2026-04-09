@@ -284,9 +284,7 @@ const syncAuthFromStoredUser = () => {
 
 const getNavBadgeCounts = () => {
   try {
-    const raw = localStorage.getItem("nuvelo_saved_listing_ids");
-    const ids = raw ? JSON.parse(raw) : [];
-    const savedCount = Array.isArray(ids) ? ids.length : 0;
+    const savedCount = readSavedListingIds().length;
     const unreadMessages = Math.max(
       0,
       Math.floor(Number(localStorage.getItem("nuvelo_unread_messages") || "0"))
@@ -774,6 +772,31 @@ const writeJsonStore = (key, value) => {
   } catch {
     /* ignore */
   }
+};
+
+const SAVED_LISTING_IDS_KEY = "nuvelo_saved_listing_ids";
+
+const readSavedListingIds = () => {
+  const raw = readJsonStore(SAVED_LISTING_IDS_KEY, []);
+  return Array.isArray(raw) ? raw.map(String) : [];
+};
+
+const writeSavedListingIds = (ids) => {
+  writeJsonStore(SAVED_LISTING_IDS_KEY, ids);
+};
+
+const isListingSaved = (id) => readSavedListingIds().includes(String(id));
+
+const toggleSavedListing = (id) => {
+  const sid = String(id);
+  const next = new Set(readSavedListingIds());
+  if (next.has(sid)) {
+    next.delete(sid);
+  } else {
+    next.add(sid);
+  }
+  writeSavedListingIds([...next]);
+  syncNavUserIcons();
 };
 
 const readProfileFieldStore = () => readJsonStore(PROFILE_FIELDS_KEY, {});
@@ -1700,6 +1723,13 @@ const buildListingCardEl = (listing, opts = {}) => {
     ? `<p class="lc__cta"><button type="button" class="lc__claim-btn" data-donation-cta>${claimed ? "View listing" : "I want this"}</button></p>`
     : "";
 
+  const saved = isListingSaved(listing.id);
+  const saveBtnHtml = `<button type="button" class="lc__save${saved ? " lc__save--active" : ""}" data-save-listing aria-label="${saved ? "Remove from saved" : "Save listing"}" aria-pressed="${saved ? "true" : "false"}" title="${saved ? "Saved" : "Save"}">
+        <svg class="lc__save-icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="${saved ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+        </svg>
+      </button>`;
+
   const card = document.createElement("article");
   card.className = `lc lc--${viewMode === "list" ? "list" : "grid"}${isDonation ? " lc--donation" : ""}${claimed ? " lc--claimed" : ""}`;
   card.tabIndex = 0;
@@ -1719,6 +1749,7 @@ const buildListingCardEl = (listing, opts = {}) => {
       ${imgHtml}
       ${claimOverlay}
       ${sellerIco}
+      ${saveBtnHtml}
     </div>
     <div class="lc__body">
       ${priceHtml}
@@ -1740,6 +1771,21 @@ const buildListingCardEl = (listing, opts = {}) => {
   card.querySelector("[data-donation-cta]")?.addEventListener("click", (e) => {
     e.stopPropagation();
     setHash(`/listing/${listing.id}`);
+  });
+
+  const saveBtn = card.querySelector("[data-save-listing]");
+  saveBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleSavedListing(listing.id);
+    const on = isListingSaved(listing.id);
+    saveBtn.classList.toggle("lc__save--active", on);
+    saveBtn.setAttribute("aria-pressed", on ? "true" : "false");
+    saveBtn.setAttribute("aria-label", on ? "Remove from saved" : "Save listing");
+    saveBtn.title = on ? "Saved" : "Save";
+    const path = saveBtn.querySelector("path");
+    if (path) {
+      path.setAttribute("fill", on ? "currentColor" : "none");
+    }
   });
 
   return card;
@@ -2483,7 +2529,12 @@ const renderDetail = async (id) => {
         <div style="display:flex;flex-wrap:wrap;gap:0.35rem;margin:0.75rem 0">
           ${pillsRow}
         </div>
-        <h1 style="margin:0 0 0.5rem;font-size:1.5rem">${esc(listing.title)}</h1>
+        <div class="detail-title-row">
+          <h1 style="margin:0;font-size:1.5rem;flex:1;min-width:0">${esc(listing.title)}</h1>
+          <button type="button" class="detail-save-btn${isListingSaved(listing.id) ? " detail-save-btn--active" : ""}" id="detail-save-listing" aria-pressed="${isListingSaved(listing.id) ? "true" : "false"}" aria-label="${isListingSaved(listing.id) ? "Remove from saved" : "Save listing"}" title="${isListingSaved(listing.id) ? "Saved" : "Save"}">
+            <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="${isListingSaved(listing.id) ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+          </button>
+        </div>
         <section>
           <h2 class="site-footer__heading" style="margin-top:1rem">Description</h2>
           <p class="desc-long ${descLong ? "is-collapsed" : ""}" id="detail-desc">${esc(listing.description)}</p>
@@ -2519,6 +2570,21 @@ const renderDetail = async (id) => {
     e.preventDefault();
     document.getElementById("detail-desc")?.classList.remove("is-collapsed");
     e.target.hidden = true;
+  });
+
+  document.getElementById("detail-save-listing")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    toggleSavedListing(listing.id);
+    const btn = document.getElementById("detail-save-listing");
+    if (!btn) {
+      return;
+    }
+    const on = isListingSaved(listing.id);
+    btn.classList.toggle("detail-save-btn--active", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+    btn.setAttribute("aria-label", on ? "Remove from saved" : "Save listing");
+    btn.title = on ? "Saved" : "Save";
+    btn.querySelector("path")?.setAttribute("fill", on ? "currentColor" : "none");
   });
 
   document.getElementById("detail-show-contact")?.addEventListener("click", () => {
