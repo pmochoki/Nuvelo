@@ -149,6 +149,35 @@ form.admin-form input {
   margin-bottom: 16px;
 }
 
+.admin-mock-banner {
+  padding: 14px 18px;
+  border-radius: 10px;
+  background: rgba(167, 139, 250, 0.2);
+  border: 1px solid var(--purple-light);
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.5;
+}
+
+.admin-gate {
+  max-width: 420px;
+}
+
+.admin-gate-submit {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+  color: var(--white);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.admin-access-denied {
+  color: #fecaca;
+  margin: 0;
+  font-weight: 600;
+}
+
 .muted {
   color: rgba(255, 255, 255, 0.72);
 }
