@@ -19,6 +19,7 @@ import {
   donationConditionLabel,
   donationCollectionMeta
 } from "./data/donationConstants.js";
+import { renderProfilePage } from "./pages/ProfilePage.js";
 
 if (!import.meta.env.VITE_API_URL) {
   console.error("[Nuvelo] VITE_API_URL is not set! Auth and API calls will fail.");
@@ -1428,15 +1429,20 @@ const parseHash = () => {
     return { view: "static", page: parts[0] };
   }
   if (parts[0] === "profile") {
-    if (parts.length === 1) {
-      return { view: "profile", section: "overview" };
-    }
-    const sub = parts[1];
-    const allowed = ["saved", "messages", "notifications", "adverts"];
+    const sub = parts[1] || "adverts";
+    const allowed = [
+      "saved",
+      "messages",
+      "notifications",
+      "adverts",
+      "followers",
+      "feedback",
+      "settings"
+    ];
     if (allowed.includes(sub)) {
       return { view: "profile", section: sub };
     }
-    return { view: "profile", section: "overview" };
+    return { view: "profile", section: "adverts" };
   }
   return { view: "landing" };
 };
@@ -2669,13 +2675,15 @@ const renderProfile = async (section) => {
   }
   const user = getUser();
   const titles = {
-    overview: "My profile",
+    adverts: "My profile",
     saved: "Saved ads",
     messages: "Messages",
     notifications: "Notifications",
-    adverts: "My adverts"
+    followers: "Followers",
+    feedback: "Feedback",
+    settings: "Settings"
   };
-  const title = titles[section] || titles.overview;
+  const title = titles[section] || titles.adverts;
   if (!user) {
     appEl.innerHTML = `
       <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
@@ -2690,19 +2698,39 @@ const renderProfile = async (section) => {
     return;
   }
   appEl.innerHTML = `
-    <article class="stack profile-page" style="max-width:720px;margin:0 auto;padding:0 0 2rem">
-      <h1 style="margin:0 0 0.75rem">${esc(title)}</h1>
-      <p class="muted" style="margin:0 0 1rem">${esc(
-        section === "overview"
-          ? `Signed in as ${user.name} · ${user.role}`
-          : "More options for this area will appear here soon."
-      )}</p>
-      <p style="margin:0 0 1rem">
-        <a href="#/browse">Browse listings</a>
-      </p>
-      <button type="button" class="btn btn--pill btn--signin" id="profile-sign-out">Sign out</button>
-    </article>
+    <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
+      <span class="page-loading__spinner" aria-hidden="true"></span>
+      <span class="page-loading__text">Loading…</span>
+    </div>
   `;
+  try {
+    const all = await fetchListings({});
+    const adverts = all.filter((l) => l.userId === user.id);
+    const rawSaved = readJsonStore("nuvelo_saved_listing_ids", []);
+    const ids = Array.isArray(rawSaved) ? rawSaved.slice(0, 50) : [];
+    const savedResults = await Promise.all(
+      ids.map((id) =>
+        apiFetchListing(id).catch(() => null)
+      )
+    );
+    const savedAds = savedResults.filter(Boolean);
+    const profileUser = {
+      ...user,
+      adverts,
+      savedAds
+    };
+    appEl.innerHTML = renderProfilePage(profileUser, section);
+  } catch (e) {
+    console.error(e);
+    appEl.innerHTML = `
+      <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
+        <h1 style="margin:0 0 0.5rem">${esc(title)}</h1>
+        <p class="muted">${esc(friendlyNetworkError(e))}</p>
+        <p><a href="#/browse">Browse listings</a></p>
+      </section>
+    `;
+    return;
+  }
   document.getElementById("profile-sign-out")?.addEventListener("click", () => void signOutNuvelo());
 };
 
