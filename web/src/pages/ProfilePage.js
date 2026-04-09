@@ -366,7 +366,7 @@ function renderMessagesLayout() {
 
   return `
     <div class="messages-jiji" data-messages-root>
-      <div class="messages-jiji__left">
+      <div class="messages-jiji__left" data-msg-list-column>
         <h2 class="messages-jiji__title">My messages</h2>
         <label class="messages-jiji__search-wrap">
           <span class="messages-jiji__search-icon" aria-hidden="true">⌕</span>
@@ -410,6 +410,7 @@ function renderChatPanel(threadId) {
     : `<div class="chat-head__ph"></div>`;
   return `
     <header class="chat-head">
+      <button type="button" class="chat-head__back" data-msg-back aria-label="Back to messages">←</button>
       <div class="chat-head__thumb">${thumb}</div>
       <div class="chat-head__meta">
         <p class="chat-head__name">${esc(t.name)}</p>

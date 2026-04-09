@@ -355,6 +355,8 @@ const syncNavUserIcons = () => {
 const updateAuthUi = () => {
   const user = getUser();
   const regBtn = document.getElementById("auth-register-btn");
+  const drawerGuest = document.getElementById("nav-drawer-guest");
+  const drawerAuth = document.getElementById("nav-drawer-auth");
   if (user) {
     authBtn.hidden = true;
     if (regBtn) {
@@ -363,6 +365,12 @@ const updateAuthUi = () => {
     userChip.hidden = true;
     userChip.removeAttribute("title");
     userChip.style.cursor = "";
+    if (drawerGuest) {
+      drawerGuest.hidden = true;
+    }
+    if (drawerAuth) {
+      drawerAuth.hidden = false;
+    }
   } else {
     authBtn.hidden = false;
     if (regBtn) {
@@ -371,6 +379,12 @@ const updateAuthUi = () => {
     userChip.hidden = true;
     userChip.removeAttribute("title");
     userChip.style.cursor = "";
+    if (drawerGuest) {
+      drawerGuest.hidden = false;
+    }
+    if (drawerAuth) {
+      drawerAuth.hidden = true;
+    }
   }
   syncNavUserIcons();
 };
@@ -1413,6 +1427,18 @@ function initMessagesPageUi() {
     btn.addEventListener("click", () => showTab(btn.getAttribute("data-msg-tab") || "all"));
   });
 
+  const closeThread = () => {
+    root.classList.remove("messages-jiji--thread-open");
+    if (chat) {
+      chat.innerHTML = "";
+      chat.hidden = true;
+    }
+    if (empty) {
+      empty.hidden = false;
+    }
+    root.querySelectorAll(".msg-row").forEach((row) => row.classList.remove("msg-row--selected"));
+  };
+
   const openThread = (id) => {
     if (!chat || !empty) {
       return;
@@ -1420,10 +1446,20 @@ function initMessagesPageUi() {
     chat.innerHTML = getMessageChatHtml(id);
     empty.hidden = true;
     chat.hidden = false;
+    root.classList.add("messages-jiji--thread-open");
     root.querySelectorAll(".msg-row").forEach((row) => {
       row.classList.toggle("msg-row--selected", row.getAttribute("data-thread-id") === id);
     });
+    const back = chat.querySelector("[data-msg-back]");
+    back?.focus();
   };
+
+  root.addEventListener("click", (e) => {
+    if (e.target.closest("[data-msg-back]")) {
+      e.preventDefault();
+      closeThread();
+    }
+  });
 
   root.querySelectorAll("[data-thread-id]").forEach((btn) => {
     btn.addEventListener("click", () => openThread(btn.getAttribute("data-thread-id") || ""));
@@ -1800,6 +1836,23 @@ const syncLocationCombobox = (root, storedRaw) => {
     btn.textContent = label;
   }
   closeLocationPanel(root);
+};
+
+/** Keep header + mobile drawer search fields aligned with the current URL. */
+const syncGlobalHeaderDrawerSearch = () => {
+  const p = new URLSearchParams(window.location.search);
+  const q = p.get("q") || "";
+  const loc = p.get("loc") || "";
+  const hf = document.getElementById("header-search-form");
+  const df = document.getElementById("drawer-search-form");
+  if (hf && "q" in hf.elements && hf.elements.q instanceof HTMLInputElement) {
+    hf.elements.q.value = q;
+  }
+  if (df && "q" in df.elements && df.elements.q instanceof HTMLInputElement) {
+    df.elements.q.value = q;
+  }
+  syncLocationCombobox(hf?.querySelector("[data-loc-combobox]"), loc);
+  syncLocationCombobox(df?.querySelector("[data-loc-combobox]"), loc);
 };
 
 const applyLocationSelection = (root, value, label) => {
@@ -2549,10 +2602,7 @@ const renderLanding = async () => {
 
   const heroLocRoot = document.querySelector("#home-hero-form [data-loc-combobox]");
   initLocationCombobox(heroLocRoot);
-  syncLocationCombobox(
-    document.querySelector("#header-search-form [data-loc-combobox]"),
-    urlLoc
-  );
+  syncGlobalHeaderDrawerSearch();
 
   document.getElementById("home-hero-form")?.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -2606,10 +2656,10 @@ const renderList = async () => {
   const hf = document.getElementById("header-search-form");
   if (hf?.elements?.q) {
     hf.elements.q.value = filters.query;
-    syncLocationCombobox(hf.querySelector("[data-loc-combobox]"), filters.location);
     const catLabel = filters.categoryId ? categoryDisplayName(filters.categoryId) : "All ads";
     hf.elements.q.placeholder = `Search in ${catLabel}`;
   }
+  syncGlobalHeaderDrawerSearch();
 
   const cacheKey = browseCacheKey(fetchFilters);
   let listings = [];
@@ -3142,6 +3192,13 @@ const renderDetail = async (id) => {
         </div>
       </aside>`;
 
+  const showBuyerMobileCta = !isOwner && (isDonation ? !claimed : true);
+  const mobileCtaHtml = showBuyerMobileCta
+    ? isDonation
+      ? `<div class="detail-mobile-cta" id="detail-mobile-cta"><button type="button" class="btn btn--primary detail-mobile-cta__btn" id="detail-mobile-primary"${claimed ? " disabled" : ""}>${claimed ? "Claimed" : "I want this"}</button></div>`
+      : `<div class="detail-mobile-cta" id="detail-mobile-cta"><button type="button" class="btn btn--primary detail-mobile-cta__btn" id="detail-mobile-primary">Show contact</button></div>`
+    : "";
+
   appEl.innerHTML = `
     <nav class="breadcrumb-jiji" aria-label="Breadcrumb">
       <a href="#/browse">All ads</a> ›
@@ -3188,6 +3245,7 @@ const renderDetail = async (id) => {
       </div>
       ${asideBlock}
     </div>
+    ${mobileCtaHtml}
     <p class="muted small" id="detail-contact-msg" style="margin-top:0.75rem"></p>
   `;
 
@@ -3232,6 +3290,14 @@ const renderDetail = async (id) => {
     const el = document.getElementById("detail-phone-reveal");
     if (el) {
       el.hidden = false;
+    }
+  });
+
+  document.getElementById("detail-mobile-primary")?.addEventListener("click", () => {
+    if (isDonation) {
+      document.getElementById("detail-donation-claim")?.click();
+    } else {
+      document.getElementById("detail-show-contact")?.click();
     }
   });
   document.getElementById("detail-callback")?.addEventListener("click", () => {
@@ -4221,6 +4287,7 @@ const render = async () => {
       tr.setAttribute("aria-expanded", "false");
     }
     ensureNavUserDropdown();
+    syncGlobalHeaderDrawerSearch();
   }
 };
 
@@ -4338,9 +4405,7 @@ document.body.addEventListener("change", (e) => {
   }
 });
 
-document.getElementById("header-search-form")?.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const form = e.target;
+const submitBrowseSearchFromForm = (form) => {
   const fd = new FormData(form);
   const next = new URLSearchParams(window.location.search);
   const qq = String(fd.get("q") || "").trim();
@@ -4363,7 +4428,27 @@ document.getElementById("header-search-form")?.addEventListener("submit", (e) =>
     "",
     `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
   );
-  render();
+};
+
+document.getElementById("header-search-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const form = e.target;
+  if (!(form instanceof HTMLFormElement)) {
+    return;
+  }
+  submitBrowseSearchFromForm(form);
+  void render();
+});
+
+document.getElementById("drawer-search-form")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const form = e.target;
+  if (!(form instanceof HTMLFormElement)) {
+    return;
+  }
+  submitBrowseSearchFromForm(form);
+  setNavDrawerOpen(false);
+  void render();
 });
 
 window.addEventListener("hashchange", render);
@@ -4379,11 +4464,10 @@ document.getElementById("filter-sheet-backdrop")?.addEventListener("click", clos
 
 bindHungarianLocationGlobalHandlers();
 const headerLocRootInit = document.querySelector("#header-search-form [data-loc-combobox]");
+const drawerLocRootInit = document.querySelector("#drawer-search-form [data-loc-combobox]");
 initLocationCombobox(headerLocRootInit);
-syncLocationCombobox(
-  headerLocRootInit,
-  new URLSearchParams(window.location.search).get("loc") || ""
-);
+initLocationCombobox(drawerLocRootInit);
+syncGlobalHeaderDrawerSearch();
 
 void (async () => {
   await initAuth();

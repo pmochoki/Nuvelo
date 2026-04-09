@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
       content="Nuvelo — rentals, jobs, services, and goods for internationals and locals in Hungary."
@@ -19,7 +19,7 @@
   <body>
     <header class="site-header jiji-header">
       <div class="jiji-header__inner">
-        <div class="jiji-header__lead">
+        <div class="jiji-header__lead" id="jiji-header-lead">
           <button
             type="button"
             class="nav-burger jiji-header__burger"
@@ -32,7 +32,7 @@
             <span class="nav-burger__line"></span>
             <span class="nav-burger__line"></span>
           </button>
-          <div class="jiji-header__brand-stack">
+          <div class="jiji-header__brand-stack jiji-header__brand-stack--nav">
             <a class="brand brand--nav jiji-header__brand" href="#/">
               <img
                 class="brand__logo"
@@ -190,15 +190,75 @@
         </div>
       </div>
       <div class="nav-drawer" id="nav-drawer" hidden aria-hidden="true">
-        <nav class="nav-drawer__inner" aria-label="Mobile menu">
-          <a href="#/">Home</a>
-          <a href="#/browse">Browse ads</a>
-          <a href="#/post">Post an ad</a>
-          <button type="button" class="nav-drawer__signin" id="drawer-signin">Sign in</button>
-          <button type="button" class="nav-drawer__signin" id="drawer-register">
-            Registration
-          </button>
-        </nav>
+        <div class="nav-drawer__panel">
+          <p class="nav-drawer__section-label">Search</p>
+          <form id="drawer-search-form" class="nav-drawer__search-form" autocomplete="off" action="javascript:void(0)">
+            <input
+              class="nav-drawer__search-q"
+              name="q"
+              type="search"
+              placeholder="Search for anything…"
+              aria-label="Search keywords"
+            />
+            <div class="loc-dd nav-drawer__loc-dd" data-loc-combobox data-loc-mode="filter">
+              <input type="hidden" name="loc" data-loc-hidden value="" />
+              <button
+                type="button"
+                class="loc-dd__btn nav-drawer__loc-btn"
+                data-loc-btn
+                aria-haspopup="dialog"
+                aria-expanded="false"
+                aria-label="Location"
+              >
+                All Hungary
+              </button>
+              <div class="loc-modal" data-loc-modal hidden aria-hidden="true" inert>
+                <div class="loc-modal__backdrop" data-loc-close tabindex="-1"></div>
+                <div class="loc-modal__dialog" role="dialog" aria-modal="true" aria-label="Choose location">
+                  <div class="loc-modal__head">
+                    <div>
+                      <h2 class="loc-modal__title" data-loc-modal-title>All Hungary</h2>
+                      <p class="loc-modal__meta" data-loc-modal-meta>Select a city or town</p>
+                    </div>
+                    <button type="button" class="loc-modal__x" data-loc-close aria-label="Close">×</button>
+                  </div>
+                  <div class="loc-modal__search-row">
+                    <span class="loc-modal__search-icon" aria-hidden="true">⌕</span>
+                    <input
+                      type="search"
+                      class="loc-modal__search"
+                      data-loc-search
+                      placeholder="Find city or town…"
+                      autocomplete="off"
+                      aria-label="Search cities"
+                    />
+                  </div>
+                  <div class="loc-modal__body" data-loc-body></div>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn--primary nav-drawer__search-submit">Search</button>
+          </form>
+          <a class="btn btn--primary btn--pill nav-drawer__sell" href="#/post">SELL</a>
+          <p class="nav-drawer__section-label">Menu</p>
+          <nav class="nav-drawer__links" aria-label="Mobile menu">
+            <a href="#/">Home</a>
+            <a href="#/browse">Browse ads</a>
+            <a href="#/post">Post an ad</a>
+          </nav>
+          <div class="nav-drawer__auth-links" id="nav-drawer-auth" hidden>
+            <p class="nav-drawer__section-label">Account</p>
+            <a href="#/profile/saved">Saved ads</a>
+            <a href="#/profile/messages">Messages</a>
+            <a href="#/profile/notifications">Notifications</a>
+            <a href="#/profile/adverts">My adverts</a>
+            <a href="#/profile/settings">Settings</a>
+          </div>
+          <div class="nav-drawer__guest" id="nav-drawer-guest">
+            <button type="button" class="nav-drawer__signin" id="drawer-signin">Sign in</button>
+            <button type="button" class="nav-drawer__signin" id="drawer-register">Registration</button>
+          </div>
+        </div>
       </div>
     </header>
 
