@@ -86,6 +86,11 @@ const userChip = document.getElementById("user-chip");
 const loginModal = document.getElementById("login-modal");
 const loginForm = document.getElementById("login-form");
 
+/** Ensure overlay starts closed (matches HTML `hidden`); never call openModal() during initial load. */
+if (loginModal) {
+  loginModal.hidden = true;
+}
+
 const getUser = () => cachedUser;
 
 const readStoredUser = () => {
@@ -269,7 +274,14 @@ const syncAuthBackendHint = () => {
   el.hidden = isSupabaseConfigured;
 };
 
+/**
+ * Opens the auth overlay. Call only from user-driven handlers (Sign in, Registration, drawer, etc.).
+ * Do not invoke on page load. Implementation: #login-modal is a div with `hidden`, not <dialog>.showModal().
+ */
 const openModal = (mode = "login") => {
+  if (!loginModal) {
+    return;
+  }
   resetAuthModalMessages();
   authModalMode = mode;
   const titleEl = document.getElementById("login-title");
@@ -328,6 +340,9 @@ const openModal = (mode = "login") => {
 };
 
 const closeModal = () => {
+  if (!loginModal) {
+    return;
+  }
   loginModal.hidden = true;
   resetAuthModalMessages();
 };
