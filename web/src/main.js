@@ -62,6 +62,20 @@ const EVENTS_CATEGORY = "events";
 let cachedUser = null;
 /** Set after sending phone OTP until verified or modal reset. */
 let phoneOtpPending = null;
+/** True only after the backend successfully accepts an SMS OTP send (Continue with phone-only path). */
+let smsSent = false;
+
+function syncAuthPhoneVerifySection() {
+  const pv = document.getElementById("auth-phone-verify");
+  if (pv) {
+    pv.hidden = !smsSent;
+  }
+}
+
+function setSmsSent(value) {
+  smsSent = Boolean(value);
+  syncAuthPhoneVerifySection();
+}
 const VIEW_MODE_KEY = "nuvelo_list_view";
 const CATEGORY_SLUGS = {
   events: "events",
@@ -154,10 +168,8 @@ function resetAuthModalMessages() {
   showLoginError("");
   showLoginSuccess("");
   phoneOtpPending = null;
-  const pv = document.getElementById("auth-phone-verify");
-  if (pv) {
-    pv.hidden = true;
-  }
+  smsSent = false;
+  syncAuthPhoneVerifySection();
   const otp = document.getElementById("auth-phone-otp-input");
   if (otp) {
     otp.value = "";
@@ -545,13 +557,13 @@ loginForm?.addEventListener("submit", async (e) => {
         return;
       }
       phoneOtpPending = phone;
-      const pv = document.getElementById("auth-phone-verify");
-      if (pv) {
-        pv.hidden = false;
-        requestAnimationFrame(() => {
-          pv.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      setSmsSent(true);
+      requestAnimationFrame(() => {
+        document.getElementById("auth-phone-verify")?.scrollIntoView({
+          block: "nearest",
+          behavior: "smooth"
         });
-      }
+      });
       showLoginSuccess("Enter the code we sent to your phone.");
     } catch (err) {
       console.error(err);
@@ -590,7 +602,7 @@ loginForm?.addEventListener("submit", async (e) => {
 });
 
 document.getElementById("auth-phone-verify-btn")?.addEventListener("click", async () => {
-  if (!supabase || !phoneOtpPending) {
+  if (!supabase || !phoneOtpPending || !smsSent) {
     showLoginError(
       supabase
         ? "No SMS was sent yet. Enter your phone (+36…), leave email empty, tap Continue, wait for the text, then enter the code here."
