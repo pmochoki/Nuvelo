@@ -28,18 +28,23 @@ function cityOptionsHtml(selectedCity) {
 }
 
 const ROLE_OPTIONS = ["Buyer", "Tenant", "Seller", "Agent", "Landlord"];
+const DEFAULT_SAVE_LABEL = "Save changes";
 
 /**
  * @param {object} user — extended with profile fields
  */
 function renderContactDetailsForm(user) {
-  const fullName = String(user.fullName || user.name || "").trim();
+  const firstName = String(user.firstName || "").trim();
+  const lastName = String(user.lastName || "").trim();
+  const fullName = String(user.fullName || "").trim() || [firstName, lastName].filter(Boolean).join(" ").trim();
   const email = String(user.email || "").trim();
   const phone = String(user.phone || "").trim();
   const phoneRest = phone
     .replace(/^\+\s*36\s*/i, "")
     .replace(/[^\d]/g, "");
   const city = user.city || "";
+  const birthday = String(user.birthday || "");
+  const sex = String(user.sex || "");
   const bio = String(user.bio || "").trim();
   const role = String(user.role || "Buyer").trim();
   const bioLen = bio.length;
@@ -62,13 +67,21 @@ function renderContactDetailsForm(user) {
 
   const imgAttrs = hasPhoto ? ` src="${esc(photoSrc)}"` : "";
 
+  const sexOpts = [
+    { v: "", l: "Prefer not to say" },
+    { v: "male", l: "Male" },
+    { v: "female", l: "Female" }
+  ]
+    .map((o) => `<option value="${esc(o.v)}"${sex === o.v ? " selected" : ""}>${esc(o.l)}</option>`)
+    .join("");
+
   return `
     <div class="settings-jiji">
       <div class="profile-section-header profile-section-header--settings-jiji">
         <h2>Account settings</h2>
       </div>
       <div class="settings-jiji__body">
-        <form class="settings-jiji-form" id="profile-settings-form" novalidate>
+        <form class="settings-jiji-form" id="profile-settings-form" novalidate action="javascript:void(0)">
           <section class="settings-jiji-section settings-jiji-section--photo">
             <h3 class="settings-jiji-section__title">Profile photo</h3>
             <p class="settings-account-photo__lead muted small">Your photo appears on your profile and in the header after you save or upload.</p>
@@ -109,17 +122,29 @@ function renderContactDetailsForm(user) {
 
           <section class="settings-jiji-section">
             <h3 class="settings-jiji-section__title">Account information</h3>
-            <div class="form-field">
-              <label class="form-label" for="settings-display-name">Display name</label>
+            <div class="form-field form-field--inline-pair">
+              <label class="form-label" for="settings-first-name">First name</label>
               <input
                 type="text"
-                id="settings-display-name"
-                name="fullName"
+                id="settings-first-name"
+                name="firstName"
                 class="form-input"
-                value="${esc(fullName)}"
-                required
-                maxlength="120"
-                autocomplete="name"
+                value="${esc(firstName)}"
+                maxlength="60"
+                autocomplete="given-name"
+                data-settings-track
+              />
+            </div>
+            <div class="form-field form-field--inline-pair">
+              <label class="form-label" for="settings-last-name">Last name</label>
+              <input
+                type="text"
+                id="settings-last-name"
+                name="lastName"
+                class="form-input"
+                value="${esc(lastName)}"
+                maxlength="60"
+                autocomplete="family-name"
                 data-settings-track
               />
             </div>
@@ -131,7 +156,6 @@ function renderContactDetailsForm(user) {
                 name="email"
                 class="form-input"
                 value="${esc(email)}"
-                required
                 maxlength="120"
                 autocomplete="email"
                 data-settings-track
@@ -166,6 +190,23 @@ function renderContactDetailsForm(user) {
               </select>
             </div>
             <div class="form-field">
+              <label class="form-label" for="settings-birthday">Birthday</label>
+              <input
+                type="date"
+                id="settings-birthday"
+                name="birthday"
+                class="form-input"
+                value="${esc(birthday)}"
+                data-settings-track
+              />
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settings-sex">Sex</label>
+              <select id="settings-sex" name="sex" class="form-input form-select" data-settings-track>
+                ${sexOpts}
+              </select>
+            </div>
+            <div class="form-field">
               <label class="form-label" for="settings-bio">Bio / About me</label>
               <span class="char-count" id="bio-count" aria-live="polite">${bioLen} / 300</span>
               <textarea
@@ -191,7 +232,7 @@ function renderContactDetailsForm(user) {
             <button type="button" class="btn btn--ghost settings-cancel-btn" id="settings-cancel-btn" disabled>
               Cancel
             </button>
-            <button type="submit" class="btn btn--primary settings-save-btn" id="save-profile-btn" disabled>Save changes</button>
+            <button type="button" class="btn btn--primary settings-save-btn" id="save-profile-btn">${esc(DEFAULT_SAVE_LABEL)}</button>
           </div>
         </form>
         <p id="profile-settings-saved-msg" class="settings-saved-msg nuvelo-toast-placeholder" hidden role="status"></p>

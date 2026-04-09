@@ -96,6 +96,8 @@ const showOAuthUnavailable = (providerLabel) => {
 const LISTINGS_UNAVAILABLE_MSG = "Listings are loading, please try again shortly.";
 const USER_STORE_KEY = "nuvelo_user";
 const PROFILE_FIELDS_KEY = "nuvelo_profile_fields";
+/** Canonical profile JSON for /profile/settings (merged with legacy key on read). */
+const NUVELO_PROFILE_KEY = "nuvelo_profile";
 const AVATAR_DATAURL_KEY = "nuvelo_avatar_dataurl";
 const EVENTS_STORE_KEY = "nuvelo_events_custom";
 const EVENTS_RSVP_KEY = "nuvelo_events_rsvp";
@@ -817,6 +819,22 @@ const readProfileFieldStore = () => readJsonStore(PROFILE_FIELDS_KEY, {});
 
 const writeProfileFieldStore = (obj) => writeJsonStore(PROFILE_FIELDS_KEY, obj);
 
+const readMergedProfileStore = () => {
+  const legacy = readJsonStore(PROFILE_FIELDS_KEY, {});
+  const v2 = readJsonStore(NUVELO_PROFILE_KEY, null);
+  if (v2 && typeof v2 === "object" && !Array.isArray(v2)) {
+    return { ...legacy, ...v2 };
+  }
+  return legacy && typeof legacy === "object" ? { ...legacy } : {};
+};
+
+/** Persists to nuvelo_profile and mirrors into nuvelo_profile_fields for older code paths. */
+const writeNuveloProfile = (snapshot) => {
+  const next = { ...snapshot };
+  writeJsonStore(NUVELO_PROFILE_KEY, next);
+  writeJsonStore(PROFILE_FIELDS_KEY, { ...readJsonStore(PROFILE_FIELDS_KEY, {}), ...next });
+};
+
 const readStoredAvatarDataUrl = () => {
   try {
     const u = localStorage.getItem(AVATAR_DATAURL_KEY);
@@ -866,15 +884,21 @@ const deriveNameParts = (user, stored) => {
 };
 
 const buildProfileSettingsUser = (baseUser) => {
-  const stored = readProfileFieldStore();
+  const stored = readMergedProfileStore();
   const parts = deriveNameParts(baseUser, stored);
-  const fullName = String(stored.fullName || "").trim() || [parts.firstName, parts.lastName].filter(Boolean).join(" ").trim() || baseUser.name || "";
+  const firstName = String(stored.firstName ?? parts.firstName ?? "").trim();
+  const lastName = String(stored.lastName ?? parts.lastName ?? "").trim();
+  const fullName =
+    String(stored.fullName || "").trim() ||
+    [firstName, lastName].filter(Boolean).join(" ").trim() ||
+    baseUser.name ||
+    "";
   return {
     ...withMergedAvatar(baseUser),
-    firstName: parts.firstName,
-    lastName: parts.lastName,
+    firstName,
+    lastName,
     fullName,
-    city: stored.city || "",
+    city: stored.city || stored.location || "",
     birthday: stored.birthday || "",
     sex: stored.sex || "",
     phone: stored.phone || baseUser.phone || "",
@@ -884,7 +908,7 @@ const buildProfileSettingsUser = (baseUser) => {
   };
 };
 
-function showNuveloToast(message) {
+function showNuveloToast(message, durationMs = 3000) {
   let el = document.getElementById("nuvelo-toast");
   if (!el) {
     el = document.createElement("div");
@@ -900,7 +924,7 @@ function showNuveloToast(message) {
   el._nuveloToastT = window.setTimeout(() => {
     el.classList.remove("nuvelo-toast--visible");
     el.hidden = true;
-  }, 2600);
+  }, durationMs);
 }
 
 function syncGlobalAvatarImages(url) {
@@ -985,8 +1009,12 @@ function persistAvatarFromFile(file) {
       cachedUser = { ...u, avatarUrl: dataUrl };
       writeStoredUser(cachedUser);
     }
-    const dn = document.getElementById("settings-display-name");
-    const nameVal = dn instanceof HTMLInputElement ? dn.value : u?.name ?? "";
+    const fnEl = document.getElementById("settings-first-name");
+    const lnEl = document.getElementById("settings-last-name");
+    const nameVal =
+      fnEl instanceof HTMLInputElement && lnEl instanceof HTMLInputElement
+        ? [fnEl.value, lnEl.value].map((s) => String(s || "").trim()).filter(Boolean).join(" ").trim()
+        : u?.name ?? "";
     updateSettingsAvatarVisual(dataUrl, nameVal, "");
     syncGlobalAvatarImages(dataUrl);
     updateAuthUi();
@@ -997,7 +1025,7 @@ function persistAvatarFromFile(file) {
 const validateEmailFormat = (email) => {
   const t = String(email || "").trim();
   if (!t) {
-    return "Email is required.";
+    return "";
   }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(t)) {
     return "Enter a valid email address.";
@@ -1016,7 +1044,7 @@ const validateHuMobileNational = (digits) => {
   return "";
 };
 
-/** Wire settings form: avatar, validation, save, cancel/revert. */
+/** Wire settings form: avatar, validation, save (always enabled), cancel/revert. */
 function bindProfileSettingsPage() {
   const updateCount = (input) => {
     const id = input.getAttribute("data-char-target");
@@ -1026,7 +1054,7 @@ function bindProfileSettingsPage() {
       el.textContent = `${input.value.length} / ${max}`;
     }
   };
-  document.querySelectorAll("[data-char-target]").forEach((el) => {
+  document.querySelectorAll("#profile-settings-form [data-char-target]").forEach((el) => {
     if (!(el instanceof HTMLInputElement) && !(el instanceof HTMLTextAreaElement)) {
       return;
     }
@@ -1055,24 +1083,31 @@ function bindProfileSettingsPage() {
   const form = document.getElementById("profile-settings-form");
   const emailErr = document.getElementById("settings-email-error");
   const phoneErr = document.getElementById("settings-phone-error");
+  const defaultSaveLabel = "Save changes";
 
   const getFormState = () => {
     if (!(form instanceof HTMLFormElement)) {
       return {
-        fullName: "",
+        firstName: "",
+        lastName: "",
         email: "",
         phoneNational: "",
         location: "",
+        birthday: "",
+        sex: "",
         bio: "",
-        role: ""
+        role: "Buyer"
       };
     }
     const fd = new FormData(form);
     return {
-      fullName: String(fd.get("fullName") || "").trim(),
+      firstName: String(fd.get("firstName") || "").trim(),
+      lastName: String(fd.get("lastName") || "").trim(),
       email: String(fd.get("email") || "").trim(),
       phoneNational: String(fd.get("phoneNational") || "").replace(/\D/g, ""),
       location: String(fd.get("location") || ""),
+      birthday: String(fd.get("birthday") || ""),
+      sex: String(fd.get("sex") || ""),
       bio: String(fd.get("bio") || ""),
       role: String(fd.get("role") || "Buyer")
     };
@@ -1081,6 +1116,18 @@ function bindProfileSettingsPage() {
   let baselineForm = getFormState();
   let baselineLocalAvatarDataUrl = readStoredAvatarDataUrl();
   let baselineAvatarResolvedAtLoad = withMergedAvatar(getUser())?.avatarUrl || "";
+  let isSaving = false;
+
+  const displayNameFromState = (state) =>
+    [state.firstName, state.lastName].filter(Boolean).join(" ").trim();
+
+  const refreshInitialsPreview = () => {
+    if (readStoredAvatarDataUrl()) {
+      return;
+    }
+    const st = getFormState();
+    updateSettingsAvatarVisual("", displayNameFromState(st), baselineAvatarResolvedAtLoad);
+  };
 
   const applyFormState = (state) => {
     const set = (name, val) => {
@@ -1089,13 +1136,16 @@ function bindProfileSettingsPage() {
         el.value = val;
       }
     };
-    set("fullName", state.fullName);
+    set("firstName", state.firstName);
+    set("lastName", state.lastName);
     set("email", state.email);
     set("phoneNational", state.phoneNational);
     set("location", state.location);
+    set("birthday", state.birthday);
+    set("sex", state.sex);
     set("bio", state.bio);
     set("role", state.role);
-    document.querySelectorAll("[data-char-target]").forEach((el) => {
+    document.querySelectorAll("#profile-settings-form [data-char-target]").forEach((el) => {
       if (el instanceof HTMLTextAreaElement) {
         updateCount(el);
       }
@@ -1106,12 +1156,11 @@ function bindProfileSettingsPage() {
     const formDirty = JSON.stringify(getFormState()) !== JSON.stringify(baselineForm);
     const avatarDirty = readStoredAvatarDataUrl() !== baselineLocalAvatarDataUrl;
     const dirty = formDirty || avatarDirty;
-    if (saveBtn instanceof HTMLButtonElement) {
-      saveBtn.disabled = !dirty;
-      saveBtn.classList.toggle("btn--settings-ready", dirty);
-    }
     if (cancelBtn instanceof HTMLButtonElement) {
       cancelBtn.disabled = !dirty;
+    }
+    if (saveBtn instanceof HTMLButtonElement && !isSaving) {
+      saveBtn.disabled = false;
     }
   };
 
@@ -1168,15 +1217,11 @@ function bindProfileSettingsPage() {
     showPhoneError(err);
   });
 
-  document.getElementById("settings-display-name")?.addEventListener("input", () => {
-    const nm =
-      document.getElementById("settings-display-name") instanceof HTMLInputElement
-        ? document.getElementById("settings-display-name").value
-        : "";
-    if (!readStoredAvatarDataUrl()) {
-      updateSettingsAvatarVisual("", nm, baselineAvatarResolvedAtLoad);
-    }
-    syncDirty();
+  ["settings-first-name", "settings-last-name"].forEach((id) => {
+    document.getElementById(id)?.addEventListener("input", () => {
+      refreshInitialsPreview();
+      syncDirty();
+    });
   });
 
   form?.querySelectorAll("[data-settings-track]").forEach((el) => {
@@ -1184,31 +1229,8 @@ function bindProfileSettingsPage() {
     el.addEventListener("change", syncDirty);
   });
 
-  cancelBtn?.addEventListener("click", () => {
-    applyFormState(baselineForm);
-    writeStoredAvatarDataUrl(baselineLocalAvatarDataUrl || "");
-    const av = readStoredAvatarDataUrl();
-    const restored = av || baselineAvatarResolvedAtLoad || "";
-    const cur = getUser();
-    if (cur) {
-      cachedUser = { ...cur, avatarUrl: restored };
-      writeStoredUser(cachedUser);
-    }
-    updateSettingsAvatarVisual(av, baselineForm.fullName || getUser()?.name || "", baselineAvatarResolvedAtLoad);
-    syncGlobalAvatarImages(restored);
-    clearFieldErrors();
-    updateAuthUi();
-    updateProfileChromeFromUser(getUser());
-    syncDirty();
-  });
-
-  saveBtn?.addEventListener("click", () => {
-    form?.requestSubmit();
-  });
-
-  form?.addEventListener("submit", (e) => {
-    e.preventDefault();
-    if (!(form instanceof HTMLFormElement)) {
+  const runSave = async () => {
+    if (isSaving || !(form instanceof HTMLFormElement)) {
       return;
     }
     clearFieldErrors();
@@ -1221,40 +1243,87 @@ function bindProfileSettingsPage() {
       return;
     }
 
-    const fullName = st.fullName;
-    const email = st.email;
+    const composedFullName = displayNameFromState(st);
+    isSaving = true;
+    if (saveBtn instanceof HTMLButtonElement) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Saving...";
+    }
+
+    await new Promise((r) => setTimeout(r, 500));
+
     const phoneFull = st.phoneNational ? `+36${st.phoneNational}` : "";
-    const cur = readProfileFieldStore();
-    const next = {
-      ...cur,
-      fullName,
-      firstName: fullName.split(/\s+/)[0] || "",
-      lastName: fullName.split(/\s+/).slice(1).join(" ") || "",
-      email,
-      city: st.location,
+    const snapshot = {
+      firstName: st.firstName,
+      lastName: st.lastName,
+      fullName: composedFullName,
+      email: st.email,
       phone: phoneFull,
+      city: st.location,
+      location: st.location,
+      birthday: st.birthday,
+      sex: st.sex,
       bio: String(st.bio || "").slice(0, 300),
-      role: st.role
+      role: st.role,
+      updatedAt: new Date().toISOString()
     };
-    writeProfileFieldStore(next);
+    writeNuveloProfile(snapshot);
+
     const u = getUser();
     if (u) {
       cachedUser = {
         ...u,
-        name: fullName || u.name,
+        name: composedFullName || u.name,
         phone: phoneFull,
-        email: email || u.email,
-        role: next.role
+        email: st.email || u.email,
+        role: st.role
       };
       writeStoredUser(cachedUser);
     }
+
     baselineForm = getFormState();
     baselineLocalAvatarDataUrl = readStoredAvatarDataUrl();
     baselineAvatarResolvedAtLoad = withMergedAvatar(getUser())?.avatarUrl || "";
+
+    isSaving = false;
+    if (saveBtn instanceof HTMLButtonElement) {
+      saveBtn.disabled = false;
+      saveBtn.textContent = defaultSaveLabel;
+    }
+
     syncDirty();
     updateAuthUi();
     updateProfileChromeFromUser(getUser());
-    showNuveloToast("Profile updated!");
+    showNuveloToast("Profile updated!", 3000);
+  };
+
+  cancelBtn?.addEventListener("click", () => {
+    applyFormState(baselineForm);
+    writeStoredAvatarDataUrl(baselineLocalAvatarDataUrl || "");
+    const av = readStoredAvatarDataUrl();
+    const restored = av || baselineAvatarResolvedAtLoad || "";
+    const cur = getUser();
+    if (cur) {
+      cachedUser = { ...cur, avatarUrl: restored };
+      writeStoredUser(cachedUser);
+    }
+    const nm = displayNameFromState(baselineForm) || getUser()?.name || "";
+    updateSettingsAvatarVisual(av, nm, baselineAvatarResolvedAtLoad);
+    syncGlobalAvatarImages(restored);
+    clearFieldErrors();
+    updateAuthUi();
+    updateProfileChromeFromUser(getUser());
+    syncDirty();
+  });
+
+  saveBtn?.addEventListener("click", (e) => {
+    e.preventDefault();
+    void runSave();
+  });
+
+  form?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    void runSave();
   });
 
   syncDirty();
