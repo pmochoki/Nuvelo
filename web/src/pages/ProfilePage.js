@@ -170,8 +170,6 @@ function renderProfileSection(section, user) {
       return renderNotifications(user);
     case "followers":
       return renderFollowers(user);
-    case "settings":
-      return renderSettings(user);
     case "feedback":
       return renderFeedback(user);
     default:
@@ -231,20 +229,5 @@ function renderFeedback() {
     <div class="profile-empty-state">
       <p>We’d love to hear from you. A feedback form will be available here soon.</p>
       <p><a href="#/contact" class="btn btn--primary">Contact us</a></p>
-    </div>`;
-}
-
-function renderSettings(user) {
-  return `
-    <div class="profile-section-header"><h2>Settings</h2></div>
-    <div class="profile-settings-panel">
-      <p class="muted">Account details</p>
-      <ul class="profile-settings-list">
-        <li><span class="profile-settings-k">Name</span> <span class="profile-settings-v">${esc(user.name)}</span></li>
-        <li><span class="profile-settings-k">Role</span> <span class="profile-settings-v">${esc(user.role || "")}</span></li>
-        <li><span class="profile-settings-k">Phone</span> <span class="profile-settings-v">${esc(user.phone || "—")}</span></li>
-        <li><span class="profile-settings-k">Email</span> <span class="profile-settings-v">${esc(user.email || "—")}</span></li>
-      </ul>
-      <p class="muted small">More preferences will be added here later.</p>
     </div>`;
 }

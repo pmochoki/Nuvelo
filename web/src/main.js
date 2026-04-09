@@ -20,6 +20,7 @@ import {
   donationCollectionMeta
 } from "./data/donationConstants.js";
 import { renderProfilePage } from "./pages/ProfilePage.js";
+import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
 
 if (!import.meta.env.VITE_API_URL) {
   console.error("[Nuvelo] VITE_API_URL is not set! Auth and API calls will fail.");
@@ -87,6 +88,7 @@ const showOAuthUnavailable = (providerLabel) => {
 /** Soft copy when listings are unavailable; never surface raw errors in the UI. */
 const LISTINGS_UNAVAILABLE_MSG = "Listings are loading, please try again shortly.";
 const USER_STORE_KEY = "nuvelo_user";
+const PROFILE_FIELDS_KEY = "nuvelo_profile_fields";
 const EVENTS_STORE_KEY = "nuvelo_events_custom";
 const EVENTS_RSVP_KEY = "nuvelo_events_rsvp";
 const EVENTS_ANON_KEY = "nuvelo_events_anon";
@@ -768,6 +770,117 @@ const writeJsonStore = (key, value) => {
   }
 };
 
+const readProfileFieldStore = () => readJsonStore(PROFILE_FIELDS_KEY, {});
+
+const writeProfileFieldStore = (obj) => writeJsonStore(PROFILE_FIELDS_KEY, obj);
+
+const deriveNameParts = (user, stored) => {
+  if (stored && (stored.firstName != null || stored.lastName != null)) {
+    return {
+      firstName: String(stored.firstName || "").trim(),
+      lastName: String(stored.lastName || "").trim()
+    };
+  }
+  const n = String(user?.name || "").trim();
+  const bits = n.split(/\s+/).filter(Boolean);
+  if (bits.length <= 1) {
+    return { firstName: n, lastName: "" };
+  }
+  return { firstName: bits[0], lastName: bits.slice(1).join(" ") };
+};
+
+const buildProfileSettingsUser = (baseUser) => {
+  const stored = readProfileFieldStore();
+  const parts = deriveNameParts(baseUser, stored);
+  return {
+    ...baseUser,
+    firstName: parts.firstName,
+    lastName: parts.lastName,
+    city: stored.city || "",
+    birthday: stored.birthday || "",
+    sex: stored.sex || "",
+    phone: baseUser.phone || stored.phone || ""
+  };
+};
+
+function bindProfileSettingsPage() {
+  const updateCount = (input) => {
+    const id = input.getAttribute("data-char-target");
+    const max = Number(input.getAttribute("data-char-max") || "20");
+    const el = id ? document.getElementById(id) : null;
+    if (el) {
+      el.textContent = `${input.value.length} / ${max}`;
+    }
+  };
+  document.querySelectorAll("[data-char-target]").forEach((el) => {
+    if (!(el instanceof HTMLInputElement)) {
+      return;
+    }
+    el.addEventListener("input", () => updateCount(el));
+  });
+
+  document.getElementById("avatar-edit-btn")?.addEventListener("click", () => {
+    document.getElementById("avatar-input")?.click();
+  });
+  document.getElementById("avatar-input")?.addEventListener("change", (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLInputElement)) {
+      return;
+    }
+    const f = t.files?.[0];
+    if (!f?.type.startsWith("image/")) {
+      return;
+    }
+    const url = URL.createObjectURL(f);
+    const img = document.getElementById("avatar-preview");
+    if (img instanceof HTMLImageElement) {
+      img.src = url;
+    }
+  });
+
+  document.getElementById("save-profile-btn")?.addEventListener("click", () => {
+    document.getElementById("profile-settings-form")?.requestSubmit();
+  });
+
+  document.getElementById("profile-settings-form")?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement)) {
+      return;
+    }
+    const fd = new FormData(form);
+    const cur = readProfileFieldStore();
+    const next = {
+      ...cur,
+      firstName: String(fd.get("firstName") || "").trim(),
+      lastName: String(fd.get("lastName") || "").trim(),
+      city: String(fd.get("location") || ""),
+      birthday: String(fd.get("birthday") || ""),
+      sex: String(fd.get("sex") || ""),
+      phone: String(fd.get("phone") || "").trim()
+    };
+    writeProfileFieldStore(next);
+    const fullName = [next.firstName, next.lastName].filter(Boolean).join(" ");
+    const u = getUser();
+    if (u) {
+      cachedUser = {
+        ...u,
+        name: fullName || u.name,
+        phone: next.phone || u.phone
+      };
+      writeStoredUser(cachedUser);
+    }
+    updateAuthUi();
+    const msg = document.getElementById("profile-settings-saved-msg");
+    if (msg) {
+      msg.hidden = false;
+      msg.textContent = "Saved.";
+    }
+  });
+
+  document.getElementById("signout-btn")?.addEventListener("click", () => void signOutNuvelo());
+}
+
 const ensureAnonEventUser = () => {
   const existing = localStorage.getItem(EVENTS_ANON_KEY);
   if (existing) {
@@ -1429,6 +1542,19 @@ const parseHash = () => {
     return { view: "static", page: parts[0] };
   }
   if (parts[0] === "profile") {
+    if (parts[1] === "settings") {
+      const key = parts[2] || "personal";
+      const settingsAllowed = [
+        "personal",
+        "business",
+        "verify",
+        "phone",
+        "email",
+        "password"
+      ];
+      const settingsSection = settingsAllowed.includes(key) ? key : "personal";
+      return { view: "profileSettings", settingsSection };
+    }
     const sub = parts[1] || "adverts";
     const allowed = [
       "saved",
@@ -1436,8 +1562,7 @@ const parseHash = () => {
       "notifications",
       "adverts",
       "followers",
-      "feedback",
-      "settings"
+      "feedback"
     ];
     if (allowed.includes(sub)) {
       return { view: "profile", section: sub };
@@ -2680,8 +2805,7 @@ const renderProfile = async (section) => {
     messages: "Messages",
     notifications: "Notifications",
     followers: "Followers",
-    feedback: "Feedback",
-    settings: "Settings"
+    feedback: "Feedback"
   };
   const title = titles[section] || titles.adverts;
   if (!user) {
@@ -2732,6 +2856,30 @@ const renderProfile = async (section) => {
     return;
   }
   document.getElementById("profile-sign-out")?.addEventListener("click", () => void signOutNuvelo());
+};
+
+const renderProfileSettings = async (settingsSection) => {
+  const appEl = mainShell();
+  if (!appEl) {
+    return;
+  }
+  const user = getUser();
+  if (!user) {
+    appEl.innerHTML = `
+      <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
+        <h1 style="margin:0 0 0.5rem">Settings</h1>
+        <p class="muted">Sign in to access settings.</p>
+        <p><button type="button" class="btn btn--primary" id="profile-settings-prompt-signin">Sign in</button></p>
+      </section>
+    `;
+    document.getElementById("profile-settings-prompt-signin")?.addEventListener("click", () => {
+      openModal("signin");
+    });
+    return;
+  }
+  const profileUser = buildProfileSettingsUser(user);
+  appEl.innerHTML = renderSettingsPage(profileUser, settingsSection);
+  bindProfileSettingsPage();
 };
 
 const renderStaticPage = async (slug) => {
@@ -3317,6 +3465,10 @@ const render = async () => {
     }
     if (route.view === "profile") {
       await renderProfile(route.section);
+      return;
+    }
+    if (route.view === "profileSettings") {
+      await renderProfileSettings(route.settingsSection);
       return;
     }
     await renderList();

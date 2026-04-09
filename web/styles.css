@@ -3772,3 +3772,173 @@ body.is-landing .jiji-hero {
     min-height: 320px;
   }
 }
+
+/* Profile settings — personal form & sidebar */
+.profile-layout--settings .profile-sidebar-header {
+  justify-content: flex-start;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--purple-deep);
+  text-decoration: none;
+}
+
+.back-link:hover {
+  color: var(--orange);
+}
+
+.settings-sidenav {
+  padding-top: 0.25rem;
+}
+
+.settings-sidenav .profile-sidenav-item {
+  border-left: none;
+  border-radius: 0;
+}
+
+.settings-sidenav-item--row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  text-align: left;
+  box-sizing: border-box;
+}
+
+.settings-sidenav .signout-btn {
+  width: calc(100% - 2rem);
+  margin: 0.75rem 1rem 0.5rem;
+  justify-content: center;
+  border: 1px solid var(--purple-border);
+  border-radius: 8px;
+  background: transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.settings-sidenav .signout-btn:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+}
+
+.profile-section-header--settings {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.profile-section-header--settings h2 {
+  margin: 0;
+}
+
+.btn-saved {
+  padding: 0.45rem 1.1rem;
+  border-radius: 8px;
+  border: 1px solid var(--purple-border);
+  background: var(--purple-deep);
+  color: var(--white);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+
+.btn-saved:hover {
+  filter: brightness(1.08);
+}
+
+.settings-form-wrap {
+  max-width: 520px;
+}
+
+.avatar-upload-block {
+  margin-bottom: 1.5rem;
+}
+
+.avatar-upload-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.avatar-upload-wrap .profile-avatar-large {
+  display: block;
+  margin: 0;
+}
+
+.avatar-edit-btn {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--white);
+  background: var(--purple-deep);
+  color: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.avatar-edit-btn:hover {
+  background: var(--orange);
+}
+
+.settings-form .form-field {
+  margin-bottom: 1.1rem;
+  position: relative;
+}
+
+.settings-form .form-label {
+  display: block;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 0.35rem;
+  color: var(--text);
+}
+
+.settings-form .char-count {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.settings-form .form-input {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--purple-border);
+  background: var(--purple-surface);
+  color: var(--text);
+  font: inherit;
+}
+
+.settings-form .form-select {
+  appearance: auto;
+  cursor: pointer;
+}
+
+.settings-form .save-btn {
+  margin-top: 0.5rem;
+}
+
+.settings-saved-msg {
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
