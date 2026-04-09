@@ -264,7 +264,8 @@ userChip?.addEventListener("click", async () => {
   await render().catch((e) => console.error(e));
 });
 
-let authModalMode = "login";
+/** @type {"signin" | "register"} */
+let authModalMode = "signin";
 
 const syncAuthBackendHint = () => {
   const el = document.getElementById("auth-backend-hint");
@@ -277,8 +278,9 @@ const syncAuthBackendHint = () => {
 /**
  * Opens the auth overlay. Call only from user-driven handlers (Sign in, Registration, drawer, etc.).
  * Do not invoke on page load. Implementation: #login-modal is a div with `hidden`, not <dialog>.showModal().
+ * @param {"signin" | "register"} [mode]
  */
-const openModal = (mode = "login") => {
+const openModal = (mode = "signin") => {
   if (!loginModal) {
     return;
   }
@@ -290,12 +292,14 @@ const openModal = (mode = "login") => {
   const formEl = document.getElementById("login-form");
   const socialEl = document.getElementById("login-social-block");
   const switchBtn = document.getElementById("auth-switch-mode");
+  const signinEmailBtn = document.getElementById("auth-signin-email-form");
+  const registerEmailBtn = document.getElementById("auth-show-email-form");
   if (titleEl) {
-    titleEl.textContent = mode === "signup" ? "Register" : "Sign in";
+    titleEl.textContent = mode === "register" ? "Create account" : "Sign in";
   }
   if (subEl) {
     subEl.textContent =
-      mode === "signup"
+      mode === "register"
         ? "Create your Nuvelo profile to post listings and message sellers."
         : "Use the same name and email as before to reconnect to your listings.";
   }
@@ -306,35 +310,34 @@ const openModal = (mode = "login") => {
   if (socialEl) {
     socialEl.hidden = false;
   }
-  const emailToggle = document.getElementById("auth-show-email-form");
-  if (emailToggle) {
-    emailToggle.hidden = mode === "signup";
-    if (!emailToggle.hidden) {
-      emailToggle.textContent = "Sign in with email or phone";
-    }
+  /* In register mode the full form is shown; hide the email-pathway buttons. In signin, show both. */
+  if (signinEmailBtn) {
+    signinEmailBtn.hidden = mode === "register";
+  }
+  if (registerEmailBtn) {
+    registerEmailBtn.hidden = mode === "register";
   }
   if (formEl) {
-    /* Login: start with OAuth only; signup: show name/role/email form immediately */
-    formEl.hidden = mode === "login";
+    formEl.hidden = mode === "signin";
     loginModal.querySelectorAll(".auth-field--signup").forEach((el) => {
-      el.hidden = mode === "login";
+      el.hidden = mode === "signin";
     });
     const nameInput = formEl.querySelector("input[name='name']");
     const roleSelect = formEl.querySelector("select[name='role']");
     if (nameInput) {
-      nameInput.required = mode === "signup";
+      nameInput.required = mode === "register";
     }
     if (roleSelect) {
-      roleSelect.required = mode === "signup";
+      roleSelect.required = mode === "register";
     }
   }
   if (switchBtn) {
     switchBtn.textContent =
-      mode === "signup" ? "Already have an account? Sign in" : "New here? Register";
+      mode === "register" ? "Already have an account? Sign in" : "New here? Register";
   }
   loginModal.hidden = false;
   syncAuthBackendHint();
-  if (mode === "signup" && formEl && !formEl.hidden) {
+  if (mode === "register" && formEl && !formEl.hidden) {
     loginModal.querySelector("input[name='name']")?.focus();
   }
 };
@@ -354,16 +357,16 @@ loginModal?.addEventListener("click", (e) => {
 });
 
 authBtn?.addEventListener("click", () => {
-  openModal("login");
+  openModal("signin");
 });
 
 document.getElementById("auth-register-btn")?.addEventListener("click", () => {
-  openModal("signup");
+  openModal("register");
 });
 
 document.getElementById("drawer-register")?.addEventListener("click", () => {
   setNavDrawerOpen(false);
-  openModal("signup");
+  openModal("register");
 });
 
 document.getElementById("auth-google-stub")?.addEventListener("click", async () => {
@@ -400,20 +403,23 @@ document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
   }
 });
 
-document.getElementById("auth-show-email-form")?.addEventListener("click", () => {
+document.getElementById("auth-signin-email-form")?.addEventListener("click", () => {
+  if (authModalMode !== "signin") {
+    return;
+  }
   const formEl = document.getElementById("login-form");
   if (formEl) {
     formEl.hidden = false;
-    if (authModalMode === "login") {
-      formEl.querySelector("input[name='email']")?.focus();
-    } else {
-      formEl.querySelector("input[name='name']")?.focus();
-    }
+    formEl.querySelector("input[name='email']")?.focus();
   }
 });
 
+document.getElementById("auth-show-email-form")?.addEventListener("click", () => {
+  openModal("register");
+});
+
 document.getElementById("auth-switch-mode")?.addEventListener("click", () => {
-  const next = authModalMode === "signup" ? "login" : "signup";
+  const next = authModalMode === "register" ? "signin" : "register";
   openModal(next);
 });
 
@@ -494,7 +500,7 @@ loginForm?.addEventListener("submit", async (e) => {
     return;
   }
 
-  if (authModalMode === "signup" && (!name || name.length < 2)) {
+  if (authModalMode === "register" && (!name || name.length < 2)) {
     showLoginError("Enter your display name (at least 2 characters).");
     return;
   }
@@ -2263,7 +2269,7 @@ const renderDetail = async (id) => {
     const msg = document.getElementById("detail-contact-msg");
     if (!user) {
       msg.textContent = "Sign in first to message the seller.";
-      openModal("login");
+      openModal("signin");
       return;
     }
     if (user.id === listing.userId) {
@@ -2279,7 +2285,7 @@ const renderDetail = async (id) => {
     const msg = document.getElementById("detail-contact-msg");
     if (!user) {
       msg.textContent = "Sign in first to message the donor.";
-      openModal("login");
+      openModal("signin");
       return;
     }
     if (user.id === listing.userId) {
@@ -2752,7 +2758,7 @@ const renderPost = async () => {
       <button type="button" class="btn btn--primary btn--lg" id="post-signin">Sign in to continue</button>
       </div>
     `;
-    document.getElementById("post-signin")?.addEventListener("click", () => openModal("login"));
+    document.getElementById("post-signin")?.addEventListener("click", () => openModal("signin"));
     return;
   }
 
@@ -3171,7 +3177,7 @@ document.body.addEventListener("click", (e) => {
   if (e.target.id === "drawer-signin" || e.target.closest("#drawer-signin")) {
     e.preventDefault();
     setNavDrawerOpen(false);
-    openModal("login");
+    openModal("signin");
   }
 });
 
