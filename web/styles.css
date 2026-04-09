@@ -1902,20 +1902,20 @@ body.is-landing .jiji-hero {
 
 .ad-grid {
   display: grid;
-  gap: 16px;
-  grid-template-columns: 1fr;
+  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 @media (min-width: 768px) {
   .ad-grid--browse {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
   }
 }
 
 @media (min-width: 1024px) {
   .ad-grid--browse {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 24px;
   }
 }
@@ -2652,8 +2652,13 @@ body.is-landing .jiji-hero {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
   display: block;
   border-radius: 8px 8px 0 0;
+}
+
+.ad-grid--lc[data-view="grid"] > .lc--grid {
+  min-width: 0;
 }
 
 .lc__badges-tl {
@@ -2836,7 +2841,7 @@ body.is-landing .jiji-hero {
   min-width: 0;
 }
 
-/* Listing cards: list = one column; grid = responsive columns (2 on narrow mobile) */
+/* Listing cards: list = one column; grid = 2 cols on phone, 2–3 tablet, 3–4 desktop */
 .ad-grid--lc {
   display: grid;
   box-sizing: border-box;
@@ -2851,14 +2856,21 @@ body.is-landing .jiji-hero {
 }
 
 .ad-grid--lc[data-view="grid"] {
-  grid-template-columns: 1fr;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
 }
 
 @media (min-width: 640px) {
   .ad-grid--lc[data-view="grid"] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .ad-grid--lc[data-view="grid"] {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
   }
 }
 
@@ -3627,46 +3639,127 @@ body.is-landing .jiji-hero {
     display: none;
   }
 
-  /* Grid view: stay 2 columns (inherited); list view: horizontal card with thumb left */
+  /* Grid view: 2 columns; compact card — 4:3 media, truncated text, tappable save */
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__media {
     aspect-ratio: 4 / 3;
   }
 
+  .ad-grid--lc[data-view="grid"] .lc--grid .lc__media img {
+    object-fit: cover;
+    object-position: center;
+  }
+
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__body {
-    padding: 0.45rem 0.5rem 0.55rem;
+    padding: 0.4rem 0.45rem 0.5rem;
+    min-width: 0;
   }
 
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__price {
-    font-size: 0.875rem;
-    margin-bottom: 0.2rem;
-  }
-
-  .ad-grid--lc[data-view="grid"] .lc--grid .lc__title {
     font-size: 0.8125rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-  }
-
-  .ad-grid--lc[data-view="grid"] .lc--grid .lc__loc {
-    font-size: 0.6875rem;
-    color: var(--text-muted);
-    display: block;
+    margin-bottom: 0.15rem;
+    line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .ad-grid--lc[data-view="grid"] .lc--grid:not(.lc--donation) .lc__foot {
-    justify-content: flex-start;
+  .ad-grid--lc[data-view="grid"] .lc--grid .lc__title {
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-bottom: 0.2rem;
+    line-height: 1.25;
+    -webkit-line-clamp: 2;
   }
 
-  .ad-grid--lc[data-view="grid"] .lc--grid .lc__excerpt,
+  .ad-grid--lc[data-view="grid"] .lc--grid .lc__loc {
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .ad-grid--lc[data-view="grid"] .lc--grid:not(.lc--donation) .lc__foot {
+    justify-content: flex-start;
+    gap: 0.25rem;
+    min-width: 0;
+  }
+
+  .ad-grid--lc[data-view="grid"] .lc--grid:not(.event-card) .lc__excerpt,
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__cond,
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__time,
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__seller-ico,
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__cta,
   .ad-grid--lc[data-view="grid"] .lc--grid .lc__coll {
     display: none !important;
+  }
+
+  /* Events grid: keep date/venue lines, single-line truncate */
+  .ad-grid--lc[data-view="grid"] .event-card .lc__excerpt {
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.65rem;
+    margin: 0 0 0.2rem;
+    white-space: normal;
+  }
+
+  .ad-grid--lc[data-view="grid"] .event-card .lc__foot {
+    font-size: 0.6rem;
+    flex-wrap: nowrap;
+    min-width: 0;
+  }
+
+  .ad-grid--lc[data-view="grid"] .event-card .lc__foot span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+  }
+
+  .ad-grid--lc[data-view="grid"] .lc--grid .lc__badges-tl .lc__pill {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.3rem;
+    letter-spacing: 0.02em;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ad-grid--lc[data-view="grid"] .lc--grid .lc__badges-tr .lc__pill {
+    font-size: 0.5rem;
+    padding: 0.1rem 0.28rem;
+    letter-spacing: 0.02em;
+    max-width: min(100%, 5.5rem);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .ad-grid--lc[data-view="grid"] .lc--grid .lc__save {
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    bottom: 0.35rem;
+    left: 0.35rem;
+  }
+
+  .ad-grid--lc[data-view="grid"] .lc--grid .lc__save-icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .ad-grid--lc[data-view="grid"] .lc--grid .lc__seller-ico {
+    width: 26px;
+    height: 26px;
+    font-size: 0.65rem;
+    bottom: 0.4rem;
+    right: 0.4rem;
   }
 
   .ad-grid--lc[data-view="grid"] .lc--grid.lc--donation .lc__foot--donation {
@@ -4163,10 +4256,24 @@ body.is-landing .jiji-hero {
 
 .profile-saved-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1rem;
-  padding: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  padding: 16px;
   box-sizing: border-box;
+}
+
+@media (min-width: 640px) {
+  .profile-saved-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+    padding: 24px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .profile-saved-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
 }
 
 .advert-row--saved-card {
