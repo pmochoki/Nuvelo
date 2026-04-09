@@ -20,6 +20,10 @@ import {
   donationCollectionMeta
 } from "./data/donationConstants.js";
 
+if (!import.meta.env.VITE_API_URL) {
+  console.error("[Nuvelo] VITE_API_URL is not set! Auth and API calls will fail.");
+}
+
 /** Maps browser network failures (e.g. TypeError: Failed to fetch) to a clear message. */
 const friendlyNetworkError = (err) => {
   const name = err && err.name;
