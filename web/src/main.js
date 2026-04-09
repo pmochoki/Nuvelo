@@ -259,8 +259,13 @@ async function initAuth() {
     updateAuthUi();
     if (event === "SIGNED_IN") {
       resetAuthModalMessages();
-      closeModal();
-      void render().catch((e) => console.error(e));
+      const u = getUser();
+      if (u) {
+        onAuthSuccess(u);
+      } else {
+        closeModal();
+        void render().catch((e) => console.error(e));
+      }
     }
     if (event === "SIGNED_OUT") {
       cachedUser = null;
@@ -699,8 +704,7 @@ loginForm?.addEventListener("submit", async (e) => {
     cachedUser = user;
     writeStoredUser(user);
     updateAuthUi();
-    closeModal();
-    await render().catch((e) => console.error(e));
+    onAuthSuccess(user);
   } catch (err) {
     console.error(err);
     showLoginError(friendlyNetworkError(err));
@@ -3497,6 +3501,31 @@ const render = async () => {
     `;
   }
 };
+
+/**
+ * After successful login/register: sync global auth snapshot, open profile, close modal, render.
+ * @param {object} user — same shape as getUser() / cachedUser
+ */
+function onAuthSuccess(user) {
+  if (typeof window !== "undefined") {
+    if (user) {
+      window.__nuveloUser = {
+        id: user.id,
+        name: user.name,
+        role: user.role,
+        avatarUrl: user.avatarUrl || ""
+      };
+    } else {
+      window.__nuveloUser = null;
+    }
+  }
+  closeModal();
+  const prev = window.location.hash;
+  window.location.hash = "#/profile";
+  if (window.location.hash === prev) {
+    void render().catch((e) => console.error(e));
+  }
+}
 
 navBurgerEl()?.addEventListener("click", () => {
   const drawer = navDrawerEl();
