@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
+/* Use your project URL, or after Supabase custom domain activation use that host (e.g. https://api.nuvelo.one). Same anon key. */
 const url = import.meta.env.VITE_SUPABASE_URL || "";
 const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
 
