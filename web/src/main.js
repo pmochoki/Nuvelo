@@ -1,5 +1,5 @@
 import { CATEGORIES } from "./data/categories.js";
-import { HUNGARIAN_LOCATIONS } from "./data/hungarianLocations.js";
+import { HUNGARIAN_LOCATIONS as IMPORTED_HUNGARIAN_LOCATIONS } from "./data/hungarianLocations.js";
 import { DEMO_EVENTS, EVENT_SUBCATEGORIES } from "./data/demoEvents.js";
 import "../styles.css";
 import {
@@ -37,6 +37,22 @@ import {
 import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 
+const FALLBACK_HUNGARIAN_LOCATIONS = [
+  { value: "all", label: "All Hungary" },
+  { value: "budapest", label: "Budapest" },
+  { value: "debrecen", label: "Debrecen" },
+  { value: "miskolc", label: "Miskolc" },
+  { value: "pecs", label: "Pécs" },
+  { value: "gyor", label: "Győr" },
+  { value: "szeged", label: "Szeged" }
+];
+
+/** Bundled full list, or major-city fallback if data is missing or empty. */
+const HUNGARIAN_LOCATIONS =
+  Array.isArray(IMPORTED_HUNGARIAN_LOCATIONS) && IMPORTED_HUNGARIAN_LOCATIONS.length > 2
+    ? IMPORTED_HUNGARIAN_LOCATIONS
+    : FALLBACK_HUNGARIAN_LOCATIONS;
+
 if (import.meta.env.VITE_API_URL == null || String(import.meta.env.VITE_API_URL).trim() === "") {
   console.info(
     "[Nuvelo] VITE_API_URL is unset or empty — using same-origin /api (Vercel serverless or `vercel dev` for local API)."
@@ -63,7 +79,7 @@ const friendlyNetworkError = (err, context = "default") => {
     /load failed/i.test(msg)
   ) {
     if (context === "legacy") {
-      return "Could not reach the sign-in service. Check your connection. If the listings backend was asleep, wait a minute and try again.";
+      return "Could not reach the sign-in service. Check your connection and try again.";
     }
     return "Could not reach the sign-in service. Check your connection and try again.";
   }
@@ -121,24 +137,20 @@ function mapSupabasePhoneError(message) {
 /** OAuth needs Supabase env vars baked in at build time (Vercel → Production env → redeploy). */
 const showOAuthUnavailable = (providerLabel) => {
   console.warn(
-    "[Nuvelo] Supabase not configured: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY for the production build (e.g. Vercel project env), then redeploy."
+    `[Nuvelo] ${providerLabel}: Supabase not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (e.g. Vercel env), then redeploy.`
   );
   if (!signInFlowsAvailable) {
-    showLoginError(
-      "Sign-in isn’t available: this deployment has no Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, then redeploy."
-    );
+    showLoginError("Sign-in is temporarily unavailable. Please try again shortly.");
     return;
   }
-  showLoginError(
-    import.meta.env.DEV
-      ? `Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY to enable ${providerLabel}.`
-      : `${providerLabel} isn’t available without Supabase. Use email or phone below, or try again after the site is updated.`
-  );
+  showLoginError("Sign-in is temporarily unavailable. Please try again shortly.");
 };
 
 /** When the listings API fails (e.g. production with VITE_DEMO_LISTINGS=false); never surface raw stack traces. */
 const LISTINGS_UNAVAILABLE_MSG =
   "We couldn’t load listings. Check your connection and try again.";
+/** Browse page fetch failure (user-facing). */
+const BROWSE_LISTINGS_ERROR_MSG = "Could not load listings right now. Try refreshing.";
 const LISTING_DETAIL_UNAVAILABLE_MSG =
   "We couldn’t load this ad. Check your connection and try again.";
 const USER_STORE_KEY = "nuvelo_user";
@@ -156,6 +168,28 @@ let cachedUser = null;
 let phoneOtpPending = null;
 /** True only after the backend successfully accepts an SMS OTP send (Continue with phone-only path). */
 let smsSent = false;
+
+let loginContinueSlowTimer = null;
+
+function clearLoginContinueSlowTimer() {
+  if (loginContinueSlowTimer != null) {
+    clearTimeout(loginContinueSlowTimer);
+    loginContinueSlowTimer = null;
+  }
+}
+
+function setLoginContinueLoading(loading) {
+  const btn = document.getElementById("login-form-submit");
+  if (!btn) {
+    return;
+  }
+  btn.classList.toggle("is-loading", loading);
+  if (loading) {
+    btn.setAttribute("aria-busy", "true");
+  } else {
+    btn.removeAttribute("aria-busy");
+  }
+}
 
 function syncAuthPhoneVerifySection() {
   const pv = document.getElementById("auth-phone-verify");
@@ -318,6 +352,12 @@ function showLoginSuccess(msg) {
 }
 
 function resetAuthModalMessages() {
+  clearLoginContinueSlowTimer();
+  setLoginContinueLoading(false);
+  const submitBtn = document.getElementById("login-form-submit");
+  if (submitBtn) {
+    submitBtn.disabled = false;
+  }
   showLoginError("");
   showLoginSuccess("");
   phoneOtpPending = null;
@@ -542,15 +582,6 @@ userChip?.addEventListener("click", () => void signOutNuvelo());
 /** @type {"signin" | "register"} */
 let authModalMode = "signin";
 
-/** Shown only when the legacy /api/auth/login path can run (no Supabase, dev or VITE_ALLOW_LEGACY_AUTH). */
-const syncAuthBackendHint = () => {
-  const el = document.getElementById("auth-backend-hint");
-  if (!el) {
-    return;
-  }
-  el.hidden = isSupabaseConfigured || !deploymentAllowsLegacyBackendLogin;
-};
-
 /** Hides OAuth/email UI when production has neither Supabase nor legacy opt-in. */
 const syncAuthSignInAvailability = () => {
   const available = signInFlowsAvailable;
@@ -574,7 +605,6 @@ const syncAuthSignInAvailability = () => {
   if (form && !available) {
     form.hidden = true;
   }
-  syncAuthBackendHint();
 };
 
 /**
@@ -593,12 +623,10 @@ const openModal = (mode = "signin") => {
   const errEl = document.getElementById("login-error");
   const formEl = document.getElementById("login-form");
   const switchBtn = document.getElementById("auth-switch-mode");
-  const signinEmailBtn = document.getElementById("auth-signin-email-form");
-  const registerEmailBtn = document.getElementById("auth-show-email-form");
 
   if (!signInFlowsAvailable) {
     if (titleEl) {
-      titleEl.textContent = "Sign-in unavailable";
+      titleEl.textContent = "Sign in";
     }
     if (subEl) {
       subEl.textContent = "";
@@ -621,21 +649,14 @@ const openModal = (mode = "signin") => {
     subEl.textContent =
       mode === "register"
         ? "Create your Nuvelo profile to post listings and message sellers."
-        : "Use the same name and email as before to reconnect to your listings.";
+        : "Sign in with email (magic link) or phone (SMS code).";
   }
   if (errEl) {
     errEl.textContent = "";
     errEl.hidden = true;
   }
-  /* In register mode the full form is shown; hide the email-pathway buttons. In signin, show both. */
-  if (signinEmailBtn) {
-    signinEmailBtn.hidden = mode === "register";
-  }
-  if (registerEmailBtn) {
-    registerEmailBtn.hidden = mode === "register";
-  }
   if (formEl) {
-    formEl.hidden = mode === "signin";
+    formEl.hidden = false;
     loginModal.querySelectorAll(".auth-field--signup").forEach((el) => {
       el.hidden = mode === "signin";
     });
@@ -650,12 +671,14 @@ const openModal = (mode = "signin") => {
   }
   if (switchBtn) {
     switchBtn.textContent =
-      mode === "register" ? "Already have an account? Sign in" : "New here? Register";
+      mode === "register" ? "Already have an account? Sign in" : "Don’t have an account? Register";
   }
   loginModal.hidden = false;
   syncAuthSignInAvailability();
-  if (mode === "register" && formEl && !formEl.hidden) {
+  if (mode === "register" && formEl) {
     loginModal.querySelector("input[name='name']")?.focus();
+  } else if (mode === "signin" && formEl) {
+    formEl.querySelector("input[name='email']")?.focus();
   }
 };
 
@@ -718,21 +741,6 @@ document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
   if (error) {
     showLoginError(error.message || "Facebook sign-in failed.");
   }
-});
-
-document.getElementById("auth-signin-email-form")?.addEventListener("click", () => {
-  if (authModalMode !== "signin") {
-    return;
-  }
-  const formEl = document.getElementById("login-form");
-  if (formEl) {
-    formEl.hidden = false;
-    formEl.querySelector("input[name='email']")?.focus();
-  }
-});
-
-document.getElementById("auth-show-email-form")?.addEventListener("click", () => {
-  openModal("register");
 });
 
 document.getElementById("auth-switch-mode")?.addEventListener("click", () => {
@@ -798,6 +806,8 @@ loginForm?.addEventListener("keydown", (e) => {
 loginForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
   const submitBtn = document.getElementById("login-form-submit") || loginForm.querySelector("button[type='submit']");
+  clearLoginContinueSlowTimer();
+  setLoginContinueLoading(false);
   showLoginError("");
   showLoginSuccess("");
   const fd = new FormData(loginForm);
@@ -828,6 +838,10 @@ loginForm?.addEventListener("submit", async (e) => {
     if (submitBtn) {
       submitBtn.disabled = true;
     }
+    setLoginContinueLoading(true);
+    loginContinueSlowTimer = setTimeout(() => {
+      showLoginError("This is taking longer than expected. Please try again.");
+    }, 30000);
     try {
       const redirectTo = getAuthRedirectUrl();
       const metaName = name || (email ? email.split("@")[0] : "") || "Member";
@@ -888,6 +902,8 @@ loginForm?.addEventListener("submit", async (e) => {
       console.error(err);
       showLoginError(friendlyNetworkError(err));
     } finally {
+      clearLoginContinueSlowTimer();
+      setLoginContinueLoading(false);
       if (submitBtn) {
         submitBtn.disabled = false;
       }
@@ -896,15 +912,17 @@ loginForm?.addEventListener("submit", async (e) => {
   }
 
   if (!deploymentAllowsLegacyBackendLogin) {
-    showLoginError(
-      "Sign-in isn’t available in this deployment. Configure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY, or set VITE_ALLOW_LEGACY_AUTH=true only if you use the listings API login proxy."
-    );
+    showLoginError("Sign-in is temporarily unavailable. Please try again shortly.");
     return;
   }
 
   if (submitBtn) {
     submitBtn.disabled = true;
   }
+  setLoginContinueLoading(true);
+  loginContinueSlowTimer = setTimeout(() => {
+    showLoginError("This is taking longer than expected. Please try again.");
+  }, 30000);
   try {
     const user = await loginUser({
       name: name || "Member",
@@ -920,6 +938,8 @@ loginForm?.addEventListener("submit", async (e) => {
     console.error(err);
     showLoginError(friendlyNetworkError(err, "legacy"));
   } finally {
+    clearLoginContinueSlowTimer();
+    setLoginContinueLoading(false);
     if (submitBtn) {
       submitBtn.disabled = false;
     }
@@ -1792,8 +1812,7 @@ function initMessagesPageUi() {
     if (!isSupabaseConfigured) {
       if (banner) {
         banner.hidden = false;
-        banner.textContent =
-          "Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your build environment to enable messaging.";
+        banner.textContent = "Messaging is temporarily unavailable. Please try again later.";
       }
       return;
     }
@@ -2141,6 +2160,11 @@ const closeLocationPanel = (root) => {
   document.body.classList.remove("loc-modal-open");
   if (btn) {
     btn.setAttribute("aria-expanded", "false");
+    btn.removeAttribute("aria-busy");
+    if (btn.dataset.locPrevLabel != null) {
+      btn.textContent = btn.dataset.locPrevLabel;
+      delete btn.dataset.locPrevLabel;
+    }
   }
   if (modal) {
     modal.classList.remove("is-visible");
@@ -2174,6 +2198,9 @@ const openLocationPanel = (root) => {
   root.classList.add("is-open");
   if (btn) {
     btn.setAttribute("aria-expanded", "true");
+    btn.setAttribute("aria-busy", "true");
+    btn.dataset.locPrevLabel = btn.textContent || "";
+    btn.textContent = "Loading locations…";
   }
   if (modal) {
     clearTimeout(root._locModalCloseT);
@@ -2188,6 +2215,13 @@ const openLocationPanel = (root) => {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         modal.classList.add("is-visible");
+        if (btn) {
+          btn.removeAttribute("aria-busy");
+          if (btn.dataset.locPrevLabel != null) {
+            btn.textContent = btn.dataset.locPrevLabel;
+            delete btn.dataset.locPrevLabel;
+          }
+        }
         search?.focus();
       });
     });
@@ -3025,6 +3059,26 @@ const renderLanding = async () => {
   });
 };
 
+const buildBrowseSkeletonHtml = () => {
+  const cards = [0, 1, 2, 3]
+    .map(
+      () => `<article class="lc lc--grid lc--skeleton" aria-hidden="true">
+    <div class="lc__media"></div>
+    <div class="lc__body">
+      <div class="lc__price" style="height:1rem;width:45%"></div>
+      <h3 class="lc__title" style="height:1.15rem;margin:0.5rem 0;width:85%"></h3>
+      <p class="lc__excerpt" style="height:2.75rem;width:100%"></p>
+    </div>
+  </article>`
+    )
+    .join("");
+  return `<div class="feed-layout feed-layout--browse">
+    <nav class="breadcrumb-jiji" aria-label="Breadcrumb"><a href="/browse">All ads</a></nav>
+    <p class="muted small browse-skeleton-status" style="margin:0.75rem 0" role="status">Loading listings…</p>
+    <div class="ad-grid--lc browse-skeleton-grid" data-view="grid" aria-busy="true">${cards}</div>
+  </div>`;
+};
+
 const renderList = async () => {
   const appEl = mainShell();
   if (!appEl) {
@@ -3043,6 +3097,13 @@ const renderList = async () => {
     maxPrice: filters.maxPrice
   };
 
+  const browseFetchIsBroad =
+    !fetchFilters.query &&
+    !fetchFilters.categoryId &&
+    !fetchFilters.location &&
+    fetchFilters.minPrice == null &&
+    fetchFilters.maxPrice == null;
+
   const hf = document.getElementById("header-search-form");
   if (hf?.elements?.q) {
     hf.elements.q.value = filters.query;
@@ -3052,20 +3113,26 @@ const renderList = async () => {
   syncGlobalHeaderDrawerSearch();
 
   const cacheKey = browseCacheKey(fetchFilters);
+  const cacheHit = browseListingsCache.key === cacheKey;
+  if (!cacheHit) {
+    appEl.innerHTML = buildBrowseSkeletonHtml();
+  }
+
   let listings = [];
   let listingsLoadFailed = false;
   try {
-    if (browseListingsCache.key === cacheKey) {
+    if (cacheHit) {
       listings = browseListingsCache.data;
     } else {
       listings = await fetchListings(fetchFilters);
       browseListingsCache = { key: cacheKey, data: listings };
     }
   } catch (e) {
-    console.error(e);
+    console.error("[Nuvelo] Browse listings API error:", e);
     listingsLoadFailed = true;
     browseListingsCache = { key: "", data: [] };
   }
+  const rawListingCountPreEvents = listingsLoadFailed ? 0 : listings.length;
   if (!listingsLoadFailed) {
     listings = listings.filter((l) => l.categoryId !== EVENTS_CATEGORY);
   }
@@ -3229,7 +3296,7 @@ const renderList = async () => {
       <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="browse-filter-open">${filterBtnLabel}</button>
       ${
         listingsLoadFailed
-          ? `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`
+          ? `<p class="browse-listings-soft-msg muted" role="alert">${esc(BROWSE_LISTINGS_ERROR_MSG)}</p>`
           : ""
       }
       <div class="browse-layout browse-layout--jiji">
@@ -3332,12 +3399,22 @@ const renderList = async () => {
   });
 
   if (!pageSlice.length && !listingsLoadFailed) {
-    grid.innerHTML = `<div class="empty-state">No ads match your filters yet.</div>`;
+    if (rawListingCountPreEvents === 0) {
+      grid.innerHTML =
+        browseFetchIsBroad && filters.page <= 1
+          ? `<div class="empty-state" role="status">
+              <p>No listings yet. Be the first to post one!</p>
+              <p style="margin-top:0.75rem"><a class="btn btn--primary" href="/post">Post an ad</a></p>
+            </div>`
+          : `<div class="empty-state" role="status">No ads match your search or filters yet. Try adjusting filters or <a href="/browse">view all ads</a>.</div>`;
+    } else {
+      grid.innerHTML = `<div class="empty-state" role="status">No ads match your filters yet.</div>`;
+    }
     return;
   }
 
   if (listingsLoadFailed) {
-    grid.innerHTML = "";
+    grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="alert">${esc(BROWSE_LISTINGS_ERROR_MSG)}</p>`;
     return;
   }
 
@@ -3718,7 +3795,7 @@ const renderDetail = async (id) => {
       return;
     }
     if (!isSupabaseConfigured) {
-      msg.textContent = "Messaging requires Supabase (VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY) to be configured.";
+      msg.textContent = "Messaging is temporarily unavailable. Please try again later.";
       return;
     }
     if (!isUuid(listing.userId)) {
@@ -4104,6 +4181,8 @@ const renderStaticPage = async (slug) => {
     terms: staticPageShell(
       "Terms & Conditions",
       `
+      <!-- TODO: LEGAL REVIEW -->
+      <p class="muted small"><em>Placeholder legal text — must be reviewed and approved by qualified counsel before production reliance.</em></p>
       <p>Welcome to Nuvelo. These Terms and Conditions govern access to and use of our marketplace where users can publish and discover listings for rentals, jobs, services, vehicles, electronics, furniture, fashion, and other legal categories in Hungary. By accessing Nuvelo, creating an account, posting a listing, or responding to a listing, you agree to comply with these terms in full. If you do not agree, you must not use the platform.</p>
       <p>Nuvelo is a user-generated marketplace. We provide technical infrastructure to help buyers, sellers, tenants, landlords, job seekers, and service providers connect. Nuvelo is not a party to contracts concluded between users. Every user is responsible for verifying information, reviewing documents, and making independent decisions before any transaction. Any contract for sale, rental, employment, or service is solely between the users involved.</p>
       <p>Users must provide accurate profile information, including a valid name and contact details. You are responsible for maintaining account security and for all actions taken under your account. You may not create accounts using false identities, impersonate others, or share accounts in a way that bypasses moderation. If you suspect unauthorized access, notify us immediately and update your credentials.</p>
@@ -4118,14 +4197,16 @@ const renderStaticPage = async (slug) => {
       <p>You agree to indemnify and hold Nuvelo harmless against claims, losses, and costs arising from your listings, your user content, your legal violations, or disputes with other users. This includes reasonable legal costs where permitted by law. Nuvelo may participate in dispute resolution evidence requests but is not obligated to mediate private contractual disagreements.</p>
       <p>These terms may be updated to reflect legal changes, product updates, or safety requirements. Material changes will be published on this page with an updated effective date. Continued use after updates means acceptance of revised terms. If you disagree with a change, you must stop using the service and request account closure.</p>
       <p>These terms are governed by applicable Hungarian law, without prejudice to mandatory EU consumer protections. Disputes should first be raised through Nuvelo support so we can attempt resolution in good faith. If unresolved, disputes may be submitted to competent courts in Hungary. If any clause is invalid, the remaining terms remain in force.</p>
-      <p><strong>Effective date:</strong> 8 April 2026. Contact: <a href="mailto:support@nuvelo.app">support@nuvelo.app</a></p>
+      <p><strong>Effective date:</strong> 8 April 2026. Contact: <a href="mailto:support@nuvelo.one">support@nuvelo.one</a></p>
       `
     ),
     privacy: staticPageShell(
       "Privacy Policy",
       `
+      <!-- TODO: LEGAL REVIEW -->
+      <p class="muted small"><em>Placeholder legal text — must be reviewed and approved by qualified counsel before production reliance.</em></p>
       <p>Nuvelo respects your privacy and processes personal data in accordance with the EU General Data Protection Regulation (GDPR) and applicable Hungarian law. This Privacy Policy explains what data we collect, why we collect it, how we use it, and what rights you have. It applies to users browsing, posting listings, messaging sellers, and contacting support through Nuvelo.</p>
-      <p><strong>Data controller:</strong> Nuvelo Marketplace. For privacy requests, email <a href="mailto:privacy@nuvelo.app">privacy@nuvelo.app</a>. We process account and listing data to operate the marketplace, prevent abuse, and comply with legal obligations.</p>
+      <p><strong>Data controller:</strong> Nuvelo Marketplace. For privacy requests, email <a href="mailto:privacy@nuvelo.one">privacy@nuvelo.one</a>. We process account and listing data to operate the marketplace, prevent abuse, and comply with legal obligations.</p>
       <p><strong>Data we collect:</strong> account details (name, email, phone, role), listing details (title, description, category, price, location, images), communication metadata (message timestamps, moderation reports), technical information (IP address, browser type, device characteristics), and analytics/cookie data where consent applies. We do not intentionally collect special category data unless users include it in free-text fields.</p>
       <p><strong>Legal bases:</strong> contract performance (providing marketplace functions), legitimate interests (fraud prevention, abuse detection, service security), consent (optional analytics/marketing cookies), and legal obligations (law-enforcement requests, tax/accounting where applicable).</p>
       <p><strong>How we use data:</strong> creating and maintaining user accounts, publishing and ranking listings, filtering search results by location and category, enabling contact between users, preventing spam/scams, enforcing listing policies, and improving platform performance. We also use aggregated data to understand usage trends and prioritize product fixes.</p>
@@ -4137,12 +4218,14 @@ const renderStaticPage = async (slug) => {
       <p><strong>Cookies and analytics:</strong> Nuvelo uses necessary cookies for essential operation and optional analytics cookies for product improvement. Consent is collected where required. You can control cookie preferences in your browser and via site controls where available. See our Cookie Policy for detailed cookie categories.</p>
       <p><strong>Children:</strong> Nuvelo is not intended for children under 16. If we learn that personal data of a child was collected without valid authorization, we will remove it as required by law.</p>
       <p><strong>Policy updates:</strong> We may update this Privacy Policy to reflect legal or service changes. Material updates will be posted with a revised effective date. Continued use after updates indicates acknowledgement of the new policy terms.</p>
-      <p><strong>Effective date:</strong> 8 April 2026. Privacy contact: <a href="mailto:privacy@nuvelo.app">privacy@nuvelo.app</a></p>
+      <p><strong>Effective date:</strong> 8 April 2026. Privacy contact: <a href="mailto:privacy@nuvelo.one">privacy@nuvelo.one</a></p>
       `
     ),
     cookies: staticPageShell(
       "Cookie Policy",
       `
+      <!-- TODO: LEGAL REVIEW -->
+      <p class="muted small"><em>Placeholder legal text — must be reviewed and approved by qualified counsel before production reliance.</em></p>
       <p>This Cookie Policy explains how Nuvelo uses cookies and similar technologies when you visit our website. Cookies are small text files stored on your device that help websites remember preferences, maintain sessions, and understand usage.</p>
       <h2>Cookie categories we use</h2>
       <p><strong>Necessary cookies:</strong> Required for core functionality such as routing, session continuity, and security controls. These cannot be disabled if you want the website to function properly.</p>
@@ -4150,23 +4233,19 @@ const renderStaticPage = async (slug) => {
       <p><strong>Marketing cookies:</strong> If enabled in future campaigns, these cookies may help measure ad effectiveness and show relevant promotions. We only use them with consent where required.</p>
       <h2>Managing cookies</h2>
       <p>You can control cookies through browser settings by blocking or deleting stored cookies. You can also use private browsing modes to reduce persistence. Blocking necessary cookies may break parts of the site.</p>
-      <p>For privacy requests related to cookies, contact <a href="mailto:privacy@nuvelo.app">privacy@nuvelo.app</a>.</p>
+      <p>For privacy requests related to cookies, contact <a href="mailto:privacy@nuvelo.one">privacy@nuvelo.one</a>.</p>
       `
     ),
     faq: staticPageShell(
       "Frequently Asked Questions",
       `
-      <h2>General</h2>
-      <p><strong>1) How do I post an ad?</strong><br />Go to <code>/post</code>, complete the required fields, add photos, and submit. Listings may be moderated before they appear publicly.</p>
-      <p><strong>2) Do I need an account to browse?</strong><br />No. Browsing is open. You need an account to publish listings and use direct contact features.</p>
-      <p><strong>3) How do I contact a seller?</strong><br />Open the listing page and use the available contact action. Always keep conversations on-platform when possible.</p>
-      <p><strong>4) Is posting free?</strong><br />Core posting is currently free during MVP. Paid promotion features may be introduced later.</p>
-      <p><strong>5) Why was my listing rejected?</strong><br />Common reasons include missing details, prohibited content, misleading titles, duplicate posts, or poor-quality images.</p>
-      <p><strong>6) How can I stay safe?</strong><br />Meet in public places, avoid prepayments, verify documents, and report suspicious users immediately.</p>
-      <p><strong>7) Can I edit or delete my listing?</strong><br />Yes. Use your account area or moderation request channels if direct editing is not yet enabled for your listing type.</p>
-      <p><strong>8) Why can’t I find my city in search?</strong><br />Use the location dropdown and check spelling/diacritics. Filters can hide results if min/max prices are too strict.</p>
-      <p><strong>9) How fast does moderation happen?</strong><br />Most listings are reviewed within one business day, but high-risk categories may take longer.</p>
-      <p><strong>10) How do I report fraud or abuse?</strong><br />Use the report action in listing/chat views or email <a href="mailto:support@nuvelo.app">support@nuvelo.app</a> with screenshots and links.</p>
+      <h2>Using Nuvelo</h2>
+      <p><strong>How do I post an ad?</strong><br />Open <a href="/post">Post an ad</a>, pick a category, add a clear title and description, set your location and price where relevant, add photo links, and submit. New listings may be reviewed before they appear publicly.</p>
+      <p><strong>How do I contact a seller?</strong><br />Open the listing and use the on-page contact options (for example messaging, where available). Keep communication respectful and avoid sharing unnecessary personal data.</p>
+      <p><strong>Is it free to list on Nuvelo?</strong><br />Posting standard classified ads is free. Optional paid promotion, if we introduce it later, will always be clearly labelled.</p>
+      <p><strong>What areas does Nuvelo cover?</strong><br />Nuvelo is focused on Hungary. You can browse and filter by city or region; coverage grows as more people post in their area.</p>
+      <p><strong>I need help with my account or sign-in.</strong><br />Use <strong>Sign in</strong> in the header for email magic links or SMS codes. If you are stuck, email <a href="mailto:support@nuvelo.one">support@nuvelo.one</a> with a short description of the issue.</p>
+      <p class="muted small">More topics (safety, moderation, reporting) are covered on our <a href="/safety">Safety tips</a> page and in the <a href="/contact">Contact</a> form.</p>
       `
     ),
     safety: staticPageShell(
@@ -4187,16 +4266,15 @@ const renderStaticPage = async (slug) => {
     about: staticPageShell(
       "About Nuvelo",
       `
-      <p>Nuvelo is a classifieds marketplace built for Hungary’s international community. We help expats and locals connect around real everyday needs: finding rentals, posting jobs, buying and selling goods, and offering trusted services.</p>
-      <p>Our mission is to make local discovery simpler, safer, and more transparent for people living and working across languages and cultures in Hungary.</p>
-      <p>We focus on practical marketplace tools, clear listings, moderation standards, and a mobile-friendly experience that works on both desktop and phone.</p>
-      <p>Contact: <a href="mailto:support@nuvelo.app">support@nuvelo.app</a></p>
+      <p>Nuvelo is Hungary’s free classifieds marketplace for the international community — a single place to buy, sell, rent, hire, and find work. We focus on clear listings, sensible categories, and tools that work well on phones and desktops.</p>
+      <p>Our founding mission is to make everyday deals and moves in Hungary easier for people who live across languages and cultures: less friction, more transparency, and a fair shot for private sellers and small businesses alike.</p>
+      <p>We’re always improving moderation, safety, and discovery. Reach us anytime at <a href="mailto:support@nuvelo.one">support@nuvelo.one</a>.</p>
       `
     ),
     contact: staticPageShell(
       "Contact Us",
       `
-      <p>If you need support, have a moderation question, or want to report an issue, contact us using the form below.</p>
+      <p>If you need support, have a moderation question, or want to report an issue, use the form below or email us directly.</p>
       <form id="contact-form" class="stack" style="max-width:640px">
         <label>Name<input name="name" required placeholder="Your full name" /></label>
         <label>Email<input name="email" type="email" required placeholder="you@example.com" /></label>
@@ -4204,7 +4282,7 @@ const renderStaticPage = async (slug) => {
         <div><button type="submit" class="btn btn--primary">Send message</button></div>
         <p id="contact-msg" class="muted"></p>
       </form>
-      <p>Support email: <a href="mailto:support@nuvelo.app">support@nuvelo.app</a></p>
+      <p>Support email: <a href="mailto:support@nuvelo.one">support@nuvelo.one</a></p>
       `
     )
   };
@@ -4655,6 +4733,10 @@ const render = async () => {
       await renderLanding();
       return;
     }
+    if (route.view === "list") {
+      await renderList();
+      return;
+    }
     appEl.innerHTML = `
       <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
         <span class="page-loading__spinner" aria-hidden="true"></span>
@@ -4881,8 +4963,38 @@ initLocationCombobox(headerLocRootInit);
 initLocationCombobox(drawerLocRootInit);
 syncGlobalHeaderDrawerSearch();
 
+function bindAuthPhoneFocusHint() {
+  const form = document.getElementById("login-form");
+  const phone = form?.querySelector("input[name='phone']");
+  const hint = document.getElementById("auth-phone-focus-hint");
+  if (!phone || !hint || phone.dataset.focusHintBound === "1") {
+    return;
+  }
+  phone.dataset.focusHintBound = "1";
+  phone.addEventListener("focus", () => {
+    hint.hidden = false;
+  });
+  phone.addEventListener("blur", () => {
+    hint.hidden = true;
+  });
+}
+
 void (async () => {
   await initAuth();
   syncAuthSignInAvailability();
+  bindAuthPhoneFocusHint();
   await render().catch((e) => console.error(e));
 })();
+
+/*
+ * --- COULD NOT FULLY FIX (manual follow-up) ---
+ * - True per-URL HTML for crawlers: the app remains a client-rendered SPA; meta tags are updated in
+ *   the browser via src/seo.js (equivalent goal to react-helmet-async), but initial HTML from the
+ *   server is still identical for all routes until JS runs. Full SEO for bots needs SSR/prerender
+ *   or a hosting integration if required.
+ * - Social OAuth errors: Supabase may still return provider-specific error strings in rare cases;
+ *   only config-leaking messages were replaced with generic copy.
+ * - YouTube / X URLs in the footer are placeholders with TODO comments — confirm real channel and
+ *   handle before launch.
+ * - Legal pages: substantive text remains placeholder until your lawyer reviews (marked TODO: LEGAL REVIEW).
+ */

@@ -1,4 +1,7 @@
 User-agent: *
 Allow: /
+Disallow: /profile/
+Disallow: /api/
 
 Sitemap: https://nuvelo.one/sitemap.xml
+Sitemap: https://nuvelo.one/listings-sitemap.xml

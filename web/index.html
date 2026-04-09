@@ -18,6 +18,7 @@
     <meta property="og:url" content="https://nuvelo.one/" />
     <meta property="og:image" content="https://nuvelo.one/og-image.png" />
     <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Nuvelo" />
     <meta name="theme-color" content="#0d0a1e" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -315,7 +316,7 @@
         </div>
         <div class="site-footer__col">
           <h3 class="site-footer__heading">Support</h3>
-          <a href="mailto:support@nuvelo.app">support@nuvelo.app</a>
+          <a href="mailto:support@nuvelo.one">support@nuvelo.one</a>
           <a href="/safety">Safety tips</a>
           <a href="/contact">Contact us</a>
           <a href="/faq">FAQ</a>
@@ -347,8 +348,26 @@
             >
               <span class="site-footer__social-icon" aria-hidden="true">◎</span>
             </a>
-            <span class="site-footer__social-icon site-footer__social-icon--muted" aria-hidden="true">▶</span>
-            <span class="site-footer__social-icon site-footer__social-icon--muted" aria-hidden="true">𝕏</span>
+            <!-- TODO: Confirm real YouTube channel URL (placeholder below). -->
+            <a
+              class="site-footer__social-link"
+              href="https://www.youtube.com/@nuvelo_one"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Nuvelo on YouTube"
+            >
+              <span class="site-footer__social-icon" aria-hidden="true">▶</span>
+            </a>
+            <!-- TODO: Confirm correct X/Twitter handle (placeholder URL). -->
+            <a
+              class="site-footer__social-link"
+              href="https://x.com/nuvelo_one"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Nuvelo on X"
+            >
+              <span class="site-footer__social-icon" aria-hidden="true">𝕏</span>
+            </a>
           </div>
         </div>
       </div>
@@ -375,18 +394,8 @@
         </p>
         <p id="login-error" class="login-error" role="alert" hidden></p>
         <p id="login-success" class="login-success" role="status" hidden></p>
-        <p id="auth-missing-config" class="auth-missing-config muted small" role="note" hidden>
-          Sign-in is not configured for this build. Production requires
-          <strong>VITE_SUPABASE_URL</strong> and <strong>VITE_SUPABASE_ANON_KEY</strong> in the web
-          app environment, then a redeploy. Optional: set <strong>VITE_ALLOW_LEGACY_AUTH=true</strong>
-          only if you intentionally use the listings API <code>/auth/login</code> proxy instead of
-          Supabase.
-        </p>
-        <p id="auth-backend-hint" class="auth-backend-hint muted small" hidden>
-          Without Supabase, this browser build signs in via this site’s <code>/api</code> route,
-          which proxies to the listings backend (<code>LISTINGS_BACKEND_URL</code> /
-          <code>NUVELO_API_URL</code> on the server). The first request may take up to a minute if
-          that host was asleep — try Continue again if it fails.
+        <p id="auth-missing-config" class="auth-missing-config muted small" role="alert" hidden>
+          Sign-in is temporarily unavailable. Please try again shortly.
         </p>
 
         <div id="login-social-block" class="auth-social">
@@ -397,12 +406,6 @@
             Continue with Facebook
           </button>
           <p class="auth-or"><span>or</span></p>
-          <button type="button" class="btn btn--outline auth-email-toggle" id="auth-signin-email-form">
-            Sign in with email or phone
-          </button>
-          <button type="button" class="btn btn--outline auth-email-toggle" id="auth-show-email-form">
-            Register via email or phone
-          </button>
         </div>
 
         <form id="login-form" class="stack auth-email-form">
@@ -426,12 +429,20 @@
           </label>
           <label>
             Phone (optional — SMS code, E.164 e.g. +36301234567)
-            <input name="phone" type="tel" autocomplete="tel" placeholder="+36 …" />
+            <input
+              name="phone"
+              type="tel"
+              autocomplete="tel"
+              placeholder="+36 …"
+              aria-describedby="auth-phone-focus-hint"
+            />
+            <span id="auth-phone-focus-hint" class="auth-phone-focus-hint muted small" hidden>
+              For SMS sign-in: leave email empty, enter your phone, then tap Continue. We’ll text you a
+              code — enter it below and tap Verify code.
+            </span>
           </label>
-          <p id="auth-sms-steps" class="auth-sms-hint muted small">
-            <strong>SMS sign-in:</strong> leave email empty, enter your phone (+36…), then tap
-            <strong>Continue</strong> to receive a text. Then type the code and tap
-            <strong>Verify code</strong>.
+          <p id="auth-sms-steps" class="auth-sms-hint muted small visually-hidden">
+            SMS verification steps (visible when phone field is focused).
           </p>
           <!-- SMS code UI: visibility toggled from main.js via smsSent (shown only after successful OTP send). -->
           <div id="auth-phone-verify" class="auth-phone-verify stack" hidden>
@@ -452,18 +463,23 @@
               type="button"
               class="btn btn--primary auth-submit-full"
               id="auth-phone-verify-btn"
-              aria-describedby="auth-sms-steps"
+              aria-describedby="auth-phone-focus-hint"
             >
               Verify code
             </button>
           </div>
-          <button type="submit" class="btn btn--primary auth-submit-full" id="login-form-submit">Continue</button>
+          <button type="submit" class="btn btn--primary auth-submit-full" id="login-form-submit">
+            <span class="auth-submit-inner">
+              <span class="auth-submit-spinner" aria-hidden="true"></span>
+              <span class="auth-submit-label">Continue</span>
+            </span>
+          </button>
           <button type="button" class="btn btn--ghost auth-submit-full" data-close-modal>Cancel</button>
         </form>
 
         <p class="auth-switch small muted" id="auth-switch-line">
           <button type="button" class="btn btn--link auth-inline-link" id="auth-switch-mode">
-            Already have an account? Sign in
+            Don’t have an account? Register
           </button>
         </p>
         <p class="auth-legal small muted">

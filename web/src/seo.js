@@ -97,16 +97,21 @@ export function applyListingJsonLd(listing) {
 /**
  * @param {{ title: string, description: string }} p
  */
-export function applyDocumentMeta({ title, description }) {
+/**
+ * @param {{ title: string, description: string, ogImage?: string | null, ogType?: string }} p
+ */
+export function applyDocumentMeta({ title, description, ogImage, ogType = "website" }) {
   const canonicalUrl = `${window.location.origin}${window.location.pathname}${window.location.search}`;
-  const desc = truncateDesc(description, 150);
+  const desc = truncateDesc(description, 160);
+  const image = ogImage && String(ogImage).trim() ? String(ogImage).trim() : OG_IMAGE;
   document.title = title;
   ensureMetaName("description", desc);
   ensureMetaProperty("og:title", title);
   ensureMetaProperty("og:description", desc);
   ensureMetaProperty("og:url", canonicalUrl);
-  ensureMetaProperty("og:image", OG_IMAGE);
-  ensureMetaProperty("og:type", "website");
+  ensureMetaProperty("og:image", image);
+  ensureMetaProperty("og:type", ogType);
+  ensureMetaProperty("og:site_name", "Nuvelo");
   ensureCanonical(canonicalUrl);
 }
 
@@ -132,7 +137,7 @@ const CATEGORY_META = {
 
 const STATIC_META = {
   browse: {
-    title: "Browse Classifieds in Hungary | Nuvelo",
+    title: "Browse Ads in Hungary | Nuvelo",
     description: "Search rentals, jobs, vehicles, services and more across Hungary. Filter by category and location on Nuvelo."
   },
   post: {
@@ -144,7 +149,7 @@ const STATIC_META = {
     description: "Community events and meetups in Hungary. Discover what is on near you on Nuvelo."
   },
   about: {
-    title: "About Nuvelo | Hungary Marketplace",
+    title: "About Nuvelo | Hungary's International Marketplace",
     description: "Nuvelo connects internationals and locals in Hungary for rentals, jobs, goods and services."
   },
   faq: {
@@ -240,6 +245,27 @@ export function applyRouteMeta(route, extra = {}) {
 /**
  * @param {object} listing
  */
+function resolveOgImageUrl(raw) {
+  if (raw == null || typeof raw !== "string") {
+    return null;
+  }
+  const u = raw.trim();
+  if (!u) {
+    return null;
+  }
+  if (/^https?:\/\//i.test(u)) {
+    return u;
+  }
+  if (u.startsWith("//")) {
+    return `https:${u}`;
+  }
+  const origin = typeof window !== "undefined" ? window.location.origin : SITE_ORIGIN;
+  if (u.startsWith("/")) {
+    return `${origin}${u}`;
+  }
+  return `${origin}/${u.replace(/^\.?\//, "")}`;
+}
+
 export function applyListingPageMeta(listing) {
   if (!listing) {
     return;
@@ -247,8 +273,16 @@ export function applyListingPageMeta(listing) {
   const title = `${listing.title} — Nuvelo`;
   const description = truncateDesc(
     listing.description || `${listing.title} — ${listing.location || "Hungary"}. View on Nuvelo.`,
-    150
+    160
   );
-  applyDocumentMeta({ title, description });
+  const imgs = Array.isArray(listing.images) ? listing.images : [];
+  const first = imgs.find((x) => typeof x === "string" && x.trim());
+  const ogImage = resolveOgImageUrl(first);
+  applyDocumentMeta({
+    title,
+    description,
+    ogImage: ogImage || undefined,
+    ogType: "article"
+  });
   applyListingJsonLd(listing);
 }

@@ -6,6 +6,10 @@
   "installCommand": "npm install",
   "rewrites": [
     {
+      "source": "/listings-sitemap.xml",
+      "destination": "/api/sitemap-listings"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
