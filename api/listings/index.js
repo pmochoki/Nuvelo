@@ -1,32 +1,15 @@
 const { applyCors } = require("../_cors");
 const store = require("../_listingsStore");
+const { isListingsDbEnabled } = require("../_supabaseAdmin");
+const { listListings, insertListing } = require("../_listingsDb");
+const { readJsonBody } = require("../_readJsonBody");
 
 /**
  * GET /api/listings — all listings (filter: public = approved only; ?userId= = that user's rows incl. pending)
  * POST /api/listings — create listing (JSON body), returns created row with status pending
  *
- * No longer proxies to Render; uses in-repo store. TODO: wire to a real database.
+ * Uses Supabase Postgres when SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY are set; otherwise ephemeral file store.
  */
-
-async function readJsonBody(req) {
-  if (req.body && typeof req.body === "object" && !Buffer.isBuffer(req.body)) {
-    return req.body;
-  }
-  return new Promise((resolve, reject) => {
-    let data = "";
-    req.on("data", (chunk) => {
-      data += chunk;
-    });
-    req.on("end", () => {
-      try {
-        resolve(data ? JSON.parse(data) : {});
-      } catch (e) {
-        reject(e);
-      }
-    });
-    req.on("error", reject);
-  });
-}
 
 function filterListings(listings, q) {
   const {
@@ -87,10 +70,19 @@ module.exports = async (req, res) => {
     delete q.path;
     delete q.slug;
     delete q.id;
-    const rows = filterListings(store.getAll(), q);
-    res.statusCode = 200;
-    res.setHeader("Content-Type", "application/json");
-    return res.end(JSON.stringify(rows));
+    try {
+      const rows = isListingsDbEnabled()
+        ? await listListings(q)
+        : filterListings(store.getAll(), q);
+      res.statusCode = 200;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify(rows));
+    } catch (e) {
+      console.error("[api/listings] GET", e);
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ error: "Failed to load listings" }));
+    }
   }
 
   if (req.method === "POST") {
@@ -109,22 +101,31 @@ module.exports = async (req, res) => {
       res.statusCode = 400;
       return res.end(JSON.stringify({ error: "categoryId is required." }));
     }
-    const created = store.addListing({
-      title: payload.title,
-      description: payload.description || "",
-      categoryId: payload.categoryId,
-      price: payload.price ?? null,
-      currency: payload.currency || "HUF",
-      condition: payload.condition || "other",
-      location: payload.location || "Hungary",
-      images: Array.isArray(payload.images) ? payload.images : [],
-      categoryFields: payload.categoryFields && typeof payload.categoryFields === "object" ? payload.categoryFields : {},
-      userId: payload.userId || "anonymous",
-      status: "pending"
-    });
-    res.statusCode = 201;
-    res.setHeader("Content-Type", "application/json");
-    return res.end(JSON.stringify(created));
+    try {
+      const row = {
+        title: payload.title,
+        description: payload.description || "",
+        categoryId: payload.categoryId,
+        price: payload.price ?? null,
+        currency: payload.currency || "HUF",
+        condition: payload.condition || "other",
+        location: payload.location || "Hungary",
+        images: Array.isArray(payload.images) ? payload.images : [],
+        categoryFields:
+          payload.categoryFields && typeof payload.categoryFields === "object" ? payload.categoryFields : {},
+        userId: payload.userId || "anonymous",
+        status: "pending"
+      };
+      const created = isListingsDbEnabled() ? await insertListing(row) : store.addListing(row);
+      res.statusCode = 201;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify(created));
+    } catch (e) {
+      console.error("[api/listings] POST", e);
+      res.statusCode = 500;
+      res.setHeader("Content-Type", "application/json");
+      return res.end(JSON.stringify({ error: "Failed to create listing" }));
+    }
   }
 
   res.statusCode = 405;

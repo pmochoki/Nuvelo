@@ -2,7 +2,7 @@
  * Ephemeral listings store for Vercel serverless (no DB yet).
  * Persists to /tmp on Vercel (survives warm invocations) or ./data locally.
  *
- * TODO: Replace with Postgres, Vercel KV, or Blob-backed JSON for durable multi-region storage.
+ * Fallback when SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY are unset. Production should use Postgres via `_listingsDb.js`.
  */
 
 const fs = require("fs");
