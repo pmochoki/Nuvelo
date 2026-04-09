@@ -226,7 +226,12 @@ function applySupabaseSession(session) {
       "Member",
     role: meta.role || "buyer",
     email: u.email || "",
-    phone: u.phone || ""
+    phone: u.phone || "",
+    avatarUrl:
+      meta.avatar_url ||
+      meta.picture ||
+      meta.avatarUrl ||
+      ""
   };
   writeStoredUser(cachedUser);
 }
@@ -267,6 +272,62 @@ const syncAuthFromStoredUser = () => {
   updateAuthUi();
 };
 
+const getNavBadgeCounts = () => {
+  try {
+    const raw = localStorage.getItem("nuvelo_saved_listing_ids");
+    const ids = raw ? JSON.parse(raw) : [];
+    const savedCount = Array.isArray(ids) ? ids.length : 0;
+    const unreadMessages = Math.max(
+      0,
+      Math.floor(Number(localStorage.getItem("nuvelo_unread_messages") || "0"))
+    );
+    return { savedCount, unreadMessages };
+  } catch {
+    return { savedCount: 0, unreadMessages: 0 };
+  }
+};
+
+const syncNavUserIcons = () => {
+  const nav = document.getElementById("nav-user-icons");
+  const avatarEl = document.getElementById("nav-user-avatar");
+  if (!nav) {
+    return;
+  }
+  const user = getUser();
+  if (!user) {
+    nav.hidden = true;
+    if (typeof window !== "undefined") {
+      window.__nuveloUser = null;
+    }
+    return;
+  }
+  nav.hidden = false;
+  if (typeof window !== "undefined") {
+    window.__nuveloUser = {
+      id: user.id,
+      name: user.name,
+      role: user.role,
+      avatarUrl: user.avatarUrl || ""
+    };
+  }
+  if (avatarEl) {
+    const name = user.name || "Member";
+    avatarEl.src = user.avatarUrl || "/default-avatar.svg";
+    avatarEl.alt = name;
+  }
+  const { savedCount, unreadMessages } = getNavBadgeCounts();
+  const savedBadge = document.getElementById("nav-badge-saved");
+  const msgBadge = document.getElementById("nav-badge-messages");
+  if (savedBadge) {
+    savedBadge.hidden = savedCount <= 0;
+    savedBadge.textContent = savedCount > 99 ? "99+" : String(savedCount);
+  }
+  if (msgBadge) {
+    msgBadge.hidden = unreadMessages <= 0;
+    msgBadge.textContent = unreadMessages > 99 ? "99+" : String(unreadMessages);
+  }
+};
+
 const updateAuthUi = () => {
   const user = getUser();
   const regBtn = document.getElementById("auth-register-btn");
@@ -275,10 +336,9 @@ const updateAuthUi = () => {
     if (regBtn) {
       regBtn.hidden = true;
     }
-    userChip.hidden = false;
-    userChip.textContent = `${user.name} · ${user.role}`;
-    userChip.title = "Click to sign out";
-    userChip.style.cursor = "pointer";
+    userChip.hidden = true;
+    userChip.removeAttribute("title");
+    userChip.style.cursor = "";
   } else {
     authBtn.hidden = false;
     if (regBtn) {
@@ -288,9 +348,10 @@ const updateAuthUi = () => {
     userChip.removeAttribute("title");
     userChip.style.cursor = "";
   }
+  syncNavUserIcons();
 };
 
-userChip?.addEventListener("click", async () => {
+const signOutNuvelo = async () => {
   if (!getUser()) {
     return;
   }
@@ -306,7 +367,9 @@ userChip?.addEventListener("click", async () => {
   writeStoredUser(null);
   updateAuthUi();
   await render().catch((e) => console.error(e));
-});
+};
+
+userChip?.addEventListener("click", () => void signOutNuvelo());
 
 /** @type {"signin" | "register"} */
 let authModalMode = "signin";
@@ -1363,6 +1426,17 @@ const parseHash = () => {
     )
   ) {
     return { view: "static", page: parts[0] };
+  }
+  if (parts[0] === "profile") {
+    if (parts.length === 1) {
+      return { view: "profile", section: "overview" };
+    }
+    const sub = parts[1];
+    const allowed = ["saved", "messages", "notifications", "adverts"];
+    if (allowed.includes(sub)) {
+      return { view: "profile", section: sub };
+    }
+    return { view: "profile", section: "overview" };
   }
   return { view: "landing" };
 };
@@ -2588,6 +2662,50 @@ const staticPageShell = (title, bodyHtml) => `
   </article>
 `;
 
+const renderProfile = async (section) => {
+  const appEl = mainShell();
+  if (!appEl) {
+    return;
+  }
+  const user = getUser();
+  const titles = {
+    overview: "My profile",
+    saved: "Saved ads",
+    messages: "Messages",
+    notifications: "Notifications",
+    adverts: "My adverts"
+  };
+  const title = titles[section] || titles.overview;
+  if (!user) {
+    appEl.innerHTML = `
+      <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
+        <h1 style="margin:0 0 0.5rem">${esc(title)}</h1>
+        <p class="muted">Sign in to access this page.</p>
+        <p><button type="button" class="btn btn--primary" id="profile-prompt-signin">Sign in</button></p>
+      </section>
+    `;
+    document.getElementById("profile-prompt-signin")?.addEventListener("click", () => {
+      openModal("signin");
+    });
+    return;
+  }
+  appEl.innerHTML = `
+    <article class="stack profile-page" style="max-width:720px;margin:0 auto;padding:0 0 2rem">
+      <h1 style="margin:0 0 0.75rem">${esc(title)}</h1>
+      <p class="muted" style="margin:0 0 1rem">${esc(
+        section === "overview"
+          ? `Signed in as ${user.name} · ${user.role}`
+          : "More options for this area will appear here soon."
+      )}</p>
+      <p style="margin:0 0 1rem">
+        <a href="#/browse">Browse listings</a>
+      </p>
+      <button type="button" class="btn btn--pill btn--signin" id="profile-sign-out">Sign out</button>
+    </article>
+  `;
+  document.getElementById("profile-sign-out")?.addEventListener("click", () => void signOutNuvelo());
+};
+
 const renderStaticPage = async (slug) => {
   const appEl = mainShell();
   if (!appEl) {
@@ -3167,6 +3285,10 @@ const render = async () => {
     }
     if (route.view === "static") {
       await renderStaticPage(route.page);
+      return;
+    }
+    if (route.view === "profile") {
+      await renderProfile(route.section);
       return;
     }
     await renderList();

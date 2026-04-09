@@ -228,6 +228,7 @@ export async function loginUser({ name, role, email, phone }) {
     name: data.name || "User",
     role: data.role || role || "buyer",
     email: data.email || email || "",
-    phone: data.phone || phone || ""
+    phone: data.phone || phone || "",
+    avatarUrl: data.avatar_url || data.avatarUrl || ""
   };
 }
