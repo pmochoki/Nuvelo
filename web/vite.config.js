@@ -25,10 +25,36 @@ function moveModuleScriptToBody() {
   };
 }
 
+function spaHistoryFallback() {
+  return {
+    name: "spa-history-fallback",
+    configureServer(server) {
+      server.middlewares.use((req, _res, next) => {
+        const raw = req.url || "";
+        const q = raw.indexOf("?");
+        const pathOnly = (q >= 0 ? raw.slice(0, q) : raw) || "";
+        const search = q >= 0 ? raw.slice(q) : "";
+        if (
+          pathOnly === "/" ||
+          pathOnly === "" ||
+          pathOnly.startsWith("/assets/") ||
+          pathOnly.startsWith("/api") ||
+          pathOnly.includes(".") ||
+          pathOnly.endsWith(".html")
+        ) {
+          return next();
+        }
+        req.url = `/index.html${search}`;
+        next();
+      });
+    }
+  };
+}
+
 export default defineConfig({
   root: ".",
   publicDir: "public",
-  plugins: [moveModuleScriptToBody()],
+  plugins: [moveModuleScriptToBody(), spaHistoryFallback()],
   server: {
     proxy: {
       "/api": {

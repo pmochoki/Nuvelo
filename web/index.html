@@ -5,9 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta
       name="description"
-      content="Nuvelo — rentals, jobs, services, and goods for internationals and locals in Hungary."
+      content="Hungary's marketplace for the international community. Find jobs, rentals, vehicles, electronics and more. Free to list, easy to use."
     />
-    <title>Nuvelo — Marketplace</title>
+    <title>Nuvelo — Buy, Sell &amp; Rent in Hungary | Free Classifieds</title>
+    <meta name="google-site-verification" content="XXXXX" />
+    <link rel="canonical" href="https://nuvelo.one/" />
+    <meta property="og:title" content="Nuvelo — Buy, Sell &amp; Rent in Hungary | Free Classifieds" />
+    <meta
+      property="og:description"
+      content="Hungary's marketplace for the international community. Find jobs, rentals, vehicles, electronics and more. Free to list, easy to use."
+    />
+    <meta property="og:url" content="https://nuvelo.one/" />
+    <meta property="og:image" content="https://nuvelo.one/og-image.png" />
+    <meta property="og:type" content="website" />
     <meta name="theme-color" content="#0d0a1e" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -33,7 +43,7 @@
             <span class="nav-burger__line"></span>
           </button>
           <div class="jiji-header__brand-stack jiji-header__brand-stack--nav">
-            <a class="brand brand--nav jiji-header__brand" href="#/">
+            <a class="brand brand--nav jiji-header__brand" href="/">
               <img
                 class="brand__logo"
                 src="/nuvelo-logo.svg"
@@ -106,7 +116,7 @@
           aria-label="User actions"
           hidden
         >
-          <a href="#/profile/saved" class="nav-icon-btn" title="Saved ads" aria-label="Saved ads">
+          <a href="/profile/saved" class="nav-icon-btn" title="Saved ads" aria-label="Saved ads">
             <span class="nav-icon-btn__wrap" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
@@ -114,7 +124,7 @@
             </span>
             <span class="nav-badge" id="nav-badge-saved" hidden aria-live="polite"></span>
           </a>
-          <a href="#/profile/messages" class="nav-icon-btn" title="Messages" aria-label="Messages">
+          <a href="/profile/messages" class="nav-icon-btn" title="Messages" aria-label="Messages">
             <span class="nav-icon-btn__wrap" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -122,13 +132,13 @@
             </span>
             <span class="nav-badge nav-badge--alert" id="nav-badge-messages" hidden aria-live="polite"></span>
           </a>
-          <a href="#/profile/notifications" class="nav-icon-btn" title="Notifications" aria-label="Notifications">
+          <a href="/profile/notifications" class="nav-icon-btn" title="Notifications" aria-label="Notifications">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 01-3.46 0" />
             </svg>
           </a>
-          <a href="#/profile/adverts" class="nav-icon-btn" title="My adverts" aria-label="My adverts">
+          <a href="/profile/adverts" class="nav-icon-btn" title="My adverts" aria-label="My adverts">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <line x1="3" y1="9" x2="21" y2="9" />
@@ -157,19 +167,19 @@
               />
             </button>
             <div class="nav-user-dropdown" id="nav-user-dropdown" hidden role="menu">
-              <a href="#/profile/adverts" class="nav-user-dropdown__item" role="menuitem">
+              <a href="/profile/adverts" class="nav-user-dropdown__item" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">🏪</span>
                 My shop / My profile
               </a>
-              <a href="#/profile/feedback" class="nav-user-dropdown__item" role="menuitem">
+              <a href="/profile/feedback" class="nav-user-dropdown__item" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">😊</span>
                 Feedback
               </a>
-              <a href="#/profile/performance" class="nav-user-dropdown__item" role="menuitem">
+              <a href="/profile/performance" class="nav-user-dropdown__item" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">📈</span>
                 Performance
               </a>
-              <a href="#/profile/settings" class="nav-user-dropdown__item" role="menuitem">
+              <a href="/profile/settings" class="nav-user-dropdown__item" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">⚙️</span>
                 Settings
               </a>
@@ -185,7 +195,7 @@
           <button type="button" class="jiji-header__text-link" id="auth-register-btn">
             Registration
           </button>
-          <a class="btn btn--primary btn--pill btn--sell jiji-header__sell" href="#/post">SELL</a>
+          <a class="btn btn--primary btn--pill btn--sell jiji-header__sell" href="/post">SELL</a>
           <span class="user-chip jiji-header__chip" id="user-chip" hidden></span>
         </div>
       </div>
@@ -239,20 +249,20 @@
             </div>
             <button type="submit" class="btn btn--primary nav-drawer__search-submit">Search</button>
           </form>
-          <a class="btn btn--primary btn--pill nav-drawer__sell" href="#/post">SELL</a>
+          <a class="btn btn--primary btn--pill nav-drawer__sell" href="/post">SELL</a>
           <p class="nav-drawer__section-label">Menu</p>
           <nav class="nav-drawer__links" aria-label="Mobile menu">
-            <a href="#/">Home</a>
-            <a href="#/browse">Browse ads</a>
-            <a href="#/post">Post an ad</a>
+            <a href="/">Home</a>
+            <a href="/browse">Browse ads</a>
+            <a href="/post">Post an ad</a>
           </nav>
           <div class="nav-drawer__auth-links" id="nav-drawer-auth" hidden>
             <p class="nav-drawer__section-label">Account</p>
-            <a href="#/profile/saved">Saved ads</a>
-            <a href="#/profile/messages">Messages</a>
-            <a href="#/profile/notifications">Notifications</a>
-            <a href="#/profile/adverts">My adverts</a>
-            <a href="#/profile/settings">Settings</a>
+            <a href="/profile/saved">Saved ads</a>
+            <a href="/profile/messages">Messages</a>
+            <a href="/profile/notifications">Notifications</a>
+            <a href="/profile/adverts">My adverts</a>
+            <a href="/profile/settings">Settings</a>
           </div>
           <div class="nav-drawer__guest" id="nav-drawer-guest">
             <button type="button" class="nav-drawer__signin" id="drawer-signin">Sign in</button>
@@ -297,18 +307,18 @@
           <p class="site-footer__text">
             Rentals, jobs, services &amp; goods for Hungary’s international community.
           </p>
-          <a href="#/about">About Nuvelo</a>
-          <a href="#/browse">Browse marketplace</a>
-          <a href="#/terms">Terms &amp; Conditions</a>
-          <a href="#/privacy">Privacy Policy</a>
-          <a href="#/cookies">Cookie Policy</a>
+          <a href="/about">About Nuvelo</a>
+          <a href="/browse">Browse marketplace</a>
+          <a href="/terms">Terms &amp; Conditions</a>
+          <a href="/privacy">Privacy Policy</a>
+          <a href="/cookies">Cookie Policy</a>
         </div>
         <div class="site-footer__col">
           <h3 class="site-footer__heading">Support</h3>
           <a href="mailto:support@nuvelo.app">support@nuvelo.app</a>
-          <a href="#/safety">Safety tips</a>
-          <a href="#/contact">Contact us</a>
-          <a href="#/faq">FAQ</a>
+          <a href="/safety">Safety tips</a>
+          <a href="/contact">Contact us</a>
+          <a href="/faq">FAQ</a>
         </div>
         <div class="site-footer__col">
           <h3 class="site-footer__heading">Our apps</h3>

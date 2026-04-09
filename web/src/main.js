@@ -26,6 +26,7 @@ import {
   renderProfilePage
 } from "./pages/ProfilePage.js";
 import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
+import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 
 if (!import.meta.env.VITE_API_URL) {
   console.info(
@@ -575,7 +576,7 @@ document.body.addEventListener("click", (e) => {
   }
   const kind = pill.getAttribute("data-home-pill");
   if (kind === "post") {
-    setHash("/post");
+    navigateTo("/post");
     return;
   }
   if (kind === "trending") {
@@ -586,17 +587,19 @@ document.body.addEventListener("click", (e) => {
   }
   if (kind === "cat") {
     const catId = pill.getAttribute("data-cat") || "";
-    const next = new URLSearchParams();
     if (catId) {
-      next.set("cat", catId);
+      const slug = slugForApiCategoryId(catId);
+      if (slug) {
+        window.history.pushState(null, "", `/category/${slug}`);
+      } else {
+        const next = new URLSearchParams();
+        next.set("cat", catId);
+        window.history.pushState(null, "", `/browse?${next}`);
+      }
+    } else {
+      window.history.pushState(null, "", "/browse");
     }
-    const qs = next.toString();
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
-    );
-    render();
+    void render();
   }
 });
 
@@ -1486,7 +1489,7 @@ function initFeedbackPageUi() {
   root.querySelector("[data-copy-feedback-link]")?.addEventListener("click", async () => {
     const el = root.querySelector("[data-copy-feedback-link]");
     const link =
-      el?.getAttribute("data-link") || `${window.location.origin}${window.location.pathname}#/profile/adverts`;
+      el?.getAttribute("data-link") || `${window.location.origin}/profile/adverts`;
     try {
       await navigator.clipboard.writeText(link);
       showNuveloToast("Link copied!");
@@ -2133,6 +2136,11 @@ const formatListingCountLabel = (n) => {
 
 const apiCategoryIdForSlug = (slug) => CATEGORY_SLUGS[slug] || slug;
 
+const slugForApiCategoryId = (apiId) => {
+  const row = ADS_CATEGORIES.find((c) => apiCategoryIdForSlug(c.slug) === apiId);
+  return row?.slug || "";
+};
+
 const categoryDisplayName = (apiId) => {
   if (apiId == null || apiId === "") {
     return "";
@@ -2230,9 +2238,18 @@ const fetchListing = async (id) => {
   }
 };
 
-const parseHash = () => {
-  const raw = window.location.hash.replace(/^#\!?/, "") || "/";
-  const parts = raw.split("/").filter(Boolean);
+const normalizePathname = () => {
+  let p = window.location.pathname || "/";
+  if (p.length > 1 && p.endsWith("/")) {
+    p = p.slice(0, -1);
+  }
+  return p;
+};
+
+const parseRoute = () => {
+  const pathname = normalizePathname();
+  const parts =
+    pathname === "/" ? [] : pathname.slice(1).split("/").map((seg) => decodeURIComponent(seg));
   if (parts[0] === "listing" && parts[1]) {
     return { view: "detail", id: parts[1] };
   }
@@ -2254,7 +2271,7 @@ const parseHash = () => {
       return { view: "events" };
     }
     const catId = CATEGORY_SLUGS[slug] || slug;
-    return { view: "list", categorySlug: catId };
+    return { view: "list", categorySlug: catId, categoryUrlSlug: slug };
   }
   if (
     ["terms", "privacy", "cookies", "faq", "safety", "about", "contact"].includes(
@@ -2298,9 +2315,54 @@ const parseHash = () => {
   return { view: "landing" };
 };
 
-const setHash = (path) => {
-  window.location.hash = path.startsWith("#") ? path : `#${path}`;
+const navigateTo = (path, { replace = false } = {}) => {
+  const p = path.startsWith("/") ? path : `/${path}`;
+  if (replace) {
+    window.history.replaceState(null, "", p);
+  } else {
+    window.history.pushState(null, "", p);
+  }
+  void render();
 };
+
+document.addEventListener("click", (e) => {
+  const a = e.target.closest?.("a[href]");
+  if (!a) {
+    return;
+  }
+  if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) {
+    return;
+  }
+  const t = a.getAttribute("target");
+  if (t && t !== "_self") {
+    return;
+  }
+  if (a.hasAttribute("download")) {
+    return;
+  }
+  const hrefAttr = a.getAttribute("href");
+  if (!hrefAttr || hrefAttr.startsWith("#")) {
+    return;
+  }
+  let url;
+  try {
+    url = new URL(hrefAttr, window.location.origin);
+  } catch {
+    return;
+  }
+  if (url.origin !== window.location.origin) {
+    return;
+  }
+  const p = url.pathname;
+  if (p === "/admin.html" || p.endsWith("/admin.html")) {
+    return;
+  }
+  if (/\.(png|jpe?g|gif|webp|svg|ico|css|js|map|woff2?|ttf|eot|pdf|zip|xml|txt)$/i.test(p)) {
+    return;
+  }
+  e.preventDefault();
+  navigateTo(`${url.pathname}${url.search}`);
+});
 
 const listingImageUrl = (listing) => {
   const u = listing.images?.[0];
@@ -2428,11 +2490,11 @@ const buildListingCardEl = (listing, opts = {}) => {
   card.className = `lc lc--${viewMode === "list" ? "list" : "grid"}${isDonation ? " lc--donation" : ""}${claimed ? " lc--claimed" : ""}`;
   card.tabIndex = 0;
   card.setAttribute("role", "link");
-  card.addEventListener("click", () => setHash(`/listing/${listing.id}`));
+  card.addEventListener("click", () => navigateTo(`/listing/${listing.id}`));
   card.addEventListener("keydown", (ev) => {
     if (ev.key === "Enter" || ev.key === " ") {
       ev.preventDefault();
-      setHash(`/listing/${listing.id}`);
+      navigateTo(`/listing/${listing.id}`);
     }
   });
 
@@ -2464,7 +2526,7 @@ const buildListingCardEl = (listing, opts = {}) => {
 
   card.querySelector("[data-donation-cta]")?.addEventListener("click", (e) => {
     e.stopPropagation();
-    setHash(`/listing/${listing.id}`);
+    navigateTo(`/listing/${listing.id}`);
   });
 
   const saveBtn = card.querySelector("[data-save-listing]");
@@ -2502,7 +2564,7 @@ const renderLanding = async () => {
   const trending = sortListings([...listings], "popular").slice(0, 24);
 
   const catRows = [
-    `<a class="jiji-cat-row" href="#/events">
+    `<a class="jiji-cat-row" href="/events">
       <span class="jiji-cat-row__thumb" aria-hidden="true">🎉</span>
       <span class="jiji-cat-row__mid">
         <span class="jiji-cat-row__name">Events</span>
@@ -2514,7 +2576,7 @@ const renderLanding = async () => {
     const catId = apiCategoryIdForSlug(row.slug);
     const n = counts[catId] ?? 0;
     const countLine = formatStaticCategoryCount(row, n);
-    return `<a class="jiji-cat-row" href="#/category/${esc(row.slug)}">
+    return `<a class="jiji-cat-row" href="/category/${esc(row.slug)}">
       <span class="jiji-cat-row__thumb" aria-hidden="true">${row.icon}</span>
       <span class="jiji-cat-row__mid">
         <span class="jiji-cat-row__name">${esc(row.label)}</span>
@@ -2527,7 +2589,7 @@ const renderLanding = async () => {
 
   const pills = [
     `<button type="button" class="jiji-pill" data-home-pill="post">Post ad</button>`,
-    `<a class="jiji-pill" href="#/events">🎉 Events</a>`,
+    `<a class="jiji-pill" href="/events">🎉 Events</a>`,
     `<button type="button" class="jiji-pill jiji-pill--active" data-home-pill="trending">Trending</button>`,
     ...ADS_CATEGORIES.map((row) => {
       const catId = apiCategoryIdForSlug(row.slug);
@@ -2567,11 +2629,11 @@ const renderLanding = async () => {
         </aside>
         <div class="jiji-home__main">
           <div class="jiji-promo-strip" aria-label="Promotions">
-            <a href="#/post" class="jiji-promo-card jiji-promo-card--a">Post your first ad</a>
-            <a href="#/browse" class="jiji-promo-card jiji-promo-card--b">How to buy safely</a>
-            <a href="#/about" class="jiji-promo-card jiji-promo-card--c">Verified sellers</a>
-            <a href="#/faq" class="jiji-promo-card jiji-promo-card--d">How to sell</a>
-            <a href="#/safety" class="jiji-promo-card jiji-promo-card--e">Safety tips</a>
+            <a href="/post" class="jiji-promo-card jiji-promo-card--a">Post your first ad</a>
+            <a href="/browse" class="jiji-promo-card jiji-promo-card--b">How to buy safely</a>
+            <a href="/about" class="jiji-promo-card jiji-promo-card--c">Verified sellers</a>
+            <a href="/faq" class="jiji-promo-card jiji-promo-card--d">How to sell</a>
+            <a href="/safety" class="jiji-promo-card jiji-promo-card--e">Safety tips</a>
           </div>
           <div class="jiji-pills" id="home-pills">${pills}</div>
           <section class="jiji-trending" aria-label="Trending ads">
@@ -2617,12 +2679,8 @@ const renderLanding = async () => {
       next.set("loc", loc);
     }
     const qs = next.toString();
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
-    );
-    render();
+    window.history.pushState(null, "", `/browse${qs ? `?${qs}` : ""}`);
+    void render();
   });
 
   document.getElementById("home-view-grid")?.addEventListener("click", () => {
@@ -2640,7 +2698,7 @@ const renderList = async () => {
   if (!appEl) {
     return;
   }
-  const routeInfo = parseHash();
+  const routeInfo = parseRoute();
   const filters = parseBrowseParams();
   if (routeInfo.categorySlug) {
     filters.categoryId = routeInfo.categorySlug;
@@ -2696,7 +2754,7 @@ const renderList = async () => {
   const subCount = totalCount;
 
   const catChips = [
-    `<a href="#/events" class="cat-chip"><span class="cat-chip__emoji" aria-hidden="true">🎉</span><span class="cat-chip__label">Events</span></a>`,
+    `<a href="/events" class="cat-chip"><span class="cat-chip__emoji" aria-hidden="true">🎉</span><span class="cat-chip__label">Events</span></a>`,
     `<button type="button" class="cat-chip${!filters.categoryId ? " cat-chip--active" : ""}" data-cat=""><span class="cat-chip__emoji" aria-hidden="true">✨</span><span class="cat-chip__label">All</span></button>`,
     ...ADS_CATEGORIES.map((c) => {
       const apiId = apiCategoryIdForSlug(c.slug);
@@ -2737,7 +2795,7 @@ const renderList = async () => {
       <div class="filter-section">
         <h3>Categories</h3>
         <p class="muted small" style="margin:0 0 0.5rem"><strong>${filters.categoryId ? esc(categoryDisplayName(filters.categoryId)) : "All categories"}</strong></p>
-        <a href="#/browse" class="small">All in category · ${esc(formatListingCountLabel(subCount))}</a>
+        <a href="/browse" class="small">All in category · ${esc(formatListingCountLabel(subCount))}</a>
       </div>
       <div class="filter-section">
         <h3>Location</h3>
@@ -2794,7 +2852,6 @@ const renderList = async () => {
     </div>
   `;
 
-  const hashStr = window.location.hash || "#/browse";
   const pageHref = (p) => {
     const n = new URLSearchParams(window.location.search);
     if (p <= 1) {
@@ -2803,7 +2860,7 @@ const renderList = async () => {
       n.set("page", String(p));
     }
     const qs = n.toString();
-    return `${window.location.pathname}${qs ? `?${qs}` : ""}${hashStr}`;
+    return `${window.location.pathname}${qs ? `?${qs}` : ""}`;
   };
 
   let pagHtml = "";
@@ -2832,7 +2889,7 @@ const renderList = async () => {
   appEl.innerHTML = `
     <div class="feed-layout feed-layout--browse">
       <nav class="breadcrumb-jiji" aria-label="Breadcrumb">
-        <a href="#/browse">All ads</a>${bcCat}
+        <a href="/browse">All ads</a>${bcCat}
       </nav>
       <div class="category-rail-wrap category-strip-wrap browse-cat-rail-mobile">
         <div class="category-strip" id="category-rail" role="tablist">${catChips}</div>
@@ -2914,7 +2971,7 @@ const renderList = async () => {
       window.history.replaceState(
         null,
         "",
-        `${window.location.pathname}${n.toString() ? `?${n}` : ""}${window.location.hash}`
+        `${window.location.pathname}${n.toString() ? `?${n}` : ""}`
       );
       render();
     });
@@ -2923,7 +2980,7 @@ const renderList = async () => {
   appEl.querySelectorAll(".browse-filter-clear-btn").forEach((btn) => {
     btn.addEventListener("click", (ev) => {
       ev.preventDefault();
-      window.history.replaceState(null, "", `${window.location.pathname}#/browse`);
+      window.history.replaceState(null, "", "/browse");
       browseListingsCache = { key: "", data: [] };
       render();
     });
@@ -3009,7 +3066,7 @@ function wireBrowseFilterForm(form) {
     window.history.replaceState(
       null,
       "",
-      `${window.location.pathname}${qs ? `?${qs}` : ""}${window.location.hash || "#/browse"}`
+      `${window.location.pathname}${qs ? `?${qs}` : ""}`
     );
     closeFilterSheet();
     render();
@@ -3039,11 +3096,11 @@ const renderDetail = async (id) => {
   }
   if (loadFailed) {
     appEl.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>
-      <p><a href="#/browse">← Back to listings</a></p>`;
+      <p><a href="/browse">← Back to listings</a></p>`;
     return;
   }
   if (!listing) {
-    appEl.innerHTML = `<p>Listing not found. <a href="#/browse">Back to browse</a></p>`;
+    appEl.innerHTML = `<p>Listing not found. <a href="/browse">Back to browse</a></p>`;
     return;
   }
 
@@ -3109,7 +3166,7 @@ const renderDetail = async (id) => {
   const bcTitle = excerptOneLine(listing.title, 40);
   const descRaw = String(listing.description || "");
   const descLong = descRaw.length > 320;
-  const catBrowseHref = `${window.location.pathname}?cat=${encodeURIComponent(listing.categoryId)}#/browse`;
+  const catBrowseHref = `/browse?cat=${encodeURIComponent(listing.categoryId)}`;
 
   const pillsRow = isDonation
     ? `<span class="pill pill--free">FREE</span><span class="pill">${esc(
@@ -3178,7 +3235,7 @@ const renderDetail = async (id) => {
           <p class="small muted" id="detail-phone-reveal" hidden style="margin:0.5rem 0 0">Phone: use the Nuvelo app to contact the seller securely.</p>
           <button type="button" class="btn btn--outline" style="width:100%;margin-top:0.5rem;border-radius:8px" id="detail-callback">Request call back</button>
           <hr style="border:0;border-top:1px solid var(--purple-border);margin:1rem 0" />
-          <p style="margin:0;font-weight:700"><a href="#/browse">${esc(listing.sellerName || "Seller")}</a></p>
+          <p style="margin:0;font-weight:700"><a href="/browse">${esc(listing.sellerName || "Seller")}</a></p>
           <p class="muted small">Verified seller · 1+ years on Nuvelo</p>
           <p class="muted small">Typically replies within an hour</p>
           <button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-contact">Start chat</button>
@@ -3201,7 +3258,7 @@ const renderDetail = async (id) => {
 
   appEl.innerHTML = `
     <nav class="breadcrumb-jiji" aria-label="Breadcrumb">
-      <a href="#/browse">All ads</a> ›
+      <a href="/browse">All ads</a> ›
       <a href="${catBrowseHref}">${esc(categoryDisplayName(listing.categoryId))}</a> ›
       <span class="muted">${esc(bcTitle)}</span>
     </nav>
@@ -3241,7 +3298,7 @@ const renderDetail = async (id) => {
         ${donationDetailsSection}
         ${fieldRows ? `<section><h2 class="site-footer__heading" style="margin-top:1rem">Details</h2>${fieldRows}</section>` : ""}
         ${safetySection}
-        <p class="small" style="margin-top:1rem"><a href="#/post" class="btn btn--link">Post ad like this</a></p>
+        <p class="small" style="margin-top:1rem"><a href="/post" class="btn btn--link">Post ad like this</a></p>
       </div>
       ${asideBlock}
     </div>
@@ -3347,6 +3404,8 @@ const renderDetail = async (id) => {
   document.getElementById("detail-report")?.addEventListener("click", () => {
     window.alert("Thanks. This listing has been flagged for moderator review.");
   });
+
+  applyListingPageMeta(listing);
 };
 
 const eventDateFmt = (iso) =>
@@ -3397,7 +3456,7 @@ const renderEventsList = async () => {
 
   appEl.innerHTML = `
     <div class="feed-layout feed-layout--browse">
-      <nav class="breadcrumb-jiji"><a href="#/">Home</a> › <span>Events</span></nav>
+      <nav class="breadcrumb-jiji"><a href="/">Home</a> › <span>Events</span></nav>
       <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="events-filter-open">${filtersOpenLabel}</button>
       <div class="browse-layout browse-layout--jiji">
         <aside class="browse-sidebar browse-sidebar--desktop">
@@ -3427,7 +3486,7 @@ const renderEventsList = async () => {
         <div class="browse-main">
           <div class="sort-bar sort-bar--jiji">
             <h1 class="feed-head__title" style="margin:0">🎉 Events in Hungary</h1>
-            <a class="btn btn--primary" href="#/post">Create event</a>
+            <a class="btn btn--primary" href="/post">Create event</a>
           </div>
           <div class="ad-grid--lc" id="events-grid" data-view="grid">
             ${rows.map((e) => `<article class="lc lc--grid event-card" role="link" tabindex="0" data-event-id="${esc(e.id)}">
@@ -3456,7 +3515,7 @@ const renderEventsList = async () => {
     });
     if (fd.get("efree")) q.set("efree", "1");
     else q.delete("efree");
-    window.history.replaceState(null, "", `${window.location.pathname}${q.toString() ? `?${q}` : ""}#/events`);
+    window.history.replaceState(null, "", `/events${q.toString() ? `?${q}` : ""}`);
     render();
   };
   form?.addEventListener("submit", (e) => {
@@ -3464,11 +3523,11 @@ const renderEventsList = async () => {
     applyFilter(form);
   });
   document.getElementById("events-filter-clear")?.addEventListener("click", () => {
-    window.history.replaceState(null, "", `${window.location.pathname}#/events`);
+    window.history.replaceState(null, "", "/events");
     render();
   });
   appEl.querySelectorAll("[data-event-id]").forEach((el) => {
-    const go = () => setHash(`/event/${el.getAttribute("data-event-id")}`);
+    const go = () => navigateTo(`/event/${el.getAttribute("data-event-id")}`);
     el.addEventListener("click", go);
     el.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter" || ev.key === " ") {
@@ -3499,7 +3558,7 @@ const renderEventDetail = async (eventId) => {
   if (!appEl) return;
   const row = getAllEvents().find((x) => x.id === eventId);
   if (!row) {
-    appEl.innerHTML = `<p>Event not found. <a href="#/events">Back to events</a></p>`;
+    appEl.innerHTML = `<p>Event not found. <a href="/events">Back to events</a></p>`;
     return;
   }
   const user = getUser();
@@ -3516,7 +3575,7 @@ const renderEventDetail = async (eventId) => {
   }
 
   appEl.innerHTML = `
-    <nav class="breadcrumb-jiji"><a href="#/events">Events</a> › <span>${esc(row.title)}</span></nav>
+    <nav class="breadcrumb-jiji"><a href="/events">Events</a> › <span>${esc(row.title)}</span></nav>
     <div class="detail-jiji-wrap">
       <div class="detail-jiji-main">
         <div class="detail-gallery__main"><img src="${esc(row.image)}" alt="" /></div>
@@ -3634,7 +3693,7 @@ const renderProfile = async (section) => {
       <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
         <h1 style="margin:0 0 0.5rem">${esc(title)}</h1>
         <p class="muted">${esc(friendlyNetworkError(e))}</p>
-        <p><a href="#/browse">Browse listings</a></p>
+        <p><a href="/browse">Browse listings</a></p>
       </section>
     `;
     return;
@@ -3732,7 +3791,7 @@ const renderStaticPage = async (slug) => {
       "Frequently Asked Questions",
       `
       <h2>General</h2>
-      <p><strong>1) How do I post an ad?</strong><br />Go to <code>#/post</code>, complete the required fields, add photos, and submit. Listings may be moderated before they appear publicly.</p>
+      <p><strong>1) How do I post an ad?</strong><br />Go to <code>/post</code>, complete the required fields, add photos, and submit. Listings may be moderated before they appear publicly.</p>
       <p><strong>2) Do I need an account to browse?</strong><br />No. Browsing is open. You need an account to publish listings and use direct contact features.</p>
       <p><strong>3) How do I contact a seller?</strong><br />Open the listing page and use the available contact action. Always keep conversations on-platform when possible.</p>
       <p><strong>4) Is posting free?</strong><br />Core posting is currently free during MVP. Paid promotion features may be introduced later.</p>
@@ -3785,7 +3844,7 @@ const renderStaticPage = async (slug) => {
   };
 
   appEl.innerHTML =
-    pages[slug] || staticPageShell("Page not found", `<p>We could not find that page. <a href="#/">Return home</a>.</p>`);
+    pages[slug] || staticPageShell("Page not found", `<p>We could not find that page. <a href="/">Return home</a>.</p>`);
 
   if (slug === "contact") {
     document.getElementById("contact-form")?.addEventListener("submit", (e) => {
@@ -4047,7 +4106,7 @@ const renderPost = async () => {
         <textarea name="images" required rows="4" placeholder="Drag photos here or paste URLs (https://…), one per line"></textarea>
       </label>
       <div class="button-row" style="justify-content:space-between">
-        <a class="btn btn--ghost" href="#/browse">Cancel</a>
+        <a class="btn btn--ghost" href="/browse">Cancel</a>
         <button type="submit" class="btn btn--primary" style="border-radius:8px">Post Ad</button>
       </div>
       <p class="muted small" id="post-msg"></p>
@@ -4175,12 +4234,12 @@ const renderPost = async () => {
         custom.push(eventRow);
         writeJsonStore(EVENTS_STORE_KEY, custom);
         msg.textContent = "Your event is live. Redirecting…";
-        setTimeout(() => setHash(`/event/${eventRow.id}`), 700);
+        setTimeout(() => navigateTo(`/event/${eventRow.id}`), 700);
         return;
       }
       const created = await createListing(payload, user.id);
       msg.textContent = "Your listing is live. Redirecting…";
-      setTimeout(() => setHash(`/listing/${created.id}`), 800);
+      setTimeout(() => navigateTo(`/listing/${created.id}`), 800);
     } catch (err) {
       console.error(err);
       msg.textContent = err?.message || "Could not create listing. Check your API connection and try again.";
@@ -4204,11 +4263,11 @@ const setNavDrawerOpen = (open) => {
 };
 
 const render = async () => {
+  migrateLegacyHashToPath();
   setNavDrawerOpen(false);
   updateAuthUi();
-  const route = parseHash();
-  /** Normalized hash for prefix checks (supports `#!/…` and `#/…`). */
-  const hash = (window.location.hash || "#/").replace(/^#!\/?/, "#/");
+  const route = parseRoute();
+  applyRouteMeta(route);
   document.body.classList.toggle("is-landing", route.view === "landing");
   syncHeaderChrome(route);
   const appEl = mainShell();
@@ -4233,17 +4292,13 @@ const render = async () => {
       </div>
     `;
     /*
-     * Profile routes (hash router pattern):
-     *   import { renderProfilePage } from './pages/ProfilePage.js';
-     *   import { renderSettingsPage } from './pages/ProfileSettingsPage.js';
-     * Check #/profile/settings BEFORE #/profile — settings is a prefix of profile/settings.
-     * renderProfile* load data, set app.innerHTML, then initSettingsHandlers / sign-out binds.
+     * Profile routes: /profile/settings/* before /profile/* (settings is a prefix).
      */
-    if (hash.startsWith("#/profile/settings") && route.view === "profileSettings") {
+    if (route.view === "profileSettings") {
       await renderProfileSettings(route.settingsSection);
       return;
     }
-    if (hash.startsWith("#/profile") && route.view === "profile") {
+    if (route.view === "profile") {
       await renderProfile(route.section);
       return;
     }
@@ -4274,7 +4329,7 @@ const render = async () => {
       <section class="stack">
         <h2>We could not load this page.</h2>
         <p class="muted">${esc(friendlyNetworkError(err))}</p>
-        <p><a href="#/">Go to home</a> · <a href="#/browse">Browse listings</a></p>
+        <p><a href="/">Go to home</a> · <a href="/browse">Browse listings</a></p>
       </section>
     `;
   } finally {
@@ -4309,11 +4364,8 @@ function onAuthSuccess(user) {
     }
   }
   closeModal();
-  const prev = window.location.hash;
-  window.location.hash = "#/profile";
-  if (window.location.hash === prev) {
-    void render().catch((e) => console.error(e));
-  }
+  window.history.pushState(null, "", "/profile");
+  void render().catch((e) => console.error(e));
 }
 
 navBurgerEl()?.addEventListener("click", () => {
@@ -4331,19 +4383,19 @@ document.body.addEventListener("click", (e) => {
   }
   const catVal = btn.getAttribute("data-cat") ?? "";
   const next = new URLSearchParams(window.location.search);
+  next.delete("page");
   if (catVal) {
-    next.set("cat", catVal);
+    next.delete("cat");
+    const slug = slugForApiCategoryId(catVal);
+    const path = slug ? `/category/${slug}` : "/browse";
+    const qs = next.toString();
+    window.history.replaceState(null, "", `${path}${qs ? `?${qs}` : ""}`);
   } else {
     next.delete("cat");
+    const qs = next.toString();
+    window.history.replaceState(null, "", `/browse${qs ? `?${qs}` : ""}`);
   }
-  next.delete("page");
-  const qs = next.toString();
-  window.history.replaceState(
-    null,
-    "",
-    `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
-  );
-  render();
+  void render();
 });
 
 document.body.addEventListener("click", (e) => {
@@ -4355,9 +4407,9 @@ document.body.addEventListener("click", (e) => {
     window.history.replaceState(
       null,
       "",
-      `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
+      `${window.location.pathname}${qs ? `?${qs}` : ""}`
     );
-    render();
+    void render();
     return;
   }
   const drawerLink = e.target.closest("#nav-drawer a[href]");
@@ -4372,18 +4424,14 @@ document.body.addEventListener("click", (e) => {
 });
 
 document.body.addEventListener("change", (e) => {
-  const hid = window.location.hash || "#/browse";
+  const path = window.location.pathname || "/browse";
   if (e.target.id === "browse-sort-select") {
     const next = new URLSearchParams(window.location.search);
     next.set("sort", e.target.value);
     next.delete("page");
     const qs = next.toString();
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${qs ? `?${qs}` : ""}${hid}`
-    );
-    render();
+    window.history.replaceState(null, "", `${path}${qs ? `?${qs}` : ""}`);
+    void render();
     return;
   }
   if (e.target.id === "browse-time-select") {
@@ -4396,12 +4444,8 @@ document.body.addEventListener("change", (e) => {
     }
     next.delete("page");
     const qs = next.toString();
-    window.history.replaceState(
-      null,
-      "",
-      `${window.location.pathname}${qs ? `?${qs}` : ""}${hid}`
-    );
-    render();
+    window.history.replaceState(null, "", `${path}${qs ? `?${qs}` : ""}`);
+    void render();
   }
 });
 
@@ -4423,11 +4467,7 @@ const submitBrowseSearchFromForm = (form) => {
   next.delete("page");
   browseListingsCache = { key: "", data: [] };
   const qs = next.toString();
-  window.history.replaceState(
-    null,
-    "",
-    `${window.location.pathname}${qs ? `?${qs}` : ""}#/browse`
-  );
+  window.history.replaceState(null, "", `/browse${qs ? `?${qs}` : ""}`);
 };
 
 document.getElementById("header-search-form")?.addEventListener("submit", (e) => {
@@ -4451,7 +4491,9 @@ document.getElementById("drawer-search-form")?.addEventListener("submit", (e) =>
   void render();
 });
 
-window.addEventListener("hashchange", render);
+window.addEventListener("popstate", () => {
+  void render();
+});
 window.addEventListener(
   "scroll",
   () => {

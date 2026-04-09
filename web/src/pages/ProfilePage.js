@@ -6,9 +6,15 @@ const esc = (s) => {
   return d.innerHTML;
 };
 
-/** @param {string} hash */
-export function getProfileSectionFromHash(hash = typeof location !== "undefined" ? location.hash : "") {
-  const parts = hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+/** @param {string} pathname */
+export function getProfileSectionFromPathname(
+  pathname = typeof location !== "undefined" ? location.pathname : "/"
+) {
+  let p = pathname || "/";
+  if (p.length > 1 && p.endsWith("/")) {
+    p = p.slice(0, -1);
+  }
+  const parts = p.replace(/^\/+/, "").split("/").filter(Boolean);
   if (parts[0] !== "profile") {
     return "adverts";
   }
@@ -196,7 +202,7 @@ function renderAdvertRows(listings) {
   return listings
     .map(
       (ad) => `
-    <a href="#/listing/${encodeURIComponent(String(ad.id))}" class="advert-row advert-row--saved-card">
+    <a href="/listing/${encodeURIComponent(String(ad.id))}" class="advert-row advert-row--saved-card">
       <div class="advert-row__media">
         ${
           listingThumb(ad)
@@ -247,7 +253,7 @@ function renderMyAdvertRowsWithStatus(listings, { demo = false } = {}) {
       if (demo) {
         return `<div class="advert-row advert-row--demo" role="article">${body}</div>`;
       }
-      return `<a href="#/listing/${encodeURIComponent(String(ad.id))}" class="advert-row my-advert-row">${body}</a>`;
+      return `<a href="/listing/${encodeURIComponent(String(ad.id))}" class="advert-row my-advert-row">${body}</a>`;
     })
     .join("");
 }
@@ -263,13 +269,13 @@ export function renderProfileMobileTabs(activeSection) {
   };
   return `
   <nav class="profile-mobile-tabs" aria-label="Profile" data-profile-mobile-tabs>
-    ${item("#/profile/adverts", "adverts", "Ads")}
-    ${item("#/profile/messages", "messages", "Messages")}
-    ${item("#/profile/saved", "saved", "Saved")}
-    ${item("#/profile/performance", "performance", "Stats")}
-    ${item("#/profile/notifications", "notifications", "Alerts")}
-    ${item("#/profile/feedback", "feedback", "Feedback")}
-    ${item("#/profile/settings", "settings", "Settings")}
+    ${item("/profile/adverts", "adverts", "Ads")}
+    ${item("/profile/messages", "messages", "Messages")}
+    ${item("/profile/saved", "saved", "Saved")}
+    ${item("/profile/performance", "performance", "Stats")}
+    ${item("/profile/notifications", "notifications", "Alerts")}
+    ${item("/profile/feedback", "feedback", "Feedback")}
+    ${item("/profile/settings", "settings", "Settings")}
   </nav>`;
 }
 
@@ -294,7 +300,7 @@ export function renderProfileSidebar(user, section) {
   <aside class="profile-sidebar profile-sidebar--jiji" data-profile-sidebar>
     <div class="profile-sidebar-card">
       <div class="profile-sidebar-card__head">
-        <a href="#/profile/settings" class="profile-settings-pill${section === "settings" ? " profile-settings-pill--active" : ""}" title="Settings">
+        <a href="/profile/settings" class="profile-settings-pill${section === "settings" ? " profile-settings-pill--active" : ""}" title="Settings">
           <span>SETTINGS</span>
           <span class="profile-settings-pill__ico" aria-hidden="true">⚙️</span>
         </a>
@@ -309,18 +315,18 @@ export function renderProfileSidebar(user, section) {
         <p class="profile-phone profile-phone--accent">${esc(phone)}</p>
       </div>
       <nav class="profile-sidenav profile-sidenav--jiji">
-        ${navItem("#/post", "promo", "Boost your reach", "😍")}
-        ${navItem("#/profile/followers", "followers", "Followers", "👥")}
-        ${navItem("#/profile/adverts", "adverts", "My adverts", "📋")}
-        ${navItem("#/profile/feedback", "feedback", "Feedback", "😊")}
-        ${navItem("#/faq", "faq", "Frequently Asked Questions", "❓")}
+        ${navItem("/post", "promo", "Boost your reach", "😍")}
+        ${navItem("/profile/followers", "followers", "Followers", "👥")}
+        ${navItem("/profile/adverts", "adverts", "My adverts", "📋")}
+        ${navItem("/profile/feedback", "feedback", "Feedback", "😊")}
+        ${navItem("/faq", "faq", "Frequently Asked Questions", "❓")}
       </nav>
       <div class="profile-sidenav-extra muted small">
         <p class="profile-sidenav-extra__title">Quick links</p>
-        ${navItem("#/profile/messages", "messages", "Messages", "💬")}
-        ${navItem("#/profile/saved", "saved", "Saved ads", "🔖")}
-        ${navItem("#/profile/notifications", "notifications", "Notifications", "🔔")}
-        ${navItem("#/profile/performance", "performance", "Performance", "📊")}
+        ${navItem("/profile/messages", "messages", "Messages", "💬")}
+        ${navItem("/profile/saved", "saved", "Saved ads", "🔖")}
+        ${navItem("/profile/notifications", "notifications", "Notifications", "🔔")}
+        ${navItem("/profile/performance", "performance", "Performance", "📊")}
       </div>
       <div class="profile-sidebar__foot">
         <button type="button" class="btn btn--pill btn--signin profile-sign-out-btn" id="profile-sign-out">
@@ -470,11 +476,11 @@ function renderPerformanceSection() {
       </div>
       <div class="perf-metrics-grid">${metricCards}</div>
       <div class="perf-summary-row">
-        <a href="#/profile/followers" class="perf-summary-card">
+        <a href="/profile/followers" class="perf-summary-card">
           <span>New visitors</span>
           <span class="perf-summary-card__arrow" aria-hidden="true">›</span>
         </a>
-        <a href="#/profile/messages" class="perf-summary-card">
+        <a href="/profile/messages" class="perf-summary-card">
           <span>New chats</span>
           <span class="perf-summary-card__arrow" aria-hidden="true">›</span>
         </a>
@@ -484,7 +490,7 @@ function renderPerformanceSection() {
 
 function renderFeedbackSection(user) {
   const uid = esc(user.id || "me");
-  const profileLink = `${typeof location !== "undefined" ? location.origin : ""}${typeof location !== "undefined" ? location.pathname : "/"}#/profile/adverts?ref=${uid}`;
+  const profileLink = `${typeof location !== "undefined" ? location.origin : ""}/profile/adverts?ref=${uid}`;
   return `
     <div class="feedback-jiji" data-feedback-root>
       <div class="feedback-jiji__header">
@@ -521,10 +527,10 @@ function renderFeedbackSection(user) {
 
 /**
  * @param {object} user — { name, phone, avatarUrl, role, adverts?, savedAds? }
- * @param {string} [sectionFromRoute] — from router; falls back to hash
+ * @param {string} [sectionFromRoute] — from router; falls back to pathname
  */
 export function renderProfilePage(user, sectionFromRoute) {
-  const section = sectionFromRoute || getProfileSectionFromHash();
+  const section = sectionFromRoute || getProfileSectionFromPathname();
   const mainExtra = section === "messages" ? " profile-content--messages" : "";
 
   return `
@@ -576,7 +582,7 @@ function renderMyAdverts(user) {
     }
     <div class="advert-row-list my-adverts-list">${renderMyAdvertRowsWithStatus(display, { demo: useDemo })}</div>
     <div class="profile-cta-row">
-      <a href="#/post" class="btn btn--primary">Post an ad</a>
+      <a href="/post" class="btn btn--primary">Post an ad</a>
     </div>`;
 }
 
@@ -587,7 +593,7 @@ function renderSavedAds(user) {
     ${
       saved.length === 0
         ? `<div class="profile-empty-state"><p>No saved ads yet. Tap the heart on any listing to save it here.</p>
-           <p><a href="#/browse" class="btn btn--primary">Browse ads</a></p></div>`
+           <p><a href="/browse" class="btn btn--primary">Browse ads</a></p></div>`
         : `<div class="profile-saved-grid">${renderAdvertRows(saved)}</div>`
     }`;
 }
