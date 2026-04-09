@@ -5220,12 +5220,74 @@ body.is-landing .jiji-hero {
 }
 
 .btn--settings-ready:not(:disabled) {
-  background: #2d8c4e;
+  background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
   color: #fff;
+  box-shadow: 0 2px 12px rgba(249, 115, 22, 0.35);
 }
 
 .profile-section-header--settings-jiji {
   border-bottom: 1px solid #e2e8f0;
+}
+
+/* /profile/settings — Nuvelo orange accents (sidebar + form; scoped to settings layout) */
+.profile-layout--settings-jiji .profile-sidenav-item.active {
+  color: var(--orange-dark);
+  font-weight: 600;
+  background: rgba(249, 115, 22, 0.1);
+}
+
+.profile-layout--settings-jiji .profile-sidenav-item.active svg {
+  color: var(--orange);
+}
+
+.profile-layout--settings-jiji .profile-phone--accent {
+  color: var(--orange);
+}
+
+.profile-layout--settings-jiji .profile-sign-out-btn {
+  color: var(--orange);
+  border-color: rgba(249, 115, 22, 0.45);
+}
+
+.profile-layout--settings-jiji .profile-sign-out-btn:hover {
+  color: var(--orange-dark);
+  background: rgba(249, 115, 22, 0.08);
+  border-color: var(--orange);
+}
+
+.profile-layout--settings-jiji .settings-jiji-form .form-input:focus,
+.profile-layout--settings-jiji .settings-jiji-form .form-textarea:focus,
+.profile-layout--settings-jiji .settings-jiji-form select.form-input:focus {
+  border-color: var(--orange);
+  outline: none;
+  box-shadow: 0 0 0 1px var(--orange);
+}
+
+.profile-layout--settings-jiji .settings-jiji .phone-prefix-field:focus-within {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 1px var(--orange);
+}
+
+.profile-layout--settings-jiji .settings-account-photo__trigger:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 3px;
+}
+
+.profile-layout--settings-jiji .settings-account-photo__circle:hover .settings-account-photo__overlay,
+.profile-layout--settings-jiji .settings-account-photo__trigger:focus-visible .settings-account-photo__overlay {
+  background: rgba(249, 115, 22, 0.55);
+  color: #fff;
+}
+
+.profile-layout--settings-jiji .settings-sidenav .signout-btn {
+  color: var(--orange);
+  border-color: rgba(249, 115, 22, 0.35);
+}
+
+.profile-layout--settings-jiji .settings-sidenav .signout-btn:hover {
+  color: var(--orange-dark);
+  background: rgba(249, 115, 22, 0.08);
+  border-color: var(--orange);
 }
 
 /* Nav user dropdown */
