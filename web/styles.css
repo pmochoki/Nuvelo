@@ -3747,6 +3747,14 @@ button.jiji-promo-card {
   padding: 2rem 1rem 1rem;
 }
 
+@media (max-width: 639px) {
+  .site-footer__grid--jiji {
+    padding-left: 16px;
+    padding-right: 16px;
+    box-sizing: border-box;
+  }
+}
+
 @media (min-width: 640px) {
   .site-footer__grid--jiji {
     grid-template-columns: repeat(2, 1fr);
@@ -3853,13 +3861,18 @@ button.jiji-promo-card {
   }
 
   .main--jiji {
-    padding-left: 0.75rem;
-    padding-right: 0.75rem;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .jiji-header__inner {
-    padding: 0.45rem 0.6rem;
+    padding: 0.45rem 16px;
     gap: 0.45rem;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .jiji-header__brand .brand__logo {
@@ -5064,6 +5077,15 @@ button.jiji-promo-card {
   padding: 0 12px 2rem;
 }
 
+@media (max-width: 639px) {
+  .profile-shell {
+    max-width: 100%;
+    width: 100%;
+    padding: 0 0 2rem;
+    box-sizing: border-box;
+  }
+}
+
 .profile-mobile-header {
   display: none;
   align-items: center;
@@ -5165,6 +5187,10 @@ button.jiji-promo-card {
 @media (max-width: 639px) {
   .profile-mobile-tabs {
     display: flex;
+    width: 100%;
+    gap: 8px;
+    padding: 0.5rem 0 0.75rem;
+    box-sizing: border-box;
   }
 
   .profile-layout--jiji .profile-sidebar--jiji {
@@ -5175,8 +5201,16 @@ button.jiji-promo-card {
     grid-template-columns: 1fr;
     gap: 12px;
     margin-top: 0.25rem;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .profile-content.profile-content--jiji {
+    width: 100%;
+    max-width: 100%;
+    margin-left: 0;
+    margin-right: 0;
+    border-radius: 16px;
   }
 }
 
@@ -6035,6 +6069,11 @@ button.jiji-promo-card {
 }
 
 .profile-layout--settings-jiji .settings-jiji-form .form-field {
+  margin-bottom: 12px;
+}
+
+.profile-layout--settings-jiji .settings-jiji-form .settings-jiji-section--photo .form-field,
+.profile-layout--settings-jiji .settings-jiji-form .settings-jiji-actions {
   margin-bottom: 0;
 }
 
@@ -6051,7 +6090,7 @@ button.jiji-promo-card {
 .profile-layout--settings-jiji .settings-jiji-form textarea.form-input {
   width: 100%;
   box-sizing: border-box;
-  padding: 0.55rem 0.75rem;
+  padding: 10px 12px;
   border: 1px solid #dddddd;
   border-radius: 8px;
   background-color: #ffffff;
@@ -6062,6 +6101,10 @@ button.jiji-promo-card {
 
 .profile-layout--settings-jiji .settings-jiji-form select.form-input {
   min-height: 2.75rem;
+  background-color: #fff;
+  color: #111111;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 .profile-layout--settings-jiji .settings-jiji-form .char-count {

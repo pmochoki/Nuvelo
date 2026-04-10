@@ -116,7 +116,7 @@ function renderContactDetailsForm(user) {
                 accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp"
                 hidden
               />
-              <p class="settings-account-photo__hint muted small">JPG, PNG or WebP. Images are stored in this browser only.</p>
+              <p class="settings-account-photo__hint muted small">JPG, PNG or WebP, max 5MB.</p>
             </div>
           </section>
 

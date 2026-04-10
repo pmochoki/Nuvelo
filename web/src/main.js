@@ -20,6 +20,7 @@ import {
   donationCollectionMeta
 } from "./data/donationConstants.js";
 import { getDisplayInitials } from "./lib/profileInitials.js";
+import { uploadUserAvatarToSupabase } from "./lib/avatarUpload.js";
 import {
   buildChatPanelHtml,
   buildMessageThreadRowHtml,
@@ -397,6 +398,34 @@ function applySupabaseSession(session) {
   writeStoredUser(cachedUser);
 }
 
+/** Prefer profiles.avatar_url when no local data-URL override is pending. */
+async function mergeProfileAvatarFromDb() {
+  if (!isSupabaseConfigured || !supabase) {
+    return;
+  }
+  const u = getUser();
+  if (!u?.id) {
+    return;
+  }
+  if (readStoredAvatarDataUrl()) {
+    return;
+  }
+  const { data, error } = await supabase.from("profiles").select("avatar_url").eq("id", u.id).maybeSingle();
+  if (error) {
+    console.error("[profiles avatar]", error);
+    return;
+  }
+  const url = data?.avatar_url;
+  if (!url || typeof url !== "string") {
+    return;
+  }
+  if (u.avatarUrl === url) {
+    return;
+  }
+  cachedUser = { ...u, avatarUrl: url };
+  writeStoredUser(cachedUser);
+}
+
 async function initAuth() {
   if (!isSupabaseConfigured || !supabase) {
     syncAuthFromStoredUser();
@@ -410,12 +439,15 @@ async function initAuth() {
     console.error(error);
   }
   applySupabaseSession(session ?? null);
+  await mergeProfileAvatarFromDb();
   updateAuthUi();
   void refreshMessageNavBadge();
 
   supabase.auth.onAuthStateChange((event, session) => {
     applySupabaseSession(session ?? null);
-    updateAuthUi();
+    void mergeProfileAvatarFromDb().then(() => {
+      updateAuthUi();
+    });
     if (event === "SIGNED_IN") {
       resetAuthModalMessages();
       void refreshMessageNavBadge();
@@ -1208,10 +1240,43 @@ function updateProfileChromeFromUser(u) {
   });
 }
 
-function persistAvatarFromFile(file) {
+async function persistAvatarFromFile(file) {
   if (!file?.type.startsWith("image/")) {
     return;
   }
+  const u = getUser();
+  if (!u?.id) {
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    showNuveloToast("Image must be 5MB or smaller.");
+    return;
+  }
+
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const url = await uploadUserAvatarToSupabase(u.id, file);
+      writeStoredAvatarDataUrl("");
+      cachedUser = { ...u, avatarUrl: url };
+      writeStoredUser(cachedUser);
+      const fnEl = document.getElementById("settings-first-name");
+      const lnEl = document.getElementById("settings-last-name");
+      const nameVal =
+        fnEl instanceof HTMLInputElement && lnEl instanceof HTMLInputElement
+          ? [fnEl.value, lnEl.value].map((s) => String(s || "").trim()).filter(Boolean).join(" ").trim()
+          : u?.name ?? "";
+      updateSettingsAvatarVisual("", nameVal, url);
+      syncGlobalAvatarImages(url);
+      updateAuthUi();
+      showNuveloToast("Profile photo saved.");
+      return;
+    } catch (err) {
+      console.error(err);
+      showNuveloToast(String(err?.message || "Could not upload photo."));
+      return;
+    }
+  }
+
   const reader = new FileReader();
   reader.onload = () => {
     const dataUrl = reader.result;
@@ -1219,9 +1284,9 @@ function persistAvatarFromFile(file) {
       return;
     }
     writeStoredAvatarDataUrl(dataUrl);
-    const u = getUser();
-    if (u) {
-      cachedUser = { ...u, avatarUrl: dataUrl };
+    const cur = getUser();
+    if (cur) {
+      cachedUser = { ...cur, avatarUrl: dataUrl };
       writeStoredUser(cachedUser);
     }
     const fnEl = document.getElementById("settings-first-name");
@@ -1229,7 +1294,7 @@ function persistAvatarFromFile(file) {
     const nameVal =
       fnEl instanceof HTMLInputElement && lnEl instanceof HTMLInputElement
         ? [fnEl.value, lnEl.value].map((s) => String(s || "").trim()).filter(Boolean).join(" ").trim()
-        : u?.name ?? "";
+        : cur?.name ?? "";
     updateSettingsAvatarVisual(dataUrl, nameVal, "");
     syncGlobalAvatarImages(dataUrl);
     updateAuthUi();
@@ -1280,14 +1345,14 @@ function bindProfileSettingsPage() {
   document.getElementById("avatar-edit-btn")?.addEventListener("click", () => {
     document.getElementById("avatar-input")?.click();
   });
-  document.getElementById("avatar-input")?.addEventListener("change", (e) => {
+  document.getElementById("avatar-input")?.addEventListener("change", async (e) => {
     const t = e.target;
     if (!(t instanceof HTMLInputElement)) {
       return;
     }
     const f = t.files?.[0];
     if (f) {
-      persistAvatarFromFile(f);
+      await persistAvatarFromFile(f);
     }
     t.value = "";
     syncDirty();
@@ -1550,14 +1615,14 @@ function bindProfileSidebarAvatar() {
   document.getElementById("profile-sidebar-avatar-btn")?.addEventListener("click", () => {
     document.getElementById("profile-sidebar-avatar-input")?.click();
   });
-  document.getElementById("profile-sidebar-avatar-input")?.addEventListener("change", (e) => {
+  document.getElementById("profile-sidebar-avatar-input")?.addEventListener("change", async (e) => {
     const t = e.target;
     if (!(t instanceof HTMLInputElement)) {
       return;
     }
     const f = t.files?.[0];
     if (f) {
-      persistAvatarFromFile(f);
+      await persistAvatarFromFile(f);
     }
     t.value = "";
   });

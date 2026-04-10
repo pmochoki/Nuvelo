@@ -1,4 +1,5 @@
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
+import { isSupabaseConfigured } from "../lib/supabaseClient.js";
 
 const esc = (s) => {
   const d = document.createElement("div");
@@ -96,27 +97,6 @@ export function buildMessageThreadRowHtml(t) {
       </div>
     </button>`;
 }
-
-const MOCK_NOTIFICATIONS = [
-  {
-    id: "n1",
-    text: "Your ad “Dog Walking” has been approved.",
-    time: "Today · 9:05 AM",
-    unread: true
-  },
-  {
-    id: "n2",
-    text: "Péter sent you a message.",
-    time: "Today · 2:14 PM",
-    unread: true
-  },
-  {
-    id: "n3",
-    text: "Your ad has 5 new views.",
-    time: "Yesterday · 4:40 PM",
-    unread: false
-  }
-];
 
 const MOCK_MY_ADVERTS = [
   {
@@ -521,7 +501,7 @@ function renderProfileSection(section, user) {
     case "messages":
       return renderMessagesLayout();
     case "notifications":
-      return renderNotifications(user);
+      return renderNotifications();
     case "followers":
       return renderFollowers(user);
     case "feedback":
@@ -535,8 +515,19 @@ function renderProfileSection(section, user) {
 
 function renderMyAdverts(user) {
   const real = user.adverts || [];
-  const useDemo = real.length === 0;
+  const useDemo = real.length === 0 && !isSupabaseConfigured;
   const display = useDemo ? MOCK_MY_ADVERTS : real;
+  const emptySignedIn =
+    isSupabaseConfigured && real.length === 0
+      ? `<div class="profile-empty-state">
+          <p>You haven't posted any ads yet. Post your first one!</p>
+          <p><a href="/post" class="btn btn--primary">Post an ad</a></p>
+        </div>`
+      : "";
+  const listOrDemo =
+    useDemo || real.length > 0
+      ? `<div class="advert-row-list my-adverts-list">${renderMyAdvertRowsWithStatus(display, { demo: useDemo })}</div>`
+      : emptySignedIn;
   return `
     <div class="profile-section-header profile-section-header--row">
       <h2>My adverts</h2>
@@ -547,7 +538,7 @@ function renderMyAdverts(user) {
         ? `<p class="muted small profile-hint">These are example listings. Post your own ad to manage it here.</p>`
         : ""
     }
-    <div class="advert-row-list my-adverts-list">${renderMyAdvertRowsWithStatus(display, { demo: useDemo })}</div>
+    ${listOrDemo}
     <div class="profile-cta-row">
       <a href="/post" class="btn btn--primary">Post an ad</a>
     </div>`;
@@ -566,20 +557,9 @@ function renderSavedAds(user) {
 }
 
 function renderNotifications() {
-  const items = MOCK_NOTIFICATIONS.map(
-    (n) => `
-    <div class="notif-item${n.unread ? " notif-item--unread" : ""}" role="listitem">
-      <span class="notif-item__dot" aria-hidden="true"></span>
-      <div class="notif-item__body">
-        <p class="notif-item__text">${esc(n.text)}</p>
-        <time class="notif-item__time">${esc(n.time)}</time>
-      </div>
-    </div>`
-  ).join("");
   return `
     <div class="profile-section-header"><h2>Notifications</h2></div>
-    <div class="notif-list" role="list">${items}</div>
-    <p class="muted small profile-hint">Sample notifications — preferences will be configurable later.</p>`;
+    <div class="profile-empty-state"><p>No notifications yet.</p></div>`;
 }
 
 function renderFollowers() {

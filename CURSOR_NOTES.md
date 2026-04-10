@@ -92,3 +92,76 @@
 1. **TASK 1** — Environment sync documented; empty commit optional (see git log).
 2. **TASK 2 + 5** — `middleware.js`, `vercel.json` / `web/vercel.json` (crons), `supabase/functions/keep-alive/index.ts`.
 3. **Documentation** — this `CURSOR_NOTES.md`.
+
+---
+
+## Mobile + messaging + storage — 2026-04-10
+
+### TASK 1 — `message_threads` / `messages` (Supabase project `ahiujuljjbozmfwoqtli`)
+
+**Completed in repo**
+
+- Added versioned migration **`supabase/migrations/20260410140000_messaging_threads_and_messages.sql`** — matches **`web/src/lib/messaging.js`** (participant_low/high, `listing_id` **text**, `body` on messages — **not** the buyer/seller-only draft from the prompt).
+- **`supabase/messaging.sql`** remains the same logical definition (manual run).
+
+**Manual (you)**
+
+1. Open **Supabase Dashboard** → **SQL Editor** for project **`ahiujuljjbozmfwoqtli`**.
+2. Paste and run **`supabase/migrations/20260410140000_messaging_threads_and_messages.sql`** (or `messaging.sql`).
+3. Optional: **Database → Replication** → enable **`messages`** for realtime chat UI.
+
+**Listings table**
+
+- The app does **not** FK `message_threads.listing_id` to Postgres `listings` — listing ids come from the **Vercel `/api` listings** model (see **`api/_listingsDb.js`** / **`nuvelo_listings`** and/or **`supabase/schema.sql`** `public.listings`). Either can exist independently; threads only store **`listing_id` as text**.
+
+**Verify**
+
+- Reload **https://nuvelo.one/profile/messages** — the schema-cache error should disappear after migration. Until then the client still shows the friendly banner (no raw SQL in UI).
+
+---
+
+### TASK 2 — Full-width mobile layout
+
+**Completed**
+
+- **`web/styles.css`**: `.main--jiji` on small viewports uses **16px** horizontal padding, **width/max-width 100%**; **`.profile-shell`** drops side padding on mobile so content aligns with the main shell; **`.profile-layout--jiji`** no longer adds extra horizontal inset; **`.profile-content`** gets **16px-radius** cards and full width on mobile; **`.jiji-header__inner`** and **footer grid** use **16px** side padding on small screens; profile tab row gets **gap: 8px** and **width 100%**.
+
+---
+
+### TASK 3 — Settings form (dropdowns / separation)
+
+**Completed**
+
+- Form fields under **`.profile-layout--settings-jiji`** use **12px** bottom spacing (with exceptions for photo block and action row).
+- **Select** fields: explicit **white** background / **#111** text, **`appearance: none`** (custom chevron rules already in stylesheet for `.form-select` where applicable).
+
+---
+
+### TASK 4 — Avatars in Supabase Storage
+
+**Completed in repo**
+
+- **`web/src/lib/avatarUpload.js`** — uploads to bucket **`avatars`**, path **`{user_id}/avatar.{ext}`**, max **5MB**, then **`profiles` upsert** for **`avatar_url`**.
+- **`web/src/main.js`** — **`persistAvatarFromFile`** uses Storage when Supabase is configured; otherwise keeps local **data URL** fallback; **`mergeProfileAvatarFromDb()`** loads **`profiles.avatar_url`** on session init; settings hint text updated to **“JPG, PNG or WebP, max 5MB.”**
+- **`supabase/storage_avatars.sql`** — bucket + RLS policies (public read, users write only under their **`auth.uid()`** folder).
+
+**Manual (you)**
+
+1. Run **`supabase/storage_avatars.sql`** in SQL Editor **or** create bucket **`avatars`** in Dashboard (public, ~5MB, image MIME types) and add equivalent policies.
+2. If upload fails with **bucket missing**, create the bucket first, then re-run policies.
+
+---
+
+### TASK 5 — Remove sample UI for signed-in production
+
+**Completed**
+
+- **My adverts**: Sample listings + **Sample** pill + hint only when **`!isSupabaseConfigured`** and the user has no ads. With Supabase + zero ads → empty state **“You haven't posted any ads yet…”** (no sample badge).
+- **Notifications**: **“No notifications yet.”** — removed mock list and disclaimer.
+
+---
+
+### Anything blocked / errors
+
+- **Supabase SQL** was **not** executed from this environment — apply migrations in the Dashboard.
+- **`storage.foldername(name)`** in **`storage_avatars.sql`** is the usual Supabase helper; if your project errors, replace checks with e.g. **`split_part(name, '/', 1) = auth.uid()::text`**.
