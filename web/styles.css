@@ -4461,6 +4461,20 @@ button.jiji-promo-card {
   color: var(--text);
 }
 
+/* Profile cards sit on white; body --text is light — use dark copy on adverts */
+.profile-content .advert-row {
+  color: #1a1a1a;
+}
+
+.profile-content .advert-row__title {
+  color: #111111;
+}
+
+.profile-content .advert-row__meta,
+.profile-content .advert-row__posted {
+  color: #4b5563;
+}
+
 .advert-row__meta {
   margin: 0;
   font-size: 0.85rem;
@@ -4988,18 +5002,52 @@ button.jiji-promo-card {
   padding: 0 12px 2rem;
 }
 
+.profile-mobile-tabs-wrap {
+  position: relative;
+  margin: 0 -2px;
+}
+
+.profile-mobile-tabs-wrap::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2rem;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(90deg, transparent, var(--purple-deep));
+}
+
+@media (min-width: 640px) {
+  .profile-mobile-tabs-wrap::after {
+    display: none;
+  }
+}
+
 .profile-mobile-tabs {
   display: none;
+  flex-wrap: nowrap;
   gap: 0.35rem;
   overflow-x: auto;
   padding: 0.5rem 0 0.75rem;
-  margin: 0 -4px;
+  margin: 0;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.profile-mobile-tabs::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 .profile-mobile-tabs__link {
   flex: 0 0 auto;
+  flex-shrink: 0;
+  min-width: fit-content;
   padding: 0.45rem 0.75rem;
   border-radius: 999px;
   font-size: 0.8rem;
@@ -5009,12 +5057,18 @@ button.jiji-promo-card {
   border: 1px solid var(--purple-border);
   background: #fff;
   white-space: nowrap;
+  scroll-snap-align: start;
 }
 
 .profile-mobile-tabs__link--active {
-  color: #fff;
+  color: #ffffff !important;
   background: var(--orange);
   border-color: var(--orange);
+}
+
+.profile-mobile-tabs__link--active:hover,
+.profile-mobile-tabs__link--active:focus-visible {
+  color: #ffffff !important;
 }
 
 @media (max-width: 639px) {

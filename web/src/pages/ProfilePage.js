@@ -236,15 +236,17 @@ export function renderProfileMobileTabs(activeSection) {
     return `<a href="${href}" class="profile-mobile-tabs__link${active}" data-profile-tab="${esc(key)}">${esc(label)}</a>`;
   };
   return `
-  <nav class="profile-mobile-tabs" aria-label="Profile" data-profile-mobile-tabs>
-    ${item("/profile/adverts", "adverts", "Ads")}
-    ${item("/profile/messages", "messages", "Messages")}
-    ${item("/profile/saved", "saved", "Saved")}
-    ${item("/profile/performance", "performance", "Stats")}
-    ${item("/profile/notifications", "notifications", "Alerts")}
-    ${item("/profile/feedback", "feedback", "Feedback")}
-    ${item("/profile/settings", "settings", "Settings")}
-  </nav>`;
+  <div class="profile-mobile-tabs-wrap">
+    <nav class="profile-mobile-tabs" aria-label="Profile" data-profile-mobile-tabs>
+      ${item("/profile/adverts", "adverts", "Ads")}
+      ${item("/profile/messages", "messages", "Messages")}
+      ${item("/profile/saved", "saved", "Saved")}
+      ${item("/profile/performance", "performance", "Stats")}
+      ${item("/profile/notifications", "notifications", "Alerts")}
+      ${item("/profile/feedback", "feedback", "Feedback")}
+      ${item("/profile/settings", "settings", "Settings")}
+    </nav>
+  </div>`;
 }
 
 /**

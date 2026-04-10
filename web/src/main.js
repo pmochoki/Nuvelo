@@ -1739,7 +1739,8 @@ function initMessagesPageUi() {
         u.id
       );
     } catch (e) {
-      showNuveloToast(String(e?.message || "Could not load messages"));
+      console.error(e);
+      showNuveloToast("Could not load this conversation. Please try again.");
       return;
     }
     empty.hidden = true;
@@ -1836,9 +1837,12 @@ function initMessagesPageUi() {
       }
     } catch (e) {
       console.error(e);
+      threadById = new Map();
+      fillThreadLists([]);
       if (banner) {
         banner.hidden = false;
-        banner.textContent = String(e?.message || "Could not load messages.");
+        banner.textContent =
+          "Messages couldn’t load right now. Please try again in a moment. If this keeps happening, contact support.";
       }
     }
   }
