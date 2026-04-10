@@ -95,9 +95,6 @@ export function applyListingJsonLd(listing) {
 }
 
 /**
- * @param {{ title: string, description: string }} p
- */
-/**
  * @param {{ title: string, description: string, ogImage?: string | null, ogType?: string }} p
  */
 export function applyDocumentMeta({ title, description, ogImage, ogType = "website" }) {
@@ -171,6 +168,16 @@ const STATIC_META = {
   safety: {
     title: "Safety Tips | Nuvelo",
     description: "Stay safe when buying and selling on Nuvelo in Hungary."
+  },
+  "how-to-buy": {
+    title: "How to Buy Safely on Nuvelo | Nuvelo",
+    description:
+      "Step-by-step guide to buying safely on Nuvelo in Hungary: vet sellers, meet in public, pay securely, and report problems."
+  },
+  "verified-sellers": {
+    title: "Verified Sellers on Nuvelo | Nuvelo",
+    description:
+      "What the Verified badge means on Nuvelo, buyer benefits, how to get verified, and how to report misuse."
   },
   contact: {
     title: "Contact Nuvelo",

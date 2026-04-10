@@ -2934,6 +2934,36 @@ body.is-landing .jiji-hero {
   color: var(--purple-light);
 }
 
+.static-info-page h2 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.static-info-page > article > p:first-of-type {
+  margin-top: 0;
+}
+
+.static-info-list {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  line-height: 1.55;
+}
+
+.static-info-list li + li {
+  margin-top: 0.35rem;
+}
+
+.static-info-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--purple-border);
+}
+
 .browse-filter-btn-mobile {
   display: flex;
   width: 100%;

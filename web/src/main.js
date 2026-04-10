@@ -2414,6 +2414,11 @@ const parseBrowseParams = () => {
     conditionNew = false;
     conditionUsed = false;
   }
+  const verifiedParam = p.get("verified");
+  let sellerFilter = p.get("sell") || "all";
+  if (verifiedParam === "true" || verifiedParam === "1") {
+    sellerFilter = "verified";
+  }
   return {
     query: p.get("q") || "",
     categoryId: p.get("cat") || "",
@@ -2424,7 +2429,7 @@ const parseBrowseParams = () => {
     conditionUsed,
     conditionMode: cond,
     priceBand: p.get("prb") || "",
-    sellerFilter: p.get("sell") || "all",
+    sellerFilter,
     sort: p.get("sort") || "latest",
     timeFilter: p.get("t") || "any",
     page: Math.max(1, parseInt(p.get("page") || "1", 10) || 1)
@@ -2671,9 +2676,17 @@ const parseRoute = () => {
     return { view: "list", categorySlug: catId, categoryUrlSlug: slug };
   }
   if (
-    ["terms", "privacy", "cookies", "faq", "safety", "about", "contact"].includes(
-      parts[0]
-    )
+    [
+      "terms",
+      "privacy",
+      "cookies",
+      "faq",
+      "safety",
+      "about",
+      "contact",
+      "how-to-buy",
+      "verified-sellers"
+    ].includes(parts[0])
   ) {
     return { view: "static", page: parts[0] };
   }
@@ -2994,8 +3007,8 @@ const renderLanding = async () => {
         <div class="jiji-home__main">
           <div class="jiji-promo-strip" aria-label="Promotions">
             <a href="/post" class="jiji-promo-card jiji-promo-card--a">Post your first ad</a>
-            <a href="/browse" class="jiji-promo-card jiji-promo-card--b">How to buy safely</a>
-            <a href="/about" class="jiji-promo-card jiji-promo-card--c">Verified sellers</a>
+            <a href="/how-to-buy" class="jiji-promo-card jiji-promo-card--b">How to buy safely</a>
+            <a href="/verified-sellers" class="jiji-promo-card jiji-promo-card--c">Verified sellers</a>
             <a href="/faq" class="jiji-promo-card jiji-promo-card--d">How to sell</a>
             <a href="/safety" class="jiji-promo-card jiji-promo-card--e">Safety tips</a>
           </div>
@@ -3464,7 +3477,17 @@ function wireBrowseFilterForm(form) {
       next.delete("prb");
     }
     next.set("cond", cond);
-    next.set("sell", sell);
+    if (sell === "verified") {
+      next.set("verified", "true");
+      next.delete("sell");
+    } else {
+      next.delete("verified");
+      if (sell === "all") {
+        next.delete("sell");
+      } else {
+        next.set("sell", sell);
+      }
+    }
     next.delete("cnew");
     next.delete("cused");
     const tEl = document.getElementById("browse-time-select");
@@ -4077,6 +4100,26 @@ const staticPageShell = (title, bodyHtml) => `
   </article>
 `;
 
+/** Static info pages with Home › current breadcrumb (matches browse breadcrumb styling). */
+const staticInfoPageShell = (h1Title, breadcrumbCurrent, bodyAfterH1Html) => `
+  <div class="stack static-info-page" style="max-width:920px;margin:0 auto;padding:0 0 2rem">
+    <nav class="breadcrumb-jiji" aria-label="Breadcrumb" style="margin-bottom:1rem;font-size:0.875rem">
+      <a href="/">Home</a> › <span aria-current="page">${esc(breadcrumbCurrent)}</span>
+    </nav>
+    <article class="stack" style="margin:0;padding:0">
+      <h1 style="margin:0 0 1rem">${esc(h1Title)}</h1>
+      ${bodyAfterH1Html}
+    </article>
+  </div>
+`;
+
+const staticInfoCtaRow = (primaryHref, primaryLabel, secondaryHref, secondaryLabel) => `
+  <div class="static-info-cta-row" role="group" aria-label="Next steps">
+    <a class="btn btn--primary" href="${esc(primaryHref)}">${esc(primaryLabel)}</a>
+    <a class="btn btn--outline" href="${esc(secondaryHref)}">${esc(secondaryLabel)}</a>
+  </div>
+`;
+
 const renderProfile = async (section) => {
   const appEl = mainShell();
   if (!appEl) {
@@ -4283,6 +4326,85 @@ const renderStaticPage = async (slug) => {
         <p id="contact-msg" class="muted"></p>
       </form>
       <p>Support email: <a href="mailto:support@nuvelo.one">support@nuvelo.one</a></p>
+      `
+    ),
+    "how-to-buy": staticInfoPageShell(
+      "How to Buy Safely on Nuvelo",
+      "How to buy safely",
+      `
+      <p>Nuvelo connects buyers with local sellers across Hungary. Most transactions are smooth and honest — but knowing the right steps protects you every time.</p>
+      <h2>Before you contact a seller</h2>
+      <ul class="static-info-list">
+        <li>Read the full listing carefully, including the description, condition, and photos.</li>
+        <li>Check the seller's profile: look for a Verified badge, positive feedback, and how long they've been active.</li>
+        <li>If the price seems too good to be true, treat it as a warning sign — not a deal.</li>
+        <li>Use the location filter to find listings close to you and avoid long-distance arrangements for physical goods.</li>
+      </ul>
+      <h2>Communicating with the seller</h2>
+      <ul class="static-info-list">
+        <li>Keep all conversations on the Nuvelo platform so there is a record of what was agreed.</li>
+        <li>Be specific: ask about the exact condition, any defects, whether a receipt or invoice is available, and the seller's preferred meeting location.</li>
+        <li>Never share your home address, banking details, or personal documents with a seller before meeting in person.</li>
+        <li>Be cautious if a seller is pushing you to move communication to WhatsApp, Telegram, or email before you've confirmed the deal.</li>
+      </ul>
+      <h2>Arranging the meetup</h2>
+      <ul class="static-info-list">
+        <li>Always meet in a busy public place during the day — a shopping center, a café, or near a police station.</li>
+        <li>Bring a friend if you are buying a high-value item.</li>
+        <li>For electronics and vehicles, test the item thoroughly before paying. Ask for serial numbers.</li>
+        <li>For rental viewings, never hand over a deposit before signing a written contract.</li>
+      </ul>
+      <h2>Making payment</h2>
+      <ul class="static-info-list">
+        <li>Pay in person, in cash or via a traceable bank transfer — never via gift cards, cryptocurrency, or irreversible wire transfers to strangers.</li>
+        <li>Never send advance payment before seeing and testing the item.</li>
+        <li>For high-value transactions (cars, furniture sets, electronics), consider using a written receipt with both parties' names, the item description, price, date, and signatures.</li>
+      </ul>
+      <h2>After the transaction</h2>
+      <ul class="static-info-list">
+        <li>Leave feedback on the seller's profile to help other buyers in the community.</li>
+        <li>If something went wrong, report the seller immediately using the "Report" button on their profile or listing.</li>
+        <li>Contact <a href="mailto:support@nuvelo.one">support@nuvelo.one</a> with screenshots and details if you believe you have been scammed.</li>
+      </ul>
+      ${staticInfoCtaRow("/browse", "Browse ads safely", "/safety", "View safety tips")}
+      `
+    ),
+    "verified-sellers": staticInfoPageShell(
+      "Verified Sellers on Nuvelo",
+      "Verified sellers",
+      `
+      <p>When you see the ✅ Verified badge on a listing or seller profile, it means that seller has completed Nuvelo's identity and trust verification process. Here's what that means for you as a buyer.</p>
+      <h2>What does Verified mean?</h2>
+      <p>A seller earns the Verified badge by completing one or more of the following:</p>
+      <ul class="static-info-list">
+        <li>Confirming their identity with a valid government-issued ID</li>
+        <li>Verifying their phone number via SMS</li>
+        <li>Verifying their email address</li>
+        <li>Building a positive feedback history with no unresolved disputes</li>
+        <li>(For businesses) Providing a company registration number</li>
+      </ul>
+      <p>The badge is manually reviewed by the Nuvelo moderation team. It is not automatically granted.</p>
+      <h2>Benefits for buyers when dealing with Verified sellers</h2>
+      <ul class="static-info-list">
+        <li><strong>Reduced risk of fraud</strong> — Verified sellers have provided real identity documents, making anonymous scams significantly harder.</li>
+        <li><strong>Accountable transactions</strong> — If a dispute arises, Nuvelo has verified contact information on file to assist with resolution.</li>
+        <li><strong>Higher listing quality</strong> — Verified sellers are held to stricter content standards; misleading or inaccurate listings are more likely to be caught and removed.</li>
+        <li><strong>Priority moderation</strong> — Reports against Verified sellers are reviewed faster.</li>
+        <li><strong>Searchable</strong> — You can filter the marketplace to show only Verified seller listings using the "Verified sellers" filter in Browse.</li>
+      </ul>
+      <h2>Does Verified mean guaranteed?</h2>
+      <p>No. The Verified badge confirms identity and reduces risk — it does not guarantee the quality of goods, the accuracy of every listing, or the outcome of any transaction. Always inspect items before paying and follow safe buying practices.</p>
+      <h2>How do I become a Verified seller?</h2>
+      <ul class="static-info-list">
+        <li>Go to your profile Settings</li>
+        <li>Look for the "Get Verified" section</li>
+        <li>Follow the steps to submit your verification documents</li>
+        <li>Expect a review within 1–2 business days</li>
+      </ul>
+      <p>Verification is free during the current MVP period.</p>
+      <h2>I see a fake Verified badge — what do I do?</h2>
+      <p>If you suspect a seller is falsely claiming to be verified, report the listing immediately. Misuse of the Verified badge violates our <a href="/terms">Terms &amp; Conditions</a> and will result in account suspension.</p>
+      ${staticInfoCtaRow("/browse?verified=true", "Browse Verified sellers", "/profile/settings", "Get verified")}
       `
     )
   };
