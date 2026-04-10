@@ -2825,14 +2825,20 @@ function openPromoInfoDialog(dialogId, triggerId) {
 }
 
 function initPromoInfoDialogs() {
-  document.body.addEventListener("click", (e) => {
-    const btn = e.target.closest("button[data-promo-dialog-open]");
-    if (!btn) return;
-    const dlgId = btn.getAttribute("data-promo-dialog-open");
-    if (!dlgId || !PROMO_DIALOG_IDS.includes(dlgId)) return;
-    e.preventDefault();
-    openPromoInfoDialog(dlgId, btn.id || "");
-  });
+  document.addEventListener(
+    "click",
+    (e) => {
+      const btn = e.target.closest("button[data-promo-dialog-open]");
+      if (!btn) return;
+      const dlgId = btn.getAttribute("data-promo-dialog-open");
+      if (!dlgId || !PROMO_DIALOG_IDS.includes(dlgId)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      openPromoInfoDialog(dlgId, btn.id || "");
+    },
+    true
+  );
 
   for (const id of PROMO_DIALOG_IDS) {
     const dialog = document.getElementById(id);
@@ -3099,6 +3105,7 @@ const renderLanding = async () => {
               id="promo-how-to-buy-btn"
               class="jiji-promo-card jiji-promo-card--b"
               data-promo-dialog-open="dialog-how-to-buy"
+              aria-haspopup="dialog"
             >
               How to buy safely
             </button>
@@ -3107,6 +3114,7 @@ const renderLanding = async () => {
               id="promo-verified-sellers-btn"
               class="jiji-promo-card jiji-promo-card--c"
               data-promo-dialog-open="dialog-verified-sellers"
+              aria-haspopup="dialog"
             >
               Verified sellers
             </button>
