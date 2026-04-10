@@ -2774,6 +2774,93 @@ document.addEventListener("click", (e) => {
   navigateTo(`${url.pathname}${url.search}`);
 });
 
+const PROMO_DIALOG_IDS = ["dialog-how-to-buy", "dialog-verified-sellers"];
+
+function promoInfoDialogFocusable(dialog) {
+  const sel =
+    "a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex='-1'])";
+  return [...dialog.querySelectorAll(sel)].filter((el) => {
+    if (el.closest("[hidden]")) return false;
+    if (el.hasAttribute("disabled")) return false;
+    return el.getAttribute("tabindex") !== "-1";
+  });
+}
+
+function promoInfoDialogTrapKeydown(e) {
+  if (e.key !== "Tab") return;
+  const dialog = e.currentTarget;
+  const list = promoInfoDialogFocusable(dialog);
+  if (list.length === 0) return;
+  const first = list[0];
+  const last = list[list.length - 1];
+  if (e.shiftKey) {
+    if (document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    }
+  } else if (document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
+  }
+}
+
+function promoInfoDialogCleanup(dialog) {
+  dialog.removeEventListener("keydown", promoInfoDialogTrapKeydown);
+  document.body.style.overflow = "";
+  const tid = dialog.dataset.returnFocus;
+  if (tid) {
+    document.getElementById(tid)?.focus();
+    delete dialog.dataset.returnFocus;
+  }
+}
+
+function openPromoInfoDialog(dialogId, triggerId) {
+  const dialog = document.getElementById(dialogId);
+  if (!dialog || typeof dialog.showModal !== "function") return;
+  dialog.dataset.returnFocus = triggerId || "";
+  document.body.style.overflow = "hidden";
+  dialog.showModal();
+  dialog.addEventListener("keydown", promoInfoDialogTrapKeydown);
+  dialog.querySelector("[data-promo-dialog-close]")?.focus();
+}
+
+function initPromoInfoDialogs() {
+  document.body.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-promo-dialog-open]");
+    if (!btn) return;
+    const dlgId = btn.getAttribute("data-promo-dialog-open");
+    if (!dlgId || !PROMO_DIALOG_IDS.includes(dlgId)) return;
+    e.preventDefault();
+    openPromoInfoDialog(dlgId, btn.id || "");
+  });
+
+  for (const id of PROMO_DIALOG_IDS) {
+    const dialog = document.getElementById(id);
+    if (!dialog) continue;
+
+    dialog.addEventListener("close", () => {
+      promoInfoDialogCleanup(dialog);
+    });
+
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    dialog.querySelectorAll("[data-promo-dialog-nav]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        const href = el.getAttribute("href");
+        dialog.close();
+        if (href) navigateTo(href);
+      });
+    });
+
+    dialog.querySelectorAll("[data-promo-dialog-close]").forEach((closeBtn) => {
+      closeBtn.addEventListener("click", () => dialog.close());
+    });
+  }
+}
+
 const listingImageUrl = (listing) => {
   const u = listing.images?.[0];
   if (typeof u === "string" && /^https?:\/\//i.test(u)) {
@@ -3007,8 +3094,22 @@ const renderLanding = async () => {
         <div class="jiji-home__main">
           <div class="jiji-promo-strip" aria-label="Promotions">
             <a href="/post" class="jiji-promo-card jiji-promo-card--a">Post your first ad</a>
-            <a href="/how-to-buy" class="jiji-promo-card jiji-promo-card--b">How to buy safely</a>
-            <a href="/verified-sellers" class="jiji-promo-card jiji-promo-card--c">Verified sellers</a>
+            <button
+              type="button"
+              id="promo-how-to-buy-btn"
+              class="jiji-promo-card jiji-promo-card--b"
+              data-promo-dialog-open="dialog-how-to-buy"
+            >
+              How to buy safely
+            </button>
+            <button
+              type="button"
+              id="promo-verified-sellers-btn"
+              class="jiji-promo-card jiji-promo-card--c"
+              data-promo-dialog-open="dialog-verified-sellers"
+            >
+              Verified sellers
+            </button>
             <a href="/faq" class="jiji-promo-card jiji-promo-card--d">How to sell</a>
             <a href="/safety" class="jiji-promo-card jiji-promo-card--e">Safety tips</a>
           </div>
@@ -5077,6 +5178,8 @@ window.addEventListener(
 );
 document.getElementById("filter-sheet-close")?.addEventListener("click", closeFilterSheet);
 document.getElementById("filter-sheet-backdrop")?.addEventListener("click", closeFilterSheet);
+
+initPromoInfoDialogs();
 
 bindHungarianLocationGlobalHandlers();
 const headerLocRootInit = document.querySelector("#header-search-form [data-loc-combobox]");

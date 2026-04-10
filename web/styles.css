@@ -2534,6 +2534,169 @@ body.is-landing .jiji-hero {
   color: var(--orange);
 }
 
+button.jiji-promo-card {
+  font: inherit;
+  font-weight: 800;
+  font-size: 0.95rem;
+  text-align: left;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  color: inherit;
+  box-sizing: border-box;
+}
+
+.promo-info-dialog {
+  border: none;
+  padding: 0;
+  margin: auto;
+  max-width: min(640px, 94vw);
+  width: 100%;
+  background: transparent;
+  color: var(--text);
+  box-sizing: border-box;
+}
+
+.promo-info-dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.promo-info-dialog__shell {
+  display: flex;
+  flex-direction: column;
+  max-height: min(85vh, 100dvh - 2rem);
+  background: var(--purple-card);
+  border-radius: 16px;
+  border: 1px solid var(--purple-border);
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(13, 10, 30, 0.35);
+}
+
+.promo-info-dialog__head {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.85rem 2.75rem 0.85rem 1rem;
+  border-bottom: 1px solid var(--purple-border);
+}
+
+.promo-info-dialog__title {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 800;
+  line-height: 1.3;
+  color: var(--text);
+  padding-right: 0.25rem;
+}
+
+.promo-info-dialog__close {
+  position: absolute;
+  top: 0.65rem;
+  right: 0.65rem;
+  border: none;
+  background: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0.2rem 0.45rem;
+  border-radius: 6px;
+}
+
+.promo-info-dialog__close:hover {
+  color: var(--purple-light);
+}
+
+.promo-info-dialog__close:focus-visible {
+  outline: 2px solid var(--purple-light);
+  outline-offset: 2px;
+}
+
+.promo-info-dialog__body {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 1rem 1rem 1.25rem;
+  -webkit-overflow-scrolling: touch;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.promo-info-dialog__body p {
+  margin: 0 0 0.75rem;
+}
+
+.promo-info-dialog__body p:last-child {
+  margin-bottom: 0;
+}
+
+.promo-info-dialog__block-title {
+  margin: 1.15rem 0 0.65rem;
+  padding: 0.45rem 0;
+  border-top: 1px solid var(--purple-border);
+  border-bottom: 1px solid var(--purple-border);
+  font-weight: 700;
+  font-size: 0.92rem;
+  color: var(--text);
+}
+
+.promo-info-dialog__body > p:first-of-type + .promo-info-dialog__block-title {
+  margin-top: 0.35rem;
+}
+
+.promo-info-dialog__cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.35rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--purple-border);
+}
+
+.promo-info-dialog__cta .btn {
+  flex: 1 1 auto;
+  min-width: 8rem;
+  justify-content: center;
+  text-align: center;
+  text-decoration: none;
+}
+
+@media (max-width: 639px) {
+  .promo-info-dialog {
+    position: fixed;
+    inset: auto 0 0 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    margin: 0;
+    max-width: none;
+    width: 100%;
+    max-height: none;
+    height: auto;
+  }
+
+  .promo-info-dialog__shell {
+    max-height: min(90vh, 100dvh - env(safe-area-inset-bottom, 0px));
+    border-radius: 16px 16px 0 0;
+    margin-top: auto;
+    animation: promo-info-dialog-sheet-in 0.22s ease-out;
+  }
+}
+
+@keyframes promo-info-dialog-sheet-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0.85;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 .jiji-pills {
   display: flex;
   flex-wrap: nowrap;
