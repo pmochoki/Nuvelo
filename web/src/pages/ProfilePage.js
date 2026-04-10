@@ -227,6 +227,20 @@ function renderMyAdvertRowsWithStatus(listings, { demo = false } = {}) {
 }
 
 /**
+ * Compact avatar + name on small screens (sidebar is hidden).
+ * @param {object} user
+ */
+export function renderProfileMobileHeader(user) {
+  const name = user.name || "Member";
+  const avatar = user.avatarUrl || "/default-avatar.svg";
+  return `
+  <div class="profile-mobile-header">
+    <img class="profile-mobile-header__avatar" src="${esc(avatar)}" alt="" width="40" height="40" decoding="async" />
+    <span class="profile-mobile-header__name">${esc(name)}</span>
+  </div>`;
+}
+
+/**
  * Mobile-only horizontal nav (mirrors sidebar links).
  * @param {string} activeSection
  */
@@ -310,8 +324,8 @@ export function renderProfileSidebar(user, section) {
 function renderMessagesLayout() {
   return `
     <div class="messages-jiji" data-messages-root>
-      <p class="muted small" data-msg-banner hidden style="margin:0 0 0.75rem"></p>
       <div class="messages-jiji__left" data-msg-list-column>
+        <p class="messages-jiji__banner" data-msg-banner hidden role="alert"></p>
         <h2 class="messages-jiji__title">My messages</h2>
         <label class="messages-jiji__search-wrap">
           <span class="messages-jiji__search-icon" aria-hidden="true">⌕</span>
@@ -322,9 +336,16 @@ function renderMessagesLayout() {
           <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">Unread (0)</button>
           <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">Spam (0)</button>
         </div>
-        <div class="messages-jiji__list" data-msg-list-all role="list"></div>
-        <div class="messages-jiji__list" data-msg-list-unread hidden role="list"></div>
-        <div class="messages-jiji__list" data-msg-list-spam hidden role="list"></div>
+        <div class="messages-jiji__empty-inbox" data-msg-empty-inbox hidden>
+          <div class="messages-jiji__empty-inbox-illus" aria-hidden="true">💬</div>
+          <p class="messages-jiji__empty-inbox-text">No messages yet. When someone contacts you about a listing, it will appear here.</p>
+          <a href="/browse" class="btn btn--primary messages-jiji__empty-inbox-cta">Browse ads</a>
+        </div>
+        <div class="messages-jiji__lists" data-msg-lists-wrap>
+          <div class="messages-jiji__list" data-msg-list-all role="list"></div>
+          <div class="messages-jiji__list" data-msg-list-unread hidden role="list"></div>
+          <div class="messages-jiji__list" data-msg-list-spam hidden role="list"></div>
+        </div>
       </div>
       <div class="messages-jiji__right" data-msg-pane>
         <div class="messages-jiji__empty" data-msg-empty>
@@ -422,11 +443,11 @@ function renderPerformanceSection() {
       <div class="perf-metrics-grid">${metricCards}</div>
       <div class="perf-summary-row">
         <a href="/profile/followers" class="perf-summary-card">
-          <span>New visitors</span>
+          <span class="perf-summary-card__label">New visitors</span>
           <span class="perf-summary-card__arrow" aria-hidden="true">›</span>
         </a>
         <a href="/profile/messages" class="perf-summary-card">
-          <span>New chats</span>
+          <span class="perf-summary-card__label">New chats</span>
           <span class="perf-summary-card__arrow" aria-hidden="true">›</span>
         </a>
       </div>
@@ -480,10 +501,11 @@ export function renderProfilePage(user, sectionFromRoute) {
 
   return `
 <div class="profile-shell">
+  ${renderProfileMobileHeader(user)}
   ${renderProfileMobileTabs(section)}
   <div class="profile-layout profile-layout--jiji">
     ${renderProfileSidebar(user, section === "settings" ? "adverts" : section)}
-    <main class="profile-content profile-content--jiji${mainExtra}">
+    <main class="profile-content profile-content--jiji profile-card${mainExtra}">
       ${renderProfileSection(section, user)}
     </main>
   </div>

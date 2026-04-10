@@ -1775,7 +1775,15 @@ function initMessagesPageUi() {
     });
   };
 
-  const fillThreadLists = (threads) => {
+  const listsWrap = root.querySelector("[data-msg-lists-wrap]");
+  const emptyInbox = root.querySelector("[data-msg-empty-inbox]");
+  const MESSAGES_USER_FACING_ERROR = "Messages are temporarily unavailable. Please try again later.";
+
+  /**
+   * @param {object[]} threads
+   * @param {"success" | "failure"} loadState
+   */
+  const fillThreadLists = (threads, loadState = "success") => {
     const uiRows = threads.map((row) => ({
       id: row.id,
       name: row.otherDisplayName,
@@ -1805,15 +1813,26 @@ function initMessagesPageUi() {
     if (tabSpam) {
       tabSpam.textContent = "Spam (0)";
     }
+
+    const showEmptyInbox = loadState === "success" && threads.length === 0;
+    if (emptyInbox instanceof HTMLElement) {
+      emptyInbox.hidden = !showEmptyInbox;
+    }
+    if (listsWrap instanceof HTMLElement) {
+      listsWrap.hidden = showEmptyInbox;
+    }
+
     rebindRowClicks();
     filterRows();
   };
 
   async function reloadThreads() {
     if (!isSupabaseConfigured) {
+      threadById = new Map();
+      fillThreadLists([], "failure");
       if (banner) {
         banner.hidden = false;
-        banner.textContent = "Messaging is temporarily unavailable. Please try again later.";
+        banner.textContent = MESSAGES_USER_FACING_ERROR;
       }
       return;
     }
@@ -1823,9 +1842,10 @@ function initMessagesPageUi() {
     try {
       const threads = await fetchThreadsForCurrentUser();
       threadById = new Map(threads.map((t) => [t.id, t]));
-      fillThreadLists(threads);
+      fillThreadLists(threads, "success");
       if (banner) {
         banner.hidden = true;
+        banner.textContent = "";
       }
       await refreshMessageNavBadge();
       const param = new URLSearchParams(window.location.search).get("thread");
@@ -1838,11 +1858,10 @@ function initMessagesPageUi() {
     } catch (e) {
       console.error(e);
       threadById = new Map();
-      fillThreadLists([]);
+      fillThreadLists([], "failure");
       if (banner) {
         banner.hidden = false;
-        banner.textContent =
-          "Messages couldn’t load right now. Please try again in a moment. If this keeps happening, contact support.";
+        banner.textContent = MESSAGES_USER_FACING_ERROR;
       }
     }
   }

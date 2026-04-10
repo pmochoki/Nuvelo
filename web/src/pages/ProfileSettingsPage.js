@@ -1,6 +1,6 @@
 import { HUNGARIAN_LOCATIONS } from "../data/hungarianLocations.js";
 import { getDisplayInitials } from "../lib/profileInitials.js";
-import { renderProfileMobileTabs, renderProfileSidebar } from "./ProfilePage.js";
+import { renderProfileMobileHeader, renderProfileMobileTabs, renderProfileSidebar } from "./ProfilePage.js";
 
 const AVATAR_STORAGE_KEY = "nuvelo_avatar_dataurl";
 
@@ -122,31 +122,33 @@ function renderContactDetailsForm(user) {
 
           <section class="settings-jiji-section">
             <h3 class="settings-jiji-section__title">Account information</h3>
-            <div class="form-field form-field--inline-pair">
-              <label class="form-label" for="settings-first-name">First name</label>
-              <input
-                type="text"
-                id="settings-first-name"
-                name="firstName"
-                class="form-input"
-                value="${esc(firstName)}"
-                maxlength="60"
-                autocomplete="given-name"
-                data-settings-track
-              />
-            </div>
-            <div class="form-field form-field--inline-pair">
-              <label class="form-label" for="settings-last-name">Last name</label>
-              <input
-                type="text"
-                id="settings-last-name"
-                name="lastName"
-                class="form-input"
-                value="${esc(lastName)}"
-                maxlength="60"
-                autocomplete="family-name"
-                data-settings-track
-              />
+            <div class="settings-jiji-name-row">
+              <div class="form-field">
+                <label class="form-label" for="settings-first-name">First name</label>
+                <input
+                  type="text"
+                  id="settings-first-name"
+                  name="firstName"
+                  class="form-input"
+                  value="${esc(firstName)}"
+                  maxlength="60"
+                  autocomplete="given-name"
+                  data-settings-track
+                />
+              </div>
+              <div class="form-field">
+                <label class="form-label" for="settings-last-name">Last name</label>
+                <input
+                  type="text"
+                  id="settings-last-name"
+                  name="lastName"
+                  class="form-input"
+                  value="${esc(lastName)}"
+                  maxlength="60"
+                  autocomplete="family-name"
+                  data-settings-track
+                />
+              </div>
             </div>
             <div class="form-field">
               <label class="form-label" for="settings-email">Email address</label>
@@ -247,10 +249,11 @@ function renderContactDetailsForm(user) {
 export function renderSettingsPage(user, _settingsSection) {
   return `
 <div class="profile-shell">
+  ${renderProfileMobileHeader(user)}
   ${renderProfileMobileTabs("settings")}
   <div class="profile-layout profile-layout--jiji profile-layout--settings-jiji">
     ${renderProfileSidebar(user, "settings")}
-    <main class="profile-content profile-content--jiji">
+    <main class="profile-content profile-content--jiji profile-card">
       ${renderContactDetailsForm(user)}
     </main>
   </div>

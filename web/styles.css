@@ -4357,8 +4357,70 @@ button.jiji-promo-card {
   background: #fff;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  min-height: 400px;
+  min-height: auto;
   overflow: hidden;
+  align-self: flex-start;
+  color: #1a1a1a;
+}
+
+@media (min-width: 640px) {
+  .profile-content {
+    min-height: 400px;
+  }
+}
+
+/* White profile card: stop inheriting body’s light --text / purple variables */
+.profile-content h1,
+.profile-content h2,
+.profile-content h3,
+.profile-card h1,
+.profile-card h2,
+.profile-card h3 {
+  color: #111111;
+}
+
+.profile-content .muted,
+.profile-content .profile-hint,
+.profile-content .small.muted,
+.profile-card .muted,
+.profile-card .profile-hint,
+.profile-card .small.muted {
+  color: #666666;
+}
+
+.profile-content .subtitle,
+.profile-content .hint,
+.profile-content .timestamp,
+.profile-card .subtitle,
+.profile-card .hint,
+.profile-card .timestamp {
+  color: #666666;
+}
+
+.profile-content .btn,
+.profile-card .btn {
+  color: inherit;
+}
+
+.profile-content a.btn--primary,
+.profile-content button.btn--primary,
+.profile-card a.btn--primary,
+.profile-card button.btn--primary {
+  color: #fff;
+}
+
+.profile-content .btn--ghost,
+.profile-card .btn--ghost {
+  color: #4b5563;
+}
+
+.profile-content .notif-item__time,
+.profile-card .notif-item__time {
+  color: #64748b;
+}
+
+.profile-card {
+  color: #111111;
 }
 
 .profile-section-header {
@@ -5002,6 +5064,35 @@ button.jiji-promo-card {
   padding: 0 12px 2rem;
 }
 
+.profile-mobile-header {
+  display: none;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.35rem 0 0.15rem;
+}
+
+.profile-mobile-header__avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e2e8f0;
+  flex-shrink: 0;
+}
+
+.profile-mobile-header__name {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.25;
+}
+
+@media (max-width: 639px) {
+  .profile-mobile-header {
+    display: flex;
+  }
+}
+
 .profile-mobile-tabs-wrap {
   position: relative;
   margin: 0 -2px;
@@ -5245,7 +5336,13 @@ button.jiji-promo-card {
 
 .profile-content--messages {
   padding: 0;
-  min-height: min(70vh, 640px);
+  min-height: auto;
+}
+
+@media (min-width: 640px) {
+  .profile-content--messages {
+    min-height: min(70vh, 640px);
+  }
 }
 
 /* Messages (Jiji split) */
@@ -5268,9 +5365,13 @@ button.jiji-promo-card {
     min-height: auto;
   }
 
+  .messages-jiji:not(.messages-jiji--thread-open) .messages-jiji__right {
+    display: none;
+  }
+
   .messages-jiji__right {
-    min-height: 280px;
-    border-top: 1px solid #e2e8f0;
+    min-height: 0;
+    border-top: none;
   }
 
   .messages-jiji.messages-jiji--thread-open .messages-jiji__left {
@@ -5278,6 +5379,8 @@ button.jiji-promo-card {
   }
 
   .messages-jiji.messages-jiji--thread-open .messages-jiji__right {
+    display: flex;
+    flex-direction: column;
     border-top: none;
     min-height: min(88vh, 760px);
   }
@@ -5290,10 +5393,55 @@ button.jiji-promo-card {
   min-width: 0;
 }
 
+.messages-jiji__banner {
+  margin: 0;
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: #92400e;
+  background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+}
+
 .messages-jiji__title {
   margin: 0;
   padding: 1rem 1rem 0.5rem;
   font-size: 1.1rem;
+  font-weight: 800;
+  color: #111111;
+}
+
+.messages-jiji__empty-inbox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 1.25rem 2.5rem;
+  gap: 0.75rem;
+}
+
+.messages-jiji__empty-inbox-illus {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.messages-jiji__empty-inbox-text {
+  margin: 0;
+  max-width: 22rem;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: #374151;
+}
+
+.messages-jiji__empty-inbox-cta {
+  margin-top: 0.25rem;
+}
+
+.messages-jiji__lists {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
 }
 
 .messages-jiji__search-wrap {
@@ -5339,7 +5487,7 @@ button.jiji-promo-card {
   border-radius: 6px;
   background: #f8fafc;
   cursor: pointer;
-  color: var(--text-secondary);
+  color: #475569;
 }
 
 .messages-jiji__tab.is-active {
@@ -5352,6 +5500,13 @@ button.jiji-promo-card {
   flex: 1;
   overflow-y: auto;
   max-height: min(56vh, 480px);
+}
+
+@media (max-width: 639px) {
+  .messages-jiji__list {
+    max-height: none;
+    flex: none;
+  }
 }
 
 .msg-row {
@@ -5469,6 +5624,7 @@ button.jiji-promo-card {
   flex-direction: column;
   background: #fafafa;
   min-height: 360px;
+  min-width: 0;
 }
 
 .messages-jiji__empty {
@@ -5478,7 +5634,7 @@ button.jiji-promo-card {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  color: var(--text-muted);
+  color: #64748b;
 }
 
 .messages-jiji__empty-illus {
@@ -5491,6 +5647,7 @@ button.jiji-promo-card {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
+  color: #374151;
 }
 
 .messages-jiji__chat {
@@ -5644,6 +5801,8 @@ button.jiji-promo-card {
 .perf-page__title {
   margin: 0;
   font-size: 1.15rem;
+  font-weight: 800;
+  color: #111111;
 }
 
 .perf-page__toggles {
@@ -5671,7 +5830,7 @@ button.jiji-promo-card {
   margin: 0;
   padding: 0.5rem 1.25rem;
   font-size: 0.85rem;
-  color: var(--text-muted);
+  color: #64748b;
 }
 
 .perf-chart-wrap {
@@ -5721,7 +5880,7 @@ button.jiji-promo-card {
 
 .perf-metric-card__label {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: #64748b;
 }
 
 .perf-metric-card__value {
@@ -5741,14 +5900,21 @@ button.jiji-promo-card {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 0.5rem;
   padding: 0.85rem 1rem;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   text-decoration: none;
-  color: inherit;
+  color: #111111;
   font-weight: 600;
   font-size: 0.9rem;
   background: #fff;
+}
+
+.perf-summary-card__label {
+  color: #111111;
+  flex: 1;
+  min-width: 0;
 }
 
 .perf-summary-card:hover {
@@ -5774,6 +5940,8 @@ button.jiji-promo-card {
 .feedback-jiji__title {
   margin: 0;
   font-size: 1.15rem;
+  font-weight: 800;
+  color: #111111;
 }
 
 .feedback-jiji__toggles {
@@ -5810,7 +5978,11 @@ button.jiji-promo-card {
 .feedback-empty__text {
   margin: 0 0 1.25rem;
   line-height: 1.5;
-  color: var(--text-secondary);
+  color: #374151;
+}
+
+.feedback-empty__text.muted {
+  color: #666666;
 }
 
 .feedback-copy-btn {
@@ -5842,10 +6014,61 @@ button.jiji-promo-card {
   margin-top: 0;
 }
 
+.settings-jiji-name-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 640px) {
+  .settings-jiji-name-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+}
+
 .settings-jiji-section__title {
   margin: 0 0 0.75rem;
   font-size: 0.95rem;
   font-weight: 700;
+  color: #111111;
+}
+
+.profile-layout--settings-jiji .settings-jiji-form .form-field {
+  margin-bottom: 0;
+}
+
+.profile-layout--settings-jiji .settings-jiji-form .form-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #555555;
+  margin-bottom: 4px;
+}
+
+.profile-layout--settings-jiji .settings-jiji-form .form-input,
+.profile-layout--settings-jiji .settings-jiji-form select.form-input,
+.profile-layout--settings-jiji .settings-jiji-form textarea.form-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #dddddd;
+  border-radius: 8px;
+  background-color: #ffffff;
+  color: #111111;
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.profile-layout--settings-jiji .settings-jiji-form select.form-input {
+  min-height: 2.75rem;
+}
+
+.profile-layout--settings-jiji .settings-jiji-form .char-count {
+  display: block;
+  font-size: 0.75rem;
+  color: #666666;
+  margin-bottom: 0.35rem;
 }
 
 .settings-account-photo__lead {
@@ -5984,7 +6207,8 @@ button.jiji-promo-card {
   font-size: 0.9rem;
   background: #f8fafc;
   border-right: 1px solid #e2e8f0;
-  color: var(--text-secondary);
+  color: #4b5563;
+  flex-shrink: 0;
 }
 
 .phone-prefix-field__input {
