@@ -2419,6 +2419,10 @@ const parseBrowseParams = () => {
   if (verifiedParam === "true" || verifiedParam === "1") {
     sellerFilter = "verified";
   }
+  const rawTime = p.get("t") || "any";
+  const allowedTime = new Set(["any", "24h", "7d", "30d", "6m"]);
+  const timeFilter = allowedTime.has(rawTime) ? rawTime : "any";
+
   return {
     query: p.get("q") || "",
     categoryId: p.get("cat") || "",
@@ -2431,7 +2435,7 @@ const parseBrowseParams = () => {
     priceBand: p.get("prb") || "",
     sellerFilter,
     sort: p.get("sort") || "latest",
-    timeFilter: p.get("t") || "any",
+    timeFilter,
     page: Math.max(1, parseInt(p.get("page") || "1", 10) || 1)
   };
 };
@@ -2522,12 +2526,30 @@ const filterBySellerPref = (listings, pref) => {
   });
 };
 
+const MS_PER_DAY = 86400000;
+
 const filterByTimePref = (listings, t) => {
   if (!t || t === "any") {
     return listings;
   }
+  let windowMs;
+  switch (t) {
+    case "24h":
+      windowMs = MS_PER_DAY;
+      break;
+    case "7d":
+      windowMs = 7 * MS_PER_DAY;
+      break;
+    case "30d":
+      windowMs = 30 * MS_PER_DAY;
+      break;
+    case "6m":
+      windowMs = 180 * MS_PER_DAY;
+      break;
+    default:
+      return listings;
+  }
   const now = Date.now();
-  const windowMs = t === "24h" ? 86400000 : 7 * 86400000;
   return listings.filter((l) => {
     const ts = new Date(l.createdAt || 0).getTime();
     return now - ts <= windowMs;
@@ -3451,6 +3473,8 @@ const renderList = async () => {
                   <option value="any" ${timeSel === "any" ? "selected" : ""}>Any time</option>
                   <option value="24h" ${timeSel === "24h" ? "selected" : ""}>Last 24 hours</option>
                   <option value="7d" ${timeSel === "7d" ? "selected" : ""}>Last 7 days</option>
+                  <option value="30d" ${timeSel === "30d" ? "selected" : ""}>Last month</option>
+                  <option value="6m" ${timeSel === "6m" ? "selected" : ""}>Last 6 months</option>
                 </select>
               </label>
             </div>
