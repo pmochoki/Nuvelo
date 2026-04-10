@@ -1,0 +1,16 @@
+---
+description: After pushes or deploy-related work, verify and report Vercel deployment status
+alwaysApply: true
+---
+
+# Vercel deployment status (always report)
+
+Whenever you **push to GitHub**, **merge to `main`**, or finish work that is meant to go live on Vercel:
+
+1. **Verify deployment** using the Vercel MCP (e.g. `list_deployments` for the Nuvelo project from `.vercel/project.json`: `projectId` + `orgId` as `teamId`), or the Vercel dashboard if MCP is unavailable.
+2. **State clearly in your reply to the user**, in plain language:
+   - Whether **production** (or the relevant **preview**) is **READY** (successful), **ERROR** / **FAILED**, **BUILDING** / **QUEUED**, or **could not be verified** (and why).
+   - The **commit** or **message** shown on that deployment when available, and whether it **matches** the commit you just pushed.
+3. If the latest production deployment is **behind** `origin/main`, say that explicitly and suggest checking the Vercel dashboard, GitHub integration, or triggering a redeploy.
+
+Do not assume deploy success from `git push` alone; confirm or disclaim.
