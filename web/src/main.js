@@ -1199,6 +1199,10 @@ function syncGlobalAvatarImages(url) {
   if (side instanceof HTMLImageElement) {
     side.src = src;
   }
+  const hub = document.getElementById("profile-hub-avatar-img");
+  if (hub instanceof HTMLImageElement) {
+    hub.src = src;
+  }
 }
 
 /**
@@ -1243,6 +1247,9 @@ function updateProfileChromeFromUser(u) {
     return;
   }
   document.querySelectorAll(".profile-sidebar .profile-name").forEach((el) => {
+    el.textContent = u.name || "Member";
+  });
+  document.querySelectorAll(".profile-hub-toolbar__name").forEach((el) => {
     el.textContent = u.name || "Member";
   });
   document.querySelectorAll(".profile-phone--accent").forEach((el) => {
@@ -1622,20 +1629,24 @@ function bindProfileSettingsPage() {
 }
 
 function bindProfileSidebarAvatar() {
-  document.getElementById("profile-sidebar-avatar-btn")?.addEventListener("click", () => {
-    document.getElementById("profile-sidebar-avatar-input")?.click();
-  });
-  document.getElementById("profile-sidebar-avatar-input")?.addEventListener("change", async (e) => {
-    const t = e.target;
-    if (!(t instanceof HTMLInputElement)) {
-      return;
-    }
-    const f = t.files?.[0];
-    if (f) {
-      await persistAvatarFromFile(f);
-    }
-    t.value = "";
-  });
+  const wire = (btnId, inputId) => {
+    document.getElementById(btnId)?.addEventListener("click", () => {
+      document.getElementById(inputId)?.click();
+    });
+    document.getElementById(inputId)?.addEventListener("change", async (e) => {
+      const t = e.target;
+      if (!(t instanceof HTMLInputElement)) {
+        return;
+      }
+      const f = t.files?.[0];
+      if (f) {
+        await persistAvatarFromFile(f);
+      }
+      t.value = "";
+    });
+  };
+  wire("profile-sidebar-avatar-btn", "profile-sidebar-avatar-input");
+  wire("profile-hub-avatar-btn", "profile-hub-avatar-input");
 }
 
 function initMessagesPageUi() {
@@ -2824,11 +2835,12 @@ const parseRoute = () => {
       const settingsSection = settingsAllowed.includes(key) ? key : "personal";
       return { view: "profileSettings", settingsSection };
     }
-    let sub = parts[1] || "adverts";
+    let sub = parts[1] || "hub";
     if (sub === "statistics") {
       sub = "performance";
     }
     const allowed = [
+      "hub",
       "saved",
       "messages",
       "notifications",
@@ -2840,7 +2852,7 @@ const parseRoute = () => {
     if (allowed.includes(sub)) {
       return { view: "profile", section: sub };
     }
-    return { view: "profile", section: "adverts" };
+    return { view: "profile", section: "hub" };
   }
   return { view: "landing" };
 };
@@ -4445,6 +4457,7 @@ const renderProfile = async (section) => {
   }
   const user = getUser();
   const titles = {
+    hub: "My profile",
     adverts: "My profile",
     saved: "Saved ads",
     messages: "Messages",
@@ -4453,7 +4466,7 @@ const renderProfile = async (section) => {
     feedback: "Feedback",
     performance: "Performance"
   };
-  const title = titles[section] || titles.adverts;
+  const title = titles[section] || titles.hub;
   if (!user) {
     openModal("signin");
     appEl.innerHTML = `
@@ -5123,7 +5136,7 @@ const renderPost = async () => {
       }
       const created = await createListing(payload, user.id);
       msg.textContent = "Your ad has been submitted and is pending review.";
-      setTimeout(() => navigateTo("/profile/adverts"), 800);
+      setTimeout(() => navigateTo("/profile"), 800);
     } catch (err) {
       console.error(err);
       const m = String(err?.message || "");

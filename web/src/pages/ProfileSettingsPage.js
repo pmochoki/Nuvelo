@@ -1,6 +1,6 @@
 import { HUNGARIAN_LOCATIONS } from "../data/hungarianLocations.js";
 import { getDisplayInitials } from "../lib/profileInitials.js";
-import { renderProfileMobileHeader, renderProfileMobileTabs, renderProfileSidebar } from "./ProfilePage.js";
+import { renderProfileSidebar } from "./ProfilePage.js";
 
 const AVATAR_STORAGE_KEY = "nuvelo_avatar_dataurl";
 
@@ -77,12 +77,10 @@ function renderContactDetailsForm(user) {
 
   return `
     <div class="settings-jiji">
-      <div class="profile-section-header profile-section-header--settings-jiji">
-        <h2>Account settings</h2>
-      </div>
+      <h2 class="visually-hidden">Account details</h2>
       <div class="settings-jiji__body">
         <form class="settings-jiji-form" id="profile-settings-form" novalidate action="javascript:void(0)">
-          <section class="settings-jiji-section settings-jiji-section--photo">
+          <section class="settings-jiji-section settings-jiji-section--photo" id="settings-section-photo">
             <h3 class="settings-jiji-section__title">Profile photo</h3>
             <p class="settings-account-photo__lead muted small">Your photo appears on your profile and in the header after you save or upload.</p>
             <div class="settings-account-photo" data-settings-avatar>
@@ -120,7 +118,9 @@ function renderContactDetailsForm(user) {
             </div>
           </section>
 
-          <section class="settings-jiji-section">
+          <div class="settings-jiji-group-gap" aria-hidden="true"></div>
+
+          <section class="settings-jiji-section" id="settings-section-account">
             <h3 class="settings-jiji-section__title">Account information</h3>
             <div class="settings-jiji-name-row">
               <div class="form-field">
@@ -242,20 +242,30 @@ function renderContactDetailsForm(user) {
     </div>`;
 }
 
+function renderSettingsJijiAppBar() {
+  return `
+  <header class="settings-jiji-appbar">
+    <a href="/profile" class="settings-jiji-appbar__back" aria-label="Back to profile">‹</a>
+    <h1 class="settings-jiji-appbar__title">Settings</h1>
+  </header>`;
+}
+
 /**
  * @param {object} user
  * @param {string} _settingsSection — reserved for future sub-routes
  */
 export function renderSettingsPage(user, _settingsSection) {
   return `
-<div class="profile-shell">
-  ${renderProfileMobileHeader(user)}
-  ${renderProfileMobileTabs("settings")}
+<div class="profile-shell profile-shell--settings-jiji">
+  ${renderSettingsJijiAppBar()}
   <div class="profile-layout profile-layout--jiji profile-layout--settings-jiji">
     ${renderProfileSidebar(user, "settings")}
-    <main class="profile-content profile-content--jiji profile-card">
+    <main class="profile-content profile-content--jiji profile-card profile-content--settings-jiji">
       ${renderContactDetailsForm(user)}
     </main>
   </div>
+  <a href="/contact" class="settings-jiji-fab" aria-label="Help and contact">
+    <span class="settings-jiji-fab__ico" aria-hidden="true">?</span>
+  </a>
 </div>`;
 }

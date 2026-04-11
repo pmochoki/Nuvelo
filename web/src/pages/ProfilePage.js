@@ -19,7 +19,7 @@ export function getProfileSectionFromPathname(
   if (parts[0] !== "profile") {
     return "adverts";
   }
-  const sub = parts[1] || "adverts";
+  const sub = parts[1] || "hub";
   if (sub === "statistics") {
     return "performance";
   }
@@ -235,6 +235,7 @@ export function renderProfileMobileTabs(activeSection) {
   return `
   <div class="profile-mobile-tabs-wrap">
     <nav class="profile-mobile-tabs" aria-label="Profile" data-profile-mobile-tabs>
+      ${item("/profile", "hub", "Home")}
       ${item("/profile/adverts", "adverts", "Ads")}
       ${item("/profile/messages", "messages", "Messages")}
       ${item("/profile/saved", "saved", "Saved")}
@@ -302,6 +303,81 @@ export function renderProfileSidebar(user, section) {
       </div>
     </div>
   </aside>`;
+}
+
+/**
+ * Jiji-style profile hub: back, avatar + name, settings (mobile-first; also used in main column).
+ * @param {object} user
+ */
+export function renderProfileHubToolbar(user) {
+  const name = user.name || "Member";
+  const avatar = user.avatarUrl || "/default-avatar.svg";
+  return `
+  <header class="profile-hub-toolbar" aria-label="Profile">
+    <a href="/" class="profile-hub-toolbar__back" aria-label="Back to home">‹</a>
+    <div class="profile-hub-toolbar__identity">
+      <button type="button" class="profile-hub-toolbar__avatar-btn" id="profile-hub-avatar-btn" aria-label="Change profile photo">
+        <img class="profile-hub-toolbar__avatar" src="${esc(avatar)}" alt="" width="40" height="40" decoding="async" id="profile-hub-avatar-img" />
+      </button>
+      <input type="file" id="profile-hub-avatar-input" accept="image/*" hidden />
+      <span class="profile-hub-toolbar__name">${esc(name)}</span>
+    </div>
+    <a href="/profile/settings" class="profile-hub-toolbar__settings">
+      <span class="profile-hub-toolbar__settings-label">Settings</span>
+      <span class="profile-hub-toolbar__settings-ico" aria-hidden="true">⚙</span>
+    </a>
+  </header>`;
+}
+
+/**
+ * Dashboard card grid (Jiji-style) for /profile hub.
+ * @param {object} user
+ */
+function renderProfileHub(user) {
+  const row = (href, title, emoji, badge) => {
+    const b =
+      badge != null && badge !== ""
+        ? `<span class="profile-hub-card__badge">${esc(badge)}</span>`
+        : "";
+    return `<a href="${href}" class="profile-hub-card__row">
+      <span class="profile-hub-card__row-emoji" aria-hidden="true">${emoji}</span>
+      <span class="profile-hub-card__row-label">${esc(title)}</span>
+      ${b}
+      <span class="profile-hub-card__chev" aria-hidden="true">›</span>
+    </a>`;
+  };
+  return `
+  <div class="profile-hub-page" data-profile-hub>
+    ${renderProfileHubToolbar(user)}
+    <div class="profile-hub__bg">
+      <a href="/post" class="profile-hub-hero">
+        <span class="profile-hub-hero__emoji" aria-hidden="true">🤑</span>
+        <span class="profile-hub-hero__text">Post an ad &amp; reach buyers</span>
+        <span class="profile-hub-hero__chev" aria-hidden="true">›</span>
+      </a>
+      <div class="profile-hub__columns">
+        <div class="profile-hub-card profile-hub-card--stack">
+          ${row("/browse", "Browse marketplace", "🛵", "New")}
+          ${row("/profile/notifications", "Notifications", "🔔", "")}
+          ${row("/profile/followers", "Followers", "👤", "")}
+        </div>
+        <div class="profile-hub-card profile-hub-card--stack">
+          ${row("/profile/adverts", "My adverts", "📋", "")}
+          ${row("/profile/feedback", "Feedback", "💬", "")}
+        </div>
+      </div>
+      <div class="profile-hub__faq-wrap">
+        <a href="/faq" class="profile-hub-card profile-hub-card--single">
+          <span class="profile-hub-card__row-emoji" aria-hidden="true">❓</span>
+          <span class="profile-hub-card__row-label">FAQ</span>
+          <span class="profile-hub-card__chev" aria-hidden="true">›</span>
+        </a>
+      </div>
+    </div>
+    <a href="/contact" class="profile-hub-fab" aria-label="Help and contact">
+      <span class="profile-hub-fab__ico" aria-hidden="true">?</span>
+    </a>
+  </div>`;
 }
 
 function renderMessagesLayout() {
@@ -497,13 +573,19 @@ function renderFeedbackSection(user) {
  */
 export function renderProfilePage(user, sectionFromRoute) {
   const section = sectionFromRoute || getProfileSectionFromPathname();
-  const mainExtra = section === "messages" ? " profile-content--messages" : "";
+  const mainExtra =
+    section === "messages"
+      ? " profile-content--messages"
+      : section === "hub"
+        ? " profile-content--hub"
+        : "";
+  const showMobileHeader = section !== "hub" && section !== "messages";
 
   return `
-<div class="profile-shell">
-  ${renderProfileMobileHeader(user)}
+<div class="profile-shell${section === "hub" ? " profile-shell--hub" : ""}">
+  ${showMobileHeader ? renderProfileMobileHeader(user) : ""}
   ${renderProfileMobileTabs(section)}
-  <div class="profile-layout profile-layout--jiji">
+  <div class="profile-layout profile-layout--jiji${section === "hub" ? " profile-layout--profile-hub" : ""}">
     ${renderProfileSidebar(user, section === "settings" ? "adverts" : section)}
     <main class="profile-content profile-content--jiji profile-card${mainExtra}">
       ${renderProfileSection(section, user)}
@@ -514,6 +596,8 @@ export function renderProfilePage(user, sectionFromRoute) {
 
 function renderProfileSection(section, user) {
   switch (section) {
+    case "hub":
+      return renderProfileHub(user);
     case "adverts":
       return renderMyAdverts(user);
     case "saved":
