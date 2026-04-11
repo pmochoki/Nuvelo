@@ -3864,8 +3864,8 @@ button.jiji-promo-card {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
-    padding-left: 16px;
-    padding-right: 16px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
   }
 
   .jiji-header__inner {
@@ -4367,13 +4367,16 @@ button.jiji-promo-card {
 
 .profile-content {
   min-width: 0;
+  width: 100%;
+  max-width: 100%;
   background: #fff;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
   min-height: auto;
   overflow: hidden;
-  align-self: flex-start;
+  align-self: start;
   color: #1a1a1a;
+  box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
@@ -5072,17 +5075,17 @@ button.jiji-promo-card {
 
 /* ── Jiji-style profile shell & mobile tabs ───────────────── */
 .profile-shell {
-  max-width: 1180px;
+  width: 100%;
+  max-width: min(1180px, 100%);
   margin: 0 auto;
   padding: 0 12px 2rem;
+  box-sizing: border-box;
 }
 
 @media (max-width: 639px) {
   .profile-shell {
     max-width: 100%;
-    width: 100%;
     padding: 0 0 2rem;
-    box-sizing: border-box;
   }
 }
 
@@ -5126,10 +5129,11 @@ button.jiji-promo-card {
   top: 0;
   right: 0;
   bottom: 0;
-  width: 2rem;
+  width: 1.75rem;
   pointer-events: none;
   z-index: 1;
-  background: linear-gradient(90deg, transparent, var(--purple-deep));
+  /* Fade into page background (avoid a bright band on OLED / Safari) */
+  background: linear-gradient(90deg, rgba(13, 10, 30, 0), rgba(13, 10, 30, 0.97));
 }
 
 @media (min-width: 640px) {
@@ -5175,13 +5179,16 @@ button.jiji-promo-card {
 
 .profile-mobile-tabs__link--active {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
   background: var(--orange);
   border-color: var(--orange);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
 }
 
 .profile-mobile-tabs__link--active:hover,
 .profile-mobile-tabs__link--active:focus-visible {
   color: #ffffff !important;
+  -webkit-text-fill-color: #ffffff;
 }
 
 @media (max-width: 639px) {
@@ -5198,9 +5205,6 @@ button.jiji-promo-card {
   }
 
   .profile-layout--jiji {
-    grid-template-columns: 1fr;
-    gap: 12px;
-    margin-top: 0.25rem;
     padding-left: 0;
     padding-right: 0;
   }
@@ -5246,14 +5250,24 @@ button.jiji-promo-card {
   .profile-layout--jiji .profile-sidebar--jiji {
     display: block;
   }
+
+  .profile-layout--jiji {
+    grid-template-columns: minmax(260px, 300px) 1fr;
+    gap: 20px;
+    margin-top: 0.75rem;
+  }
 }
 
+/* Mobile-first: one full-width column so the main card spans the phone (sidebar is hidden <640px). */
 .profile-layout--jiji {
   display: grid;
-  grid-template-columns: minmax(260px, 300px) 1fr;
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: 12px;
   align-items: start;
-  margin-top: 0.75rem;
+  margin-top: 0.25rem;
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
 }
 
 .profile-sidebar--jiji {
@@ -6031,6 +6045,17 @@ button.jiji-promo-card {
 .settings-jiji__body {
   padding: 0 1.25rem 2rem;
   max-width: 560px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+@media (max-width: 639px) {
+  .settings-jiji__body {
+    max-width: none;
+    width: 100%;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
 }
 
 .settings-jiji-section {
