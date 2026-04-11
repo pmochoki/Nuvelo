@@ -38,6 +38,7 @@ import {
 import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
 import { fetchNotificationsForCurrentUser } from "./lib/notificationsApi.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
+import { initTheme } from "./lib/theme.js";
 
 const FALLBACK_HUNGARIAN_LOCATIONS = [
   { value: "all", label: "All Hungary" },
@@ -5502,6 +5503,7 @@ function bindAuthPhoneFocusHint() {
 }
 
 void (async () => {
+  initTheme();
   await initAuth();
   syncAuthSignInAvailability();
   bindAuthPhoneFocusHint();

@@ -1,9 +1,10 @@
 :root {
+  color-scheme: dark;
   /* Responsive breakpoints (use consistently in media queries below) */
   --bp-tablet: 640px;
   --bp-desktop: 1024px;
 
-  /* Purple–orange–white theme */
+  /* Purple–orange–white theme (default = dark appearance) */
   --purple-deep: #0d0a1e;
   --purple-surface: #13102a;
   --purple-card: #1a1432;
@@ -19,7 +20,36 @@
   --danger: #f87171;
   --radius: 12px;
   --font: "DM Sans", system-ui, sans-serif;
+  --color-page-bg: #0d0a1e;
+  --surface-elevated: #ffffff;
+  --surface-tab-bar: #ffffff;
+  --ink-on-light: #0d0a1e;
   /* legacy aliases */
+  --navy: var(--purple-deep);
+  --navy-card: var(--purple-card);
+  --navy-border: var(--purple-border);
+}
+
+/* Light mode — keep dark text tokens for cards on white; page background is soft lavender */
+[data-color-scheme="light"] {
+  color-scheme: light;
+  --purple-deep: #14101f;
+  --purple-surface: #f4f2fb;
+  --purple-card: #ffffff;
+  --purple-border: #e4dff0;
+  --purple: #6d28d9;
+  --purple-light: #7c3aed;
+  --orange: #ea580c;
+  --orange-dark: #c2410c;
+  --white: #ffffff;
+  --text: #17131f;
+  --text-secondary: #4b4659;
+  --text-muted: #6f677a;
+  --danger: #dc2626;
+  --color-page-bg: #f3f0fa;
+  --surface-elevated: #ffffff;
+  --surface-tab-bar: #ffffff;
+  --ink-on-light: #14101f;
   --navy: var(--purple-deep);
   --navy-card: var(--purple-card);
   --navy-border: var(--purple-border);
@@ -45,12 +75,22 @@ body {
       rgba(124, 58, 237, 0.22),
       transparent 55%
     ),
-    var(--purple-deep);
-  background-color: var(--purple-deep);
+    var(--color-page-bg);
+  background-color: var(--color-page-bg);
   background-attachment: fixed;
   color: var(--text);
   line-height: 1.5;
   overflow-x: hidden;
+}
+
+[data-color-scheme="light"] body {
+  background: radial-gradient(
+      ellipse 100% 70% at 50% -15%,
+      rgba(124, 58, 237, 0.12),
+      transparent 50%
+    ),
+    linear-gradient(180deg, #ede9fe 0%, var(--color-page-bg) 45%, #faf8ff 100%);
+  background-color: var(--color-page-bg);
 }
 
 a {
@@ -584,6 +624,74 @@ body.loc-modal-open {
   margin-left: auto;
 }
 
+/* Theme: Light / Dark / System */
+.theme-switcher-wrap {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+@media (max-width: 639px) {
+  .theme-switcher-wrap--header {
+    display: none;
+  }
+}
+
+.theme-switcher__select {
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.4rem 1.65rem 0.4rem 0.45rem;
+  border-radius: 8px;
+  border: 1px solid var(--purple-border);
+  background: var(--purple-surface);
+  color: var(--text);
+  max-width: 6.5rem;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position:
+    calc(100% - 11px) calc(50% - 2px),
+    calc(100% - 7px) calc(50% - 2px);
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+}
+
+.theme-switcher__select:focus-visible {
+  outline: 2px solid var(--orange);
+  outline-offset: 2px;
+}
+
+.nav-drawer__theme-block {
+  margin-bottom: 0.5rem;
+}
+
+@media (min-width: 640px) {
+  .nav-drawer__theme-block {
+    display: none;
+  }
+}
+
+.nav-drawer__theme-hint {
+  margin: 0 0 0.35rem;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+[data-color-scheme="light"] .nav-burger {
+  background: #f4f2fb;
+  border-color: var(--purple-border);
+}
+
+[data-color-scheme="light"] .nav-burger__line {
+  background: var(--text-secondary);
+}
+
 .jiji-header__brand .brand__logo {
   max-height: 40px;
   width: auto;
@@ -915,8 +1023,8 @@ body.loc-modal-open {
     min-height: calc(3.15rem + env(safe-area-inset-bottom, 0px));
     padding: 4px 2px calc(4px + env(safe-area-inset-bottom, 0px));
     margin: 0;
-    background: #fff;
-    border-top: 1px solid #e2e8f0;
+    background: var(--surface-tab-bar);
+    border-top: 1px solid var(--purple-border);
     box-shadow: 0 -6px 24px rgba(13, 10, 30, 0.1);
     transform: translate3d(0, 100%, 0);
     transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
@@ -947,13 +1055,13 @@ body.loc-modal-open {
     font-size: 0.625rem;
     font-weight: 700;
     letter-spacing: 0.02em;
-    color: #64748b;
+    color: var(--text-muted);
     text-decoration: none;
     border-radius: 8px;
   }
 
   .mobile-tab-bar__item:active {
-    background: #f8fafc;
+    background: var(--purple-surface);
   }
 
   .mobile-tab-bar__item--active {
@@ -969,7 +1077,7 @@ body.loc-modal-open {
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #475569;
+    color: var(--text-secondary);
     line-height: 0;
   }
 
@@ -2954,10 +3062,15 @@ button.jiji-promo-card {
     transform 150ms ease,
     box-shadow 150ms ease;
   background: var(--white);
-  color: var(--purple-deep);
+  color: var(--ink-on-light);
   border: 1px solid rgba(61, 53, 88, 0.35);
   overflow: hidden;
   cursor: pointer;
+}
+
+[data-color-scheme="light"] .lc {
+  border-color: rgba(20, 16, 31, 0.12);
+  box-shadow: 0 2px 12px rgba(20, 16, 31, 0.06);
 }
 
 .lc:hover {
@@ -7063,8 +7176,8 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
   z-index: 9999;
   padding: 0.65rem 1.25rem;
   border-radius: 999px;
-  background: #111827;
-  color: #fff;
+  background: var(--ink-on-light);
+  color: var(--white);
   font-size: 0.9rem;
   font-weight: 600;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
@@ -7073,6 +7186,12 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
   pointer-events: none;
   max-width: min(90vw, 360px);
   text-align: center;
+}
+
+[data-color-scheme="light"] .nuvelo-toast {
+  background: var(--purple-deep);
+  color: var(--white);
+  box-shadow: 0 8px 28px rgba(20, 16, 31, 0.18);
 }
 
 .nuvelo-toast--visible {
