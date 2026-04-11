@@ -5557,6 +5557,7 @@ button.jiji-promo-card {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  background: #fff;
 }
 
 .messages-jiji__banner {
@@ -5569,12 +5570,60 @@ button.jiji-promo-card {
   border-bottom: 1px solid #fde68a;
 }
 
-.messages-jiji__title {
+/* Jiji-style green header + pill search (messages inbox) */
+.messages-jiji__shell {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 0.75rem;
+  background: #16a34a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 15px 15px 0 0;
+}
+
+.profile-content--messages .messages-jiji__shell {
   margin: 0;
-  padding: 1rem 1rem 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 800;
-  color: #111111;
+}
+
+.messages-jiji__back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  margin: 0;
+  padding: 0;
+  color: #fff;
+  border-radius: 10px;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.messages-jiji__back-link:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.messages-jiji__back-svg {
+  display: block;
+}
+
+.messages-jiji__search-shell {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  margin: 0;
+  padding: 0.45rem 0.85rem;
+  background: #fff;
+  border-radius: 999px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.messages-jiji__search-svg {
+  flex-shrink: 0;
+  color: #94a3b8;
 }
 
 .messages-jiji__empty-inbox {
@@ -5610,27 +5659,18 @@ button.jiji-promo-card {
   flex: 1;
 }
 
-.messages-jiji__search-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  margin: 0 1rem 0.75rem;
-  padding: 0.35rem 0.65rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #fafafa;
-}
-
-.messages-jiji__search-icon {
-  opacity: 0.45;
-}
-
 .messages-jiji__search {
   flex: 1;
+  min-width: 0;
   border: none;
   background: transparent;
   font: inherit;
-  min-width: 0;
+  font-size: 0.95rem;
+  color: #111;
+}
+
+.messages-jiji__search::placeholder {
+  color: #94a3b8;
 }
 
 .messages-jiji__search:focus {
@@ -5639,27 +5679,30 @@ button.jiji-promo-card {
 
 .messages-jiji__tabs {
   display: flex;
-  gap: 0.25rem;
-  padding: 0 0.75rem 0.75rem;
-  border-bottom: 1px solid #e2e8f0;
+  gap: 0;
+  padding: 0 0.25rem;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .messages-jiji__tab {
   flex: 1;
-  padding: 0.4rem 0.35rem;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: #f8fafc;
+  padding: 0.75rem 0.35rem 0.65rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  background: transparent;
   cursor: pointer;
-  color: #475569;
+  color: #64748b;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .messages-jiji__tab.is-active {
-  background: #ecfdf5;
-  border-color: #bbf7d0;
-  color: #166534;
+  color: #16a34a;
+  border-bottom-color: #16a34a;
+  background: transparent;
 }
 
 .messages-jiji__list {
@@ -5701,8 +5744,14 @@ button.jiji-promo-card {
   background: #fff7ed;
 }
 
-.msg-row__thumb {
+.msg-row__thumb-wrap {
+  position: relative;
   flex: 0 0 56px;
+  width: 56px;
+  height: 56px;
+}
+
+.msg-row__thumb {
   width: 56px;
   height: 56px;
   border-radius: 8px;
@@ -5742,15 +5791,31 @@ button.jiji-promo-card {
 
 .msg-row__date {
   font-size: 0.72rem;
-  color: var(--text-muted);
+  color: #94a3b8;
   flex-shrink: 0;
 }
 
-.msg-row__listing {
-  margin: 0.15rem 0;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--purple-deep);
+.msg-row__thumb-dot {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #22c55e;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.msg-row--unread .msg-row__thumb-dot {
+  background: #f97316;
+}
+
+.msg-row__listing-title {
+  margin: 0.2rem 0 0.15rem;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #111111;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5765,7 +5830,7 @@ button.jiji-promo-card {
 
 .msg-row__preview {
   font-size: 0.78rem;
-  color: var(--text-muted);
+  color: #64748b;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5890,6 +5955,33 @@ button.jiji-promo-card {
   margin: 0.1rem 0 0;
   font-size: 0.78rem;
   color: var(--text-muted);
+}
+
+@media (max-width: 639px) {
+  .messages-jiji--thread-open .chat-head {
+    background: #16a34a;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 0.6rem 0.75rem;
+  }
+
+  .messages-jiji--thread-open .chat-head__name {
+    color: #fff;
+  }
+
+  .messages-jiji--thread-open .chat-head__listing {
+    color: rgba(255, 255, 255, 0.88);
+  }
+
+  .messages-jiji--thread-open .chat-head__back {
+    border: none;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+  }
+
+  .messages-jiji--thread-open .chat-head__back:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+  }
 }
 
 .chat-scroll {

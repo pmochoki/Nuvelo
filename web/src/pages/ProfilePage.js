@@ -83,13 +83,16 @@ export function buildMessageThreadRowHtml(t) {
       : "";
   return `
     <button type="button" class="msg-row${unread ? " msg-row--unread" : ""}" data-thread-id="${esc(t.id)}" data-thread-spam="${t.spam ? "1" : ""}">
-      <div class="msg-row__thumb">${thumb}</div>
+      <div class="msg-row__thumb-wrap">
+        <div class="msg-row__thumb">${thumb}</div>
+        <span class="msg-row__thumb-dot" aria-hidden="true"></span>
+      </div>
       <div class="msg-row__body">
         <div class="msg-row__top">
           <span class="msg-row__name">${esc(t.name)}</span>
           <time class="msg-row__date" datetime="">${esc(t.dateLabel)}</time>
         </div>
-        <p class="msg-row__listing">${esc(t.listingTitle)}</p>
+        <p class="msg-row__listing-title">${esc(t.listingTitle)}</p>
         <div class="msg-row__bottom">
           <span class="msg-row__preview">${esc(t.preview)}</span>
           ${badge}
@@ -302,15 +305,32 @@ export function renderProfileSidebar(user, section) {
 }
 
 function renderMessagesLayout() {
+  const searchIcon = `<svg class="messages-jiji__search-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/>
+    <path d="M20 20l-4.3-4.3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+  </svg>`;
+  const backIcon = `<svg class="messages-jiji__back-svg" width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
   return `
     <div class="messages-jiji" data-messages-root>
       <div class="messages-jiji__left" data-msg-list-column>
+        <header class="messages-jiji__shell" aria-label="Messages toolbar">
+          <a href="/" class="messages-jiji__back-link">${backIcon}</a>
+          <label class="messages-jiji__search-shell">
+            ${searchIcon}
+            <input
+              type="search"
+              class="messages-jiji__search"
+              placeholder="Search in messages"
+              data-msg-search
+              autocomplete="off"
+              aria-label="Search in messages"
+            />
+          </label>
+        </header>
         <p class="messages-jiji__banner" data-msg-banner hidden role="alert"></p>
-        <h2 class="messages-jiji__title">My messages</h2>
-        <label class="messages-jiji__search-wrap">
-          <span class="messages-jiji__search-icon" aria-hidden="true">⌕</span>
-          <input type="search" class="messages-jiji__search" placeholder="Search messages" data-msg-search autocomplete="off" />
-        </label>
+        <h1 class="visually-hidden">Messages</h1>
         <div class="messages-jiji__tabs" role="tablist" data-msg-tabs>
           <button type="button" class="messages-jiji__tab is-active" role="tab" aria-selected="true" data-msg-tab="all">All</button>
           <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">Unread (0)</button>
