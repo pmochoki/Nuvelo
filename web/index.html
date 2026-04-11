@@ -275,6 +275,59 @@
 
     <main id="app" class="main main--jiji" aria-live="polite"></main>
 
+    <!-- Mobile-only bottom tabs (Jiji-style): visible near top of page, hides on scroll down -->
+    <nav
+      class="mobile-tab-bar"
+      id="mobile-tab-bar"
+      aria-label="Primary navigation"
+      aria-hidden="true"
+    >
+      <a href="/" class="mobile-tab-bar__item" data-mobile-tab="home">
+        <span class="mobile-tab-bar__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1V9.5z" />
+          </svg>
+        </span>
+        <span class="mobile-tab-bar__label">Home</span>
+      </a>
+      <a href="/profile/saved" class="mobile-tab-bar__item" data-mobile-tab="saved">
+        <span class="mobile-tab-bar__icon mobile-tab-bar__icon--badge" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+          </svg>
+          <span class="mobile-tab-bar__badge" id="mobile-tab-bar-badge-saved" hidden aria-live="polite"></span>
+        </span>
+        <span class="mobile-tab-bar__label">Saved</span>
+      </a>
+      <a href="/post" class="mobile-tab-bar__item" data-mobile-tab="sell">
+        <span class="mobile-tab-bar__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <path d="M12 8v8M8 12h8" />
+          </svg>
+        </span>
+        <span class="mobile-tab-bar__label">Sell</span>
+      </a>
+      <a href="/profile/messages" class="mobile-tab-bar__item" data-mobile-tab="messages">
+        <span class="mobile-tab-bar__icon mobile-tab-bar__icon--badge" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
+          </svg>
+          <span class="mobile-tab-bar__badge mobile-tab-bar__badge--alert" id="mobile-tab-bar-badge-messages" hidden aria-live="polite"></span>
+        </span>
+        <span class="mobile-tab-bar__label">Messages</span>
+      </a>
+      <a href="/profile/adverts" class="mobile-tab-bar__item" data-mobile-tab="profile">
+        <span class="mobile-tab-bar__icon" aria-hidden="true">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20a8 8 0 0116 0" />
+          </svg>
+        </span>
+        <span class="mobile-tab-bar__label">Profile</span>
+      </a>
+    </nav>
+
     <div
       id="filter-sheet"
       class="filter-sheet"

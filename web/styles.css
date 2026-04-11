@@ -893,6 +893,124 @@ body.loc-modal-open {
   }
 }
 
+/* ── Mobile bottom tab bar (Jiji-style): fixed strip; JS toggles visibility near page top ── */
+.mobile-tab-bar {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .mobile-tab-bar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 35;
+    justify-content: space-around;
+    align-items: stretch;
+    gap: 0;
+    min-height: calc(3.15rem + env(safe-area-inset-bottom, 0px));
+    padding: 4px 2px calc(4px + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+    background: #fff;
+    border-top: 1px solid #e2e8f0;
+    box-shadow: 0 -6px 24px rgba(13, 10, 30, 0.1);
+    transform: translate3d(0, 100%, 0);
+    transition: transform 0.24s cubic-bezier(0.4, 0, 0.2, 1);
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .mobile-tab-bar.mobile-tab-bar--visible {
+    transform: translate3d(0, 0, 0);
+  }
+
+  .mobile-tab-bar:not(.mobile-tab-bar--visible) {
+    pointer-events: none;
+  }
+
+  body.mobile-tab-bar-pad {
+    padding-bottom: calc(3.35rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .mobile-tab-bar__item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1px;
+    min-width: 0;
+    padding: 4px 2px;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    color: #64748b;
+    text-decoration: none;
+    border-radius: 8px;
+  }
+
+  .mobile-tab-bar__item:active {
+    background: #f8fafc;
+  }
+
+  .mobile-tab-bar__item--active {
+    color: var(--orange);
+  }
+
+  .mobile-tab-bar__item--active .mobile-tab-bar__icon {
+    color: var(--orange);
+  }
+
+  .mobile-tab-bar__icon {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #475569;
+    line-height: 0;
+  }
+
+  .mobile-tab-bar__icon--badge {
+    padding-top: 2px;
+  }
+
+  .mobile-tab-bar__label {
+    line-height: 1.15;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .mobile-tab-bar__badge {
+    position: absolute;
+    top: -2px;
+    right: -6px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #64748b;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 800;
+    display: grid;
+    place-items: center;
+    line-height: 1;
+  }
+
+  .mobile-tab-bar__badge--alert {
+    background: #ef4444;
+  }
+}
+
+@media (min-width: 768px) {
+  body.mobile-tab-bar-pad {
+    padding-bottom: 0;
+  }
+}
+
 /* Hamburger: only <640px */
 .jiji-header__burger {
   display: none;
@@ -3412,7 +3530,7 @@ button.jiji-promo-card {
     left: 0;
     right: 0;
     bottom: 0;
-    z-index: 25;
+    z-index: 38;
     padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
     margin: 0;
     background: rgba(255, 255, 255, 0.97);

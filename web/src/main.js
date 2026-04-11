@@ -552,6 +552,16 @@ const syncNavUserIcons = () => {
     msgBadge.hidden = unreadMessages <= 0;
     msgBadge.textContent = unreadMessages > 99 ? "99+" : String(unreadMessages);
   }
+  const mobileSaved = document.getElementById("mobile-tab-bar-badge-saved");
+  const mobileMsg = document.getElementById("mobile-tab-bar-badge-messages");
+  if (mobileSaved) {
+    mobileSaved.hidden = savedCount <= 0;
+    mobileSaved.textContent = savedCount > 99 ? "99+" : String(savedCount);
+  }
+  if (mobileMsg) {
+    mobileMsg.hidden = unreadMessages <= 0;
+    mobileMsg.textContent = unreadMessages > 99 ? "99+" : String(unreadMessages);
+  }
 };
 
 const updateAuthUi = () => {
@@ -2837,10 +2847,15 @@ const parseRoute = () => {
 
 const navigateTo = (path, { replace = false } = {}) => {
   const p = path.startsWith("/") ? path : `/${path}`;
+  const pathBefore = `${window.location.pathname}${window.location.search}`;
   if (replace) {
     window.history.replaceState(null, "", p);
   } else {
     window.history.pushState(null, "", p);
+  }
+  const pathAfter = `${window.location.pathname}${window.location.search}`;
+  if (pathBefore.split("?")[0] !== pathAfter.split("?")[0]) {
+    window.scrollTo(0, 0);
   }
   void render();
 };
@@ -2997,6 +3012,55 @@ const syncLandingHeaderScroll = () => {
   header.classList.toggle("is-scrolled", window.scrollY > 10);
 };
 
+/** Jiji-style bottom tabs: only visible when scrolled to the top of the page (mobile). */
+const MOBILE_TAB_TOP_THRESHOLD_PX = 12;
+
+const syncMobileTabBarScroll = () => {
+  const bar = document.getElementById("mobile-tab-bar");
+  if (!bar) {
+    return;
+  }
+  if (window.innerWidth > 767) {
+    bar.classList.remove("mobile-tab-bar--visible");
+    document.body.classList.remove("mobile-tab-bar-pad");
+    bar.setAttribute("aria-hidden", "true");
+    return;
+  }
+  const atTop = window.scrollY <= MOBILE_TAB_TOP_THRESHOLD_PX;
+  bar.classList.toggle("mobile-tab-bar--visible", atTop);
+  document.body.classList.toggle("mobile-tab-bar-pad", atTop);
+  bar.setAttribute("aria-hidden", atTop ? "false" : "true");
+};
+
+const syncMobileTabBarRoute = () => {
+  const bar = document.getElementById("mobile-tab-bar");
+  if (!bar) {
+    return;
+  }
+  const path = window.location.pathname || "/";
+  let active = "home";
+  if (path === "/profile/saved") {
+    active = "saved";
+  } else if (path.startsWith("/profile/messages")) {
+    active = "messages";
+  } else if (path === "/post" || path.startsWith("/post")) {
+    active = "sell";
+  } else if (path.startsWith("/profile")) {
+    active = "profile";
+  }
+  bar.querySelectorAll("[data-mobile-tab]").forEach((el) => {
+    const tab = el.getAttribute("data-mobile-tab");
+    const on = tab === active;
+    el.classList.toggle("mobile-tab-bar__item--active", on);
+    if (on) {
+      el.setAttribute("aria-current", "page");
+    } else {
+      el.removeAttribute("aria-current");
+    }
+  });
+  syncMobileTabBarScroll();
+};
+
 const syncHeaderChrome = (route) => {
   const wrap = document.getElementById("header-search-wrap");
   if (wrap) {
@@ -3007,6 +3071,7 @@ const syncHeaderChrome = (route) => {
     }
   }
   syncLandingHeaderScroll();
+  syncMobileTabBarRoute();
 };
 
 /** Card/detail price line — never show negative HUF. */
@@ -5293,6 +5358,15 @@ window.addEventListener(
   "scroll",
   () => {
     syncLandingHeaderScroll();
+    syncMobileTabBarScroll();
+  },
+  { passive: true }
+);
+
+window.addEventListener(
+  "resize",
+  () => {
+    syncMobileTabBarScroll();
   },
   { passive: true }
 );
