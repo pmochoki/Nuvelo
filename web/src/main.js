@@ -3012,8 +3012,18 @@ const syncLandingHeaderScroll = () => {
   header.classList.toggle("is-scrolled", window.scrollY > 10);
 };
 
-/** Jiji-style bottom tabs: only visible when scrolled to the top of the page (mobile). */
+/** Jiji-style bottom tabs (mobile): hide when scrolling down; show when scrolling up or near page top. */
 const MOBILE_TAB_TOP_THRESHOLD_PX = 12;
+const MOBILE_TAB_SCROLL_DELTA_PX = 6;
+
+let mobileTabBarScrollReady = false;
+let mobileTabBarLastScrollY = 0;
+
+const setMobileTabBarVisibility = (bar, visible) => {
+  bar.classList.toggle("mobile-tab-bar--visible", visible);
+  document.body.classList.toggle("mobile-tab-bar-pad", visible);
+  bar.setAttribute("aria-hidden", visible ? "false" : "true");
+};
 
 const syncMobileTabBarScroll = () => {
   const bar = document.getElementById("mobile-tab-bar");
@@ -3024,12 +3034,33 @@ const syncMobileTabBarScroll = () => {
     bar.classList.remove("mobile-tab-bar--visible");
     document.body.classList.remove("mobile-tab-bar-pad");
     bar.setAttribute("aria-hidden", "true");
+    mobileTabBarScrollReady = false;
     return;
   }
-  const atTop = window.scrollY <= MOBILE_TAB_TOP_THRESHOLD_PX;
-  bar.classList.toggle("mobile-tab-bar--visible", atTop);
-  document.body.classList.toggle("mobile-tab-bar-pad", atTop);
-  bar.setAttribute("aria-hidden", atTop ? "false" : "true");
+
+  const y = Math.max(0, window.scrollY);
+
+  if (!mobileTabBarScrollReady) {
+    mobileTabBarLastScrollY = y;
+    mobileTabBarScrollReady = true;
+    setMobileTabBarVisibility(bar, y <= MOBILE_TAB_TOP_THRESHOLD_PX);
+    return;
+  }
+
+  let visible = bar.classList.contains("mobile-tab-bar--visible");
+  if (y <= MOBILE_TAB_TOP_THRESHOLD_PX) {
+    visible = true;
+  } else {
+    const delta = y - mobileTabBarLastScrollY;
+    if (delta > MOBILE_TAB_SCROLL_DELTA_PX) {
+      visible = false;
+    } else if (delta < -MOBILE_TAB_SCROLL_DELTA_PX) {
+      visible = true;
+    }
+  }
+
+  mobileTabBarLastScrollY = y;
+  setMobileTabBarVisibility(bar, visible);
 };
 
 const syncMobileTabBarRoute = () => {
@@ -3058,6 +3089,7 @@ const syncMobileTabBarRoute = () => {
       el.removeAttribute("aria-current");
     }
   });
+  mobileTabBarLastScrollY = window.scrollY;
   syncMobileTabBarScroll();
 };
 
