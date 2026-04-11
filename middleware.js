@@ -1,6 +1,9 @@
 /**
  * Vercel Routing Middleware (Edge) — Prerender.io for search/social crawlers.
- * Set PRERENDER_TOKEN in Vercel (server-side only; do not use VITE_ prefix).
+ *
+ * TODO: Add PRERENDER_TOKEN to Vercel env vars to activate bot rendering.
+ * Sign up at https://prerender.io, get your token, add it under Project → Settings → Environment Variables
+ * (server-side only; do not use a VITE_ prefix — this file runs on the edge, not in the browser bundle).
  *
  * @see https://docs.prerender.io/docs/11-best-practices
  */

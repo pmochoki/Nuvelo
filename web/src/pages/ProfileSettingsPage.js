@@ -1,5 +1,6 @@
 import { HUNGARIAN_LOCATIONS } from "../data/hungarianLocations.js";
 import { getDisplayInitials } from "../lib/profileInitials.js";
+import { isSupabaseConfigured } from "../lib/supabaseClient.js";
 import { renderProfileSidebar } from "./ProfilePage.js";
 
 const AVATAR_STORAGE_KEY = "nuvelo_avatar_dataurl";
@@ -57,7 +58,7 @@ function renderContactDetailsForm(user) {
     (user.avatarUrl.startsWith("http") || user.avatarUrl.startsWith("data:image"))
       ? user.avatarUrl
       : "";
-  const photoSrc = localAv || remoteAv;
+  const photoSrc = isSupabaseConfigured && remoteAv ? remoteAv : localAv || remoteAv;
   const hasPhoto = Boolean(photoSrc);
   const initials = getDisplayInitials(fullName || "Member");
 
@@ -111,7 +112,7 @@ function renderContactDetailsForm(user) {
               <input
                 type="file"
                 id="avatar-input"
-                accept="image/jpeg,image/png,image/webp,image/gif,.jpg,.jpeg,.png,.webp"
+                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                 hidden
               />
               <p class="settings-account-photo__hint muted small">JPG, PNG or WebP, max 5MB.</p>

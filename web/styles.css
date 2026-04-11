@@ -38,6 +38,7 @@ html {
 body {
   margin: 0;
   min-height: 100vh;
+  width: 100%;
   font-family: var(--font);
   background: radial-gradient(
       ellipse 120% 80% at 50% -20%,
@@ -45,6 +46,8 @@ body {
       transparent 55%
     ),
     var(--purple-deep);
+  background-color: var(--purple-deep);
+  background-attachment: fixed;
   color: var(--text);
   line-height: 1.5;
   overflow-x: hidden;
@@ -1781,6 +1784,10 @@ body.is-landing .jiji-hero {
 
 .feed-layout--browse {
   gap: 1.25rem;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 .category-rail-wrap,
@@ -2335,9 +2342,14 @@ body.is-landing .jiji-hero {
 
 /* ─── Jiji mirror: homepage, cards, browse, detail, post, sheet ─── */
 .main--jiji {
+  width: 100%;
   max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
   padding-left: 1rem;
   padding-right: 1rem;
+  box-sizing: border-box;
+  min-width: 0;
 }
 
 .jiji-hero {
@@ -3293,6 +3305,10 @@ button.jiji-promo-card {
   display: grid;
   gap: 1rem;
   grid-template-columns: 1fr;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
 }
 
 @media (min-width: 1024px) {
@@ -3978,12 +3994,16 @@ button.jiji-promo-card {
     font-size: 15px;
   }
 
+  #app.main--jiji,
   .main--jiji {
     width: 100%;
     max-width: 100%;
     box-sizing: border-box;
     padding-left: max(16px, env(safe-area-inset-left, 0px));
     padding-right: max(16px, env(safe-area-inset-right, 0px));
+    margin-left: auto;
+    margin-right: auto;
+    min-width: 0;
   }
 
   .jiji-header__inner {
@@ -5312,10 +5332,20 @@ button.jiji-promo-card {
 @media (max-width: 639px) {
   .profile-mobile-tabs {
     display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
     width: 100%;
+    max-width: 100%;
     gap: 8px;
-    padding: 0.5rem 0 0.75rem;
+    padding: 8px 16px;
+    margin: 0;
     box-sizing: border-box;
+  }
+
+  .profile-mobile-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .profile-layout--jiji .profile-sidebar--jiji {
@@ -5330,9 +5360,9 @@ button.jiji-promo-card {
   .profile-content.profile-content--jiji {
     width: 100%;
     max-width: 100%;
-    margin-left: 0;
-    margin-right: 0;
+    margin: 0 0 16px;
     border-radius: 16px;
+    box-sizing: border-box;
   }
 }
 
@@ -6610,6 +6640,32 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
   overflow: visible;
 }
 
+.notifications-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.notifications-list__item {
+  padding: 0.85rem 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.notifications-list__item--unread {
+  padding-left: 0.5rem;
+  border-left: 3px solid var(--orange);
+}
+
+.notifications-list__msg {
+  margin: 0 0 0.35rem;
+  color: #111;
+  font-size: 0.95rem;
+}
+
+.notifications-list__time {
+  display: block;
+}
+
 .settings-jiji__body {
   padding: 0 1.25rem 2rem;
   max-width: 560px;
@@ -6663,6 +6719,8 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
 
 .profile-layout--settings-jiji .settings-jiji-form .form-field {
   margin-bottom: 12px;
+  position: relative;
+  z-index: auto;
 }
 
 .profile-layout--settings-jiji .settings-jiji-form .settings-jiji-section--photo .form-field,
@@ -6692,13 +6750,26 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
   font-size: 0.95rem;
 }
 
-.profile-layout--settings-jiji .settings-jiji-form select.form-input {
+.profile-layout--settings-jiji .settings-jiji-form select.form-input,
+.profile-layout--settings-jiji .settings-jiji-form select.form-select {
   min-height: 2.75rem;
-  background-color: #fff;
-  color: #111111;
+  margin-bottom: 12px;
+  background-color: #ffffff !important;
+  background-image: linear-gradient(45deg, transparent 50%, #555 50%),
+    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px);
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+  color: #111111 !important;
+  border: 1px solid #dddddd !important;
   -webkit-appearance: none;
   appearance: none;
+  position: relative;
+  z-index: 2;
 }
+
 
 .profile-layout--settings-jiji .settings-jiji-form .char-count {
   display: block;

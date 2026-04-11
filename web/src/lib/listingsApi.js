@@ -97,7 +97,7 @@ async function apiFetch(path, options = {}) {
       }
     });
   } catch (err) {
-    console.warn("[Nuvelo API] network error", url, err);
+    console.error("[Nuvelo] API network error", { url, baseEnv: import.meta.env.VITE_API_URL ?? "(same-origin /api)" }, err);
     throw new Error("Unable to reach the server. Please try again shortly.");
   }
   const text = await res.text();
@@ -114,6 +114,7 @@ async function apiFetch(path, options = {}) {
       payload?.error ||
       (Array.isArray(payload?.errors) ? payload.errors.join(", ") : "") ||
       `Request failed (${res.status})`;
+    console.error("[Nuvelo] API HTTP error", { url, status: res.status, msg });
     throw new Error(msg);
   }
   return payload;
@@ -191,11 +192,30 @@ export async function fetchListings(params = {}) {
   }
 
   let real = [];
+  const listingsUrl = `/listings${qs.toString() ? `?${qs}` : ""}`;
   try {
-    const data = await apiFetch(`/listings${qs.toString() ? `?${qs}` : ""}`);
+    const data = await apiFetch(listingsUrl);
     real = (Array.isArray(data) ? data : []).map(normalizeListingRow);
+    const hasServerFilters = Boolean(
+      keyword || categoryId || location || minPrice != null || maxPrice != null
+    );
+    if (real.length === 0 && hasServerFilters && !forUserId) {
+      try {
+        const rawUnfiltered = await apiFetch("/listings");
+        const n = Array.isArray(rawUnfiltered) ? rawUnfiltered.length : 0;
+        console.warn("[Nuvelo] Filtered listings empty; unfiltered API returned count:", n);
+      } catch (e2) {
+        console.error("[Nuvelo] Fallback unfiltered listings probe failed", e2);
+      }
+    }
+    if (real.length === 0 && !forUserId) {
+      console.warn("[Nuvelo] fetchListings returned 0 rows", {
+        listingsUrl,
+        params: { keyword, categoryId, location, minPrice, maxPrice }
+      });
+    }
   } catch (e) {
-    console.error(e);
+    console.error("[Nuvelo] fetchListings failed", { url: listingsUrl, message: e?.message }, e);
     if (!demosEnabled()) {
       throw e;
     }

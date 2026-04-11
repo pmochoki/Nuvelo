@@ -36,6 +36,7 @@ import {
   subscribeToThreadMessages
 } from "./lib/messaging.js";
 import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
+import { fetchNotificationsForCurrentUser } from "./lib/notificationsApi.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 
 const FALLBACK_HUNGARIAN_LOCATIONS = [
@@ -151,7 +152,7 @@ const showOAuthUnavailable = (providerLabel) => {
 const LISTINGS_UNAVAILABLE_MSG =
   "We couldn’t load listings. Check your connection and try again.";
 /** Browse page fetch failure (user-facing). */
-const BROWSE_LISTINGS_ERROR_MSG = "Could not load listings right now. Try refreshing.";
+const BROWSE_LISTINGS_ERROR_MSG = "Could not load listings. Try refreshing.";
 const LISTING_DETAIL_UNAVAILABLE_MSG =
   "We couldn’t load this ad. Check your connection and try again.";
 const USER_STORE_KEY = "nuvelo_user";
@@ -398,16 +399,13 @@ function applySupabaseSession(session) {
   writeStoredUser(cachedUser);
 }
 
-/** Prefer profiles.avatar_url when no local data-URL override is pending. */
+/** Prefer profiles.avatar_url; clears stale local data-URL when a remote URL exists. */
 async function mergeProfileAvatarFromDb() {
   if (!isSupabaseConfigured || !supabase) {
     return;
   }
   const u = getUser();
   if (!u?.id) {
-    return;
-  }
-  if (readStoredAvatarDataUrl()) {
     return;
   }
   const { data, error } = await supabase.from("profiles").select("avatar_url").eq("id", u.id).maybeSingle();
@@ -419,9 +417,13 @@ async function mergeProfileAvatarFromDb() {
   if (!url || typeof url !== "string") {
     return;
   }
-  if (u.avatarUrl === url) {
+  if (!/^https?:\/\//i.test(url)) {
     return;
   }
+  if (u.avatarUrl === url && !readStoredAvatarDataUrl()) {
+    return;
+  }
+  writeStoredAvatarDataUrl("");
   cachedUser = { ...u, avatarUrl: url };
   writeStoredUser(cachedUser);
 }
@@ -1113,10 +1115,14 @@ const writeStoredAvatarDataUrl = (dataUrl) => {
   }
 };
 
-/** Merge local avatar override into user snapshot for UI. */
+/** Merge local avatar override into user snapshot for UI. Remote HTTPS avatars win when Supabase is active. */
 const withMergedAvatar = (user) => {
   if (!user) {
     return user;
+  }
+  const remote = user.avatarUrl && typeof user.avatarUrl === "string" ? user.avatarUrl.trim() : "";
+  if (isSupabaseConfigured && /^https?:\/\//i.test(remote)) {
+    return { ...user, avatarUrl: remote };
   }
   const local = readStoredAvatarDataUrl();
   if (local) {
@@ -1863,7 +1869,7 @@ function initMessagesPageUi() {
 
   const listsWrap = root.querySelector("[data-msg-lists-wrap]");
   const emptyInbox = root.querySelector("[data-msg-empty-inbox]");
-  const MESSAGES_USER_FACING_ERROR = "Messages are temporarily unavailable. Please try again later.";
+  const MESSAGES_USER_FACING_ERROR = "Could not load messages. Try again.";
 
   /**
    * @param {object[]} threads
@@ -2050,11 +2056,63 @@ function initProfileRouteFeatures(section) {
   if (section === "messages") {
     initMessagesPageUi();
   }
+  if (section === "notifications") {
+    void initNotificationsPageUi();
+  }
   if (section === "feedback") {
     initFeedbackPageUi();
   }
   if (section === "performance") {
     initPerformancePageUi();
+  }
+}
+
+async function initNotificationsPageUi() {
+  const root = document.querySelector("[data-notifications-root]");
+  const listEl = root?.querySelector("[data-notifications-list]");
+  const errEl = root?.querySelector("[data-notifications-error]");
+  const loadEl = root?.querySelector("[data-notifications-loading]");
+  if (!listEl) {
+    return;
+  }
+  if (loadEl) {
+    loadEl.hidden = false;
+  }
+  if (errEl) {
+    errEl.hidden = true;
+    errEl.textContent = "";
+  }
+  try {
+    const rows = await fetchNotificationsForCurrentUser();
+    if (loadEl) {
+      loadEl.hidden = true;
+    }
+    if (!rows.length) {
+      listEl.innerHTML = `<div class="profile-empty-state" role="status"><p>No notifications yet.</p></div>`;
+      return;
+    }
+    listEl.innerHTML = `<ul class="notifications-list" role="list">
+      ${rows
+        .map(
+          (r) => `
+      <li class="notifications-list__item${r.is_read ? "" : " notifications-list__item--unread"}" role="listitem">
+        <p class="notifications-list__msg">${esc(String(r.message || ""))}</p>
+        <time class="notifications-list__time muted small" datetime="${esc(String(r.created_at || ""))}">${esc(
+            r.created_at ? new Date(r.created_at).toLocaleString() : ""
+          )}</time>
+      </li>`
+        )
+        .join("")}
+    </ul>`;
+  } catch {
+    if (loadEl) {
+      loadEl.hidden = true;
+    }
+    if (errEl) {
+      errEl.hidden = false;
+      errEl.textContent = "Could not load notifications. Try again.";
+    }
+    listEl.innerHTML = "";
   }
 }
 
@@ -3360,7 +3418,7 @@ const renderLanding = async () => {
   if (listingsLoadFailed) {
     grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`;
   } else if (!listings.length) {
-    grid.innerHTML = `<div class="listings-empty muted" role="status">No listings yet. Be the first to post!</div>`;
+    grid.innerHTML = `<div class="listings-empty muted" role="status">No listings yet — be the first to post!</div>`;
   } else {
     trending.forEach((listing, i) => {
       grid.appendChild(
@@ -3746,7 +3804,7 @@ const renderList = async () => {
       grid.innerHTML =
         browseFetchIsBroad && filters.page <= 1
           ? `<div class="empty-state" role="status">
-              <p>No listings yet. Be the first to post one!</p>
+              <p>No listings yet — be the first to post!</p>
               <p style="margin-top:0.75rem"><a class="btn btn--primary" href="/post">Post an ad</a></p>
             </div>`
           : `<div class="empty-state" role="status">No ads match your search or filters yet. Try adjusting filters or <a href="/browse">view all ads</a>.</div>`;

@@ -1,5 +1,27 @@
 # Nuvelo — autonomous tasks (Supabase + Vercel) — 2026-04-09
 
+## Site-wide fixes session — 2026-04-09 (tasks 1–5)
+
+| Task | Status | Notes |
+|------|--------|--------|
+| **1 — Mobile layout** | **Done** | `#app.main--jiji` / `.main--jiji`: `width/max-width: 100%`, horizontal padding `max(16px, safe-area)`, `min-width: 0`; `body` full-width navy background; `.feed-layout--browse` / `.browse-layout--jiji` full width; profile pill nav: `display: flex`, `overflow-x: auto`, `-webkit-overflow-scrolling: touch`, `scrollbar-width: none`, `padding: 8px 16px`, `gap: 8px`; profile content cards `margin: 0 0 16px`, `border-radius: 16px`. |
+| **2 — Browse / API** | **Done** | `web/src/lib/listingsApi.js`: `[Nuvelo]`-prefixed `console.error` / `console.warn` for failures, empty results, and a one-shot unfiltered `/listings` probe when filters return 0 rows; logs full request URL. Empty copy: **“No listings yet — be the first to post!”** + Post CTA. Error: **“Could not load listings. Try refreshing.”** Skeleton already 4 cards in `buildBrowseSkeletonHtml`. **API:** browser calls **`VITE_API_URL` or same-origin `/api/listings`** (Vercel Functions in repo root `api/`). **`vercel.json`** rewrites non-`/api/*` to SPA; **`/api/*` is not proxied to Render** — listings are handled by **`api/listings/index.js`** (Supabase or file store when env set). |
+| **3 — Messaging** | **Done (code + DB)** | Supabase MCP **`apply_migration`**: applied **`message_threads` / `messages`** schema matching **`web/src/lib/messaging.js`** (participant_low/high — not buyer/seller-only). **`web/src/lib/messaging.js`**: generic errors only (no raw Supabase strings). **`main.js`**: user-facing **“Could not load messages. Try again.”** |
+| **4 — Profile / settings** | **Done** | **Avatars:** `mergeProfileAvatarFromDb` clears local data-URL when `profiles.avatar_url` is HTTPS; settings form prefers remote photo when Supabase is on; bucket migration applied via MCP + **`supabase/migrations/20260411120100_storage_avatars_bucket.sql`** (jpeg/png/webp, 5MB). **My adverts:** sample/mock listings only in **`import.meta.env.DEV`** with no Supabase; production never shows SAMPLE. **Selects:** reinforced white `#fff` / `#111`, chevron, `z-index`, `margin-bottom`. |
+| **5 — SEO / notifications** | **Done** | **`middleware.js`**: TODO comment block for **`PRERENDER_TOKEN`**. **Notifications:** table applied via MCP + migration **`20260411120000_notifications.sql`**; **`web/src/lib/notificationsApi.js`** + **`initNotificationsPageUi`** loads rows or empty / error copy. |
+
+**Database (project `ahiujuljjbozmfwoqtli`) — applied via MCP this session**
+
+- **`public.message_threads`**, **`public.messages`** — yes (migration aligned with app).
+- **`public.notifications`** — yes.
+- **Storage `avatars` bucket** — yes (policies in migration file).
+
+**Could not verify remotely**
+
+- End-to-end **nuvelo.one** browse/messages in a browser from this environment (no automated run). If browse is still empty, confirm **`api/listings`** returns rows (Supabase **`SUPABASE_SERVICE_ROLE_URL`** + listings table on Vercel, or file store fallback).
+
+---
+
 ## TASK 1 — Supabase env vars in Vercel
 
 **Completed**

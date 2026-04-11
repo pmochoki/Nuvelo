@@ -619,7 +619,9 @@ function renderProfileSection(section, user) {
 
 function renderMyAdverts(user) {
   const real = user.adverts || [];
-  const useDemo = real.length === 0 && !isSupabaseConfigured;
+  /** Sample rows only in local dev when Supabase is off — never in production builds. */
+  const useDemo =
+    import.meta.env.DEV && real.length === 0 && !isSupabaseConfigured;
   const display = useDemo ? MOCK_MY_ADVERTS : real;
   const emptySignedIn =
     isSupabaseConfigured && real.length === 0
@@ -662,8 +664,12 @@ function renderSavedAds(user) {
 
 function renderNotifications() {
   return `
-    <div class="profile-section-header"><h2>Notifications</h2></div>
-    <div class="profile-empty-state"><p>No notifications yet.</p></div>`;
+    <div data-notifications-root>
+      <div class="profile-section-header"><h2>Notifications</h2></div>
+      <p class="muted small" data-notifications-loading style="margin:0 0 0.75rem">Loading…</p>
+      <p class="browse-listings-soft-msg muted" data-notifications-error hidden role="alert"></p>
+      <div data-notifications-list></div>
+    </div>`;
 }
 
 function renderFollowers() {

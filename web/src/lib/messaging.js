@@ -62,7 +62,8 @@ export async function getOrCreateThread({ listingId, listingOwnerId, listingTitl
     .maybeSingle();
 
   if (selErr) {
-    throw new Error(selErr.message || "Could not open chat.");
+    console.error("[Nuvelo] message_threads select", selErr);
+    throw new Error("Could not open chat.");
   }
   if (existing?.id) {
     return existing.id;
@@ -94,7 +95,8 @@ export async function getOrCreateThread({ listingId, listingOwnerId, listingTitl
         return retry.id;
       }
     }
-    throw new Error(insErr.message || "Could not create chat.");
+    console.error("[Nuvelo] message_threads insert", insErr);
+    throw new Error("Could not create chat.");
   }
   return inserted.id;
 }
@@ -122,8 +124,8 @@ export async function fetchThreadsForCurrentUser() {
     .or(`participant_low.eq.${uid},participant_high.eq.${uid}`);
 
   if (error) {
-    console.error("[messaging] list threads", error);
-    throw new Error(error.message || "Could not load conversations.");
+    console.error("[Nuvelo] message_threads list", error);
+    throw new Error("Could not load conversations.");
   }
 
   const list = (rows || []).sort((a, b) => {
@@ -194,8 +196,8 @@ export async function fetchMessages(threadId) {
     .order("created_at", { ascending: true });
 
   if (error) {
-    console.error("[messaging] messages", error);
-    throw new Error(error.message || "Could not load messages.");
+    console.error("[Nuvelo] messages select", error);
+    throw new Error("Could not load messages.");
   }
   return data || [];
 }
@@ -225,7 +227,8 @@ export async function sendMessage(threadId, body) {
     body: text
   });
   if (error) {
-    throw new Error(error.message || "Could not send.");
+    console.error("[Nuvelo] messages insert", error);
+    throw new Error("Could not send.");
   }
 }
 

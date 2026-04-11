@@ -17,9 +17,6 @@ function extFromMime(mime) {
   if (m === "image/webp") {
     return "webp";
   }
-  if (m === "image/gif") {
-    return "gif";
-  }
   return "jpg";
 }
 
