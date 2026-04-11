@@ -24,6 +24,36 @@
   --surface-elevated: #ffffff;
   --surface-tab-bar: #ffffff;
   --ink-on-light: #0d0a1e;
+  /* Profile shell — follows app theme (dark default) */
+  --profile-surface: var(--purple-card);
+  --profile-surface-2: #1f1a34;
+  --profile-border: var(--purple-border);
+  --profile-border-subtle: rgba(255, 255, 255, 0.08);
+  --profile-heading: var(--text);
+  --profile-body: var(--text);
+  --profile-muted: var(--text-muted);
+  --profile-faint: var(--text-secondary);
+  --profile-link-muted: #a8a4b8;
+  --profile-avatar-ring: var(--purple-border);
+  --profile-sidenav-fg: #e8e6f0;
+  --profile-sidenav-border: rgba(255, 255, 255, 0.08);
+  --profile-sidenav-hover: rgba(167, 139, 250, 0.12);
+  --profile-sidenav-active-bg: rgba(45, 140, 78, 0.22);
+  --profile-sidenav-active-fg: #86efac;
+  --profile-sidenav-icon: var(--text-muted);
+  --profile-sidenav-active-icon: #86efac;
+  --profile-mobile-pill-bg: var(--purple-surface);
+  --profile-msg-hover: rgba(255, 255, 255, 0.05);
+  --profile-msg-unread: rgba(34, 197, 94, 0.14);
+  --profile-notif-unread: rgba(255, 255, 255, 0.06);
+  --profile-advert-title: var(--text);
+  --profile-advert-meta: var(--text-secondary);
+  --profile-hub-toolbar-bg: var(--purple-card);
+  --profile-hub-toolbar-border: var(--profile-border-subtle);
+  --profile-camera-bg: var(--purple-card);
+  --profile-hub-bg: var(--purple-surface);
+  --profile-hub-card-border: var(--profile-border-subtle);
+  --profile-hub-back-hover: rgba(34, 197, 94, 0.15);
   /* legacy aliases */
   --navy: var(--purple-deep);
   --navy-card: var(--purple-card);
@@ -50,6 +80,35 @@
   --surface-elevated: #ffffff;
   --surface-tab-bar: #ffffff;
   --ink-on-light: #14101f;
+  --profile-surface: #ffffff;
+  --profile-surface-2: #fafafa;
+  --profile-border: #e2e8f0;
+  --profile-border-subtle: #f0f0f0;
+  --profile-heading: #111111;
+  --profile-body: #1a1a1a;
+  --profile-muted: #666666;
+  --profile-faint: #666666;
+  --profile-link-muted: #555555;
+  --profile-avatar-ring: #e2e8f0;
+  --profile-sidenav-fg: #333333;
+  --profile-sidenav-border: #f0f0f0;
+  --profile-sidenav-hover: #f7f7f7;
+  --profile-sidenav-active-bg: #f0faf4;
+  --profile-sidenav-active-fg: #2d8c4e;
+  --profile-sidenav-icon: #888888;
+  --profile-sidenav-active-icon: #2d8c4e;
+  --profile-mobile-pill-bg: #ffffff;
+  --profile-msg-hover: #f8fafc;
+  --profile-msg-unread: #f0fdf4;
+  --profile-notif-unread: #f8fafc;
+  --profile-advert-title: #111111;
+  --profile-advert-meta: #4b5563;
+  --profile-hub-toolbar-bg: #ffffff;
+  --profile-hub-toolbar-border: #e8e8e8;
+  --profile-camera-bg: #ffffff;
+  --profile-hub-bg: #e8eef3;
+  --profile-hub-card-border: #f1f5f9;
+  --profile-hub-back-hover: #f0fdf4;
   --navy: var(--purple-deep);
   --navy-card: var(--purple-card);
   --navy-border: var(--purple-border);
@@ -4497,9 +4556,9 @@ button.jiji-promo-card {
 .profile-sidebar {
   position: sticky;
   top: 5.5rem;
-  background: #fff;
+  background: var(--profile-surface);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--profile-border);
   overflow: hidden;
 }
 
@@ -4508,7 +4567,7 @@ button.jiji-promo-card {
   justify-content: flex-end;
   align-items: center;
   padding: 12px 16px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--profile-border);
 }
 
 .profile-settings-link {
@@ -4517,14 +4576,14 @@ button.jiji-promo-card {
   gap: 6px;
   font-size: 12px;
   font-weight: 600;
-  color: #555;
+  color: var(--profile-link-muted);
   text-decoration: none;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 .profile-settings-link:hover {
-  color: #111;
+  color: var(--profile-heading);
 }
 
 .profile-avatar-block {
@@ -4532,7 +4591,7 @@ button.jiji-promo-card {
   flex-direction: column;
   align-items: center;
   padding: 24px 16px 16px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--profile-border);
 }
 
 .profile-avatar-large {
@@ -4540,7 +4599,7 @@ button.jiji-promo-card {
   height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid #e2e8f0;
+  border: 3px solid var(--profile-avatar-ring);
   margin-bottom: 12px;
 }
 
@@ -4548,12 +4607,12 @@ button.jiji-promo-card {
   font-size: 18px;
   font-weight: 700;
   margin: 0 0 4px;
-  color: #111;
+  color: var(--profile-heading);
 }
 
 .profile-phone {
   font-size: 13px;
-  color: #888;
+  color: var(--profile-muted);
   margin: 0;
 }
 
@@ -4568,9 +4627,9 @@ button.jiji-promo-card {
   gap: 12px;
   padding: 14px 20px;
   font-size: 14px;
-  color: #333;
+  color: var(--profile-sidenav-fg);
   text-decoration: none;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--profile-sidenav-border);
   transition: background 0.1s;
   background: none;
   border-left: none;
@@ -4585,22 +4644,22 @@ button.jiji-promo-card {
 }
 
 .profile-sidenav-item:hover {
-  background: #f7f7f7;
+  background: var(--profile-sidenav-hover);
 }
 
 .profile-sidenav-item.active {
-  color: #2d8c4e;
+  color: var(--profile-sidenav-active-fg);
   font-weight: 600;
-  background: #f0faf4;
+  background: var(--profile-sidenav-active-bg);
 }
 
 .profile-sidenav-item svg {
   flex-shrink: 0;
-  color: #888;
+  color: var(--profile-sidenav-icon);
 }
 
 .profile-sidenav-item.active svg {
-  color: #2d8c4e;
+  color: var(--profile-sidenav-active-icon);
 }
 
 .signout-btn {
@@ -4609,7 +4668,7 @@ button.jiji-promo-card {
 
 .profile-sidebar__foot {
   padding: 16px;
-  border-top: 1px solid #e2e8f0;
+  border-top: 1px solid var(--profile-border);
 }
 
 .profile-sign-out-btn {
@@ -4620,13 +4679,13 @@ button.jiji-promo-card {
   min-width: 0;
   width: 100%;
   max-width: 100%;
-  background: #fff;
+  background: var(--profile-surface);
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--profile-border);
   min-height: auto;
   overflow: hidden;
   align-self: start;
-  color: #1a1a1a;
+  color: var(--profile-body);
   box-sizing: border-box;
 }
 
@@ -4636,14 +4695,13 @@ button.jiji-promo-card {
   }
 }
 
-/* White profile card: stop inheriting body’s light --text / purple variables */
 .profile-content h1,
 .profile-content h2,
 .profile-content h3,
 .profile-card h1,
 .profile-card h2,
 .profile-card h3 {
-  color: #111111;
+  color: var(--profile-heading);
 }
 
 .profile-content .muted,
@@ -4652,7 +4710,7 @@ button.jiji-promo-card {
 .profile-card .muted,
 .profile-card .profile-hint,
 .profile-card .small.muted {
-  color: #666666;
+  color: var(--profile-muted);
 }
 
 .profile-content .subtitle,
@@ -4661,7 +4719,7 @@ button.jiji-promo-card {
 .profile-card .subtitle,
 .profile-card .hint,
 .profile-card .timestamp {
-  color: #666666;
+  color: var(--profile-faint);
 }
 
 .profile-content .btn,
@@ -4678,16 +4736,16 @@ button.jiji-promo-card {
 
 .profile-content .btn--ghost,
 .profile-card .btn--ghost {
-  color: #4b5563;
+  color: var(--text-secondary);
 }
 
 .profile-content .notif-item__time,
 .profile-card .notif-item__time {
-  color: #64748b;
+  color: var(--profile-muted);
 }
 
 .profile-card {
-  color: #111111;
+  color: var(--profile-body);
 }
 
 .profile-section-header {
@@ -4695,14 +4753,14 @@ button.jiji-promo-card {
   align-items: center;
   justify-content: space-between;
   padding: 20px 24px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--profile-border);
 }
 
 .profile-section-header h2 {
   font-size: 18px;
   font-weight: 700;
   margin: 0;
-  color: #111;
+  color: var(--profile-heading);
 }
 
 .profile-empty-state {
@@ -4711,7 +4769,7 @@ button.jiji-promo-card {
   align-items: center;
   justify-content: center;
   padding: 80px 24px;
-  color: #888;
+  color: var(--profile-muted);
   font-size: 15px;
   gap: 16px;
 }
@@ -4790,18 +4848,21 @@ button.jiji-promo-card {
   color: var(--text);
 }
 
-/* Profile cards sit on white; body --text is light — use dark copy on adverts */
 .profile-content .advert-row {
-  color: #1a1a1a;
+  color: var(--profile-advert-title);
 }
 
 .profile-content .advert-row__title {
-  color: #111111;
+  color: var(--profile-advert-title);
 }
 
 .profile-content .advert-row__meta,
 .profile-content .advert-row__posted {
-  color: #4b5563;
+  color: var(--profile-advert-meta);
+}
+
+.profile-content .advert-row__price {
+  color: var(--purple-light);
 }
 
 .advert-row__meta {
@@ -4941,8 +5002,8 @@ button.jiji-promo-card {
   text-align: left;
   padding: 14px 24px;
   border: none;
-  border-bottom: 1px solid #e2e8f0;
-  background: #fff;
+  border-bottom: 1px solid var(--profile-border);
+  background: var(--profile-surface);
   font: inherit;
   cursor: pointer;
   box-sizing: border-box;
@@ -4950,11 +5011,11 @@ button.jiji-promo-card {
 }
 
 .msg-thread:hover {
-  background: #f8fafc;
+  background: var(--profile-msg-hover);
 }
 
 .msg-thread--unread {
-  background: #f0fdf4;
+  background: var(--profile-msg-unread);
 }
 
 .msg-thread__avatar {
@@ -4987,7 +5048,7 @@ button.jiji-promo-card {
 
 .msg-thread__name {
   font-weight: 700;
-  color: #111;
+  color: var(--profile-heading);
 }
 
 .msg-thread__time {
@@ -5030,12 +5091,12 @@ button.jiji-promo-card {
   display: flex;
   gap: 0.75rem;
   padding: 14px 24px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--profile-border);
   align-items: flex-start;
 }
 
 .notif-item--unread {
-  background: #f8fafc;
+  background: var(--profile-notif-unread);
 }
 
 .notif-item__dot {
@@ -5059,7 +5120,7 @@ button.jiji-promo-card {
 .notif-item__text {
   margin: 0 0 0.25rem;
   font-size: 0.9rem;
-  color: #111;
+  color: var(--profile-heading);
   line-height: 1.4;
 }
 
@@ -5147,7 +5208,7 @@ button.jiji-promo-card {
   gap: 6px;
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--profile-sidenav-fg);
   text-decoration: none;
 }
 
@@ -5423,7 +5484,7 @@ button.jiji-promo-card {
   text-decoration: none;
   color: var(--text-secondary);
   border: 1px solid var(--purple-border);
-  background: #fff;
+  background: var(--profile-mobile-pill-bg);
   white-space: nowrap;
   scroll-snap-align: start;
 }
@@ -5536,8 +5597,8 @@ button.jiji-promo-card {
 }
 
 .profile-sidebar-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--profile-surface);
+  border: 1px solid var(--profile-border);
   border-radius: 10px;
   overflow: hidden;
 }
@@ -5562,8 +5623,8 @@ button.jiji-promo-card {
 }
 
 .profile-settings-pill:hover {
-  color: var(--purple-deep);
-  background: var(--purple-surface);
+  color: var(--text);
+  background: var(--profile-sidenav-hover);
 }
 
 .profile-settings-pill--active {
@@ -5575,7 +5636,7 @@ button.jiji-promo-card {
   flex-direction: column;
   align-items: center;
   padding: 0 16px 16px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--profile-sidenav-border);
 }
 
 .profile-avatar-ring {
@@ -5606,7 +5667,7 @@ button.jiji-promo-card {
   width: 28px;
   height: 28px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--profile-camera-bg);
   border: 1px solid var(--purple-border);
   display: grid;
   place-items: center;
@@ -5631,7 +5692,7 @@ button.jiji-promo-card {
 
 .profile-sidenav-extra {
   padding: 0.5rem 0 0;
-  border-top: 1px dashed #e2e8f0;
+  border-top: 1px dashed var(--profile-border);
 }
 
 .profile-sidenav-extra__title {
@@ -5693,8 +5754,8 @@ button.jiji-promo-card {
   justify-content: space-between;
   gap: 0.5rem;
   padding: 0.55rem 0.75rem;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--profile-hub-toolbar-bg);
+  border-bottom: 1px solid var(--profile-hub-toolbar-border);
 }
 
 .profile-hub-toolbar__back {
@@ -5712,7 +5773,7 @@ button.jiji-promo-card {
 }
 
 .profile-hub-toolbar__back:hover {
-  background: #f0fdf4;
+  background: var(--profile-hub-back-hover);
 }
 
 .profile-hub-toolbar__identity {
@@ -5744,13 +5805,13 @@ button.jiji-promo-card {
   border-radius: 50%;
   object-fit: cover;
   display: block;
-  border: 2px solid #e5e7eb;
+  border: 2px solid var(--profile-border);
 }
 
 .profile-hub-toolbar__name {
   font-size: 1rem;
   font-weight: 700;
-  color: #111;
+  color: var(--profile-heading);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -5765,7 +5826,7 @@ button.jiji-promo-card {
   font-weight: 800;
   letter-spacing: 0.06em;
   text-decoration: none;
-  color: #111;
+  color: var(--profile-heading);
 }
 
 .profile-hub-toolbar__settings:hover {
@@ -5778,7 +5839,7 @@ button.jiji-promo-card {
 
 .profile-hub__bg {
   padding: 0.75rem 0.75rem 1rem;
-  background: #e8eef3;
+  background: var(--profile-hub-bg);
 }
 
 .profile-hub-hero {
@@ -5787,11 +5848,11 @@ button.jiji-promo-card {
   gap: 0.65rem;
   padding: 1rem 1rem;
   margin-bottom: 0.65rem;
-  background: #fff;
+  background: var(--profile-surface);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   text-decoration: none;
-  color: #111;
+  color: var(--profile-heading);
 }
 
 .profile-hub-hero__emoji {
@@ -5818,7 +5879,7 @@ button.jiji-promo-card {
 }
 
 .profile-hub-card {
-  background: #fff;
+  background: var(--profile-surface);
   border-radius: 12px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
   overflow: hidden;
@@ -5835,10 +5896,10 @@ button.jiji-promo-card {
   gap: 0.5rem;
   padding: 0.85rem 0.65rem;
   text-decoration: none;
-  color: #111;
+  color: var(--profile-heading);
   font-size: 0.88rem;
   font-weight: 600;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--profile-hub-card-border);
 }
 
 .profile-hub-card--stack .profile-hub-card__row:last-child {
@@ -5879,7 +5940,7 @@ button.jiji-promo-card {
   gap: 0.5rem;
   padding: 0.85rem 0.75rem;
   text-decoration: none;
-  color: #111;
+  color: var(--profile-heading);
   font-weight: 600;
 }
 
@@ -5959,11 +6020,11 @@ body.mobile-tab-bar-pad .profile-hub-fab {
 }
 
 .messages-jiji__left {
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--profile-border);
   display: flex;
   flex-direction: column;
   min-width: 0;
-  background: #fff;
+  background: var(--profile-surface);
 }
 
 .messages-jiji__banner {
@@ -6671,8 +6732,8 @@ body.mobile-tab-bar-pad .profile-hub-fab {
   align-items: center;
   gap: 0.35rem;
   padding: 0.55rem 0.75rem;
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
+  background: var(--profile-hub-toolbar-bg);
+  border-bottom: 1px solid var(--profile-hub-toolbar-border);
   margin-bottom: 0.25rem;
 }
 
@@ -6690,7 +6751,7 @@ body.mobile-tab-bar-pad .profile-hub-fab {
 }
 
 .settings-jiji-appbar__back:hover {
-  background: #f0fdf4;
+  background: var(--profile-hub-back-hover);
 }
 
 .settings-jiji-appbar__title {
@@ -6703,7 +6764,7 @@ body.mobile-tab-bar-pad .profile-hub-fab {
 .settings-jiji-group-gap {
   height: 14px;
   margin: 1rem -1.25rem;
-  background: #e8eef3;
+  background: var(--profile-hub-bg);
 }
 
 @media (max-width: 639px) {
@@ -6761,7 +6822,7 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
 
 .notifications-list__item {
   padding: 0.85rem 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--profile-border);
 }
 
 .notifications-list__item--unread {
@@ -6771,7 +6832,7 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
 
 .notifications-list__msg {
   margin: 0 0 0.35rem;
-  color: #111;
+  color: var(--profile-heading);
   font-size: 0.95rem;
 }
 
@@ -6798,7 +6859,7 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
 .settings-jiji-section {
   margin-top: 1.5rem;
   padding-top: 1.25rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid var(--profile-hub-card-border);
 }
 
 .settings-jiji-section:first-of-type {
@@ -6827,7 +6888,7 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
   margin: 0 0 0.75rem;
   font-size: 0.95rem;
   font-weight: 700;
-  color: #111111;
+  color: var(--profile-heading);
 }
 
 .profile-layout--settings-jiji .settings-jiji-form .form-field {
@@ -6845,7 +6906,7 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #555555;
+  color: var(--profile-link-muted);
   margin-bottom: 4px;
 }
 
@@ -6855,10 +6916,10 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
   width: 100%;
   box-sizing: border-box;
   padding: 10px 12px;
-  border: 1px solid #dddddd;
+  border: 1px solid var(--profile-border);
   border-radius: 8px;
-  background-color: #ffffff;
-  color: #111111;
+  background-color: var(--profile-surface-2);
+  color: var(--profile-heading);
   font: inherit;
   font-size: 0.95rem;
 }
@@ -6867,16 +6928,16 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
 .profile-layout--settings-jiji .settings-jiji-form select.form-select {
   min-height: 2.75rem;
   margin-bottom: 12px;
-  background-color: #ffffff !important;
-  background-image: linear-gradient(45deg, transparent 50%, #555 50%),
-    linear-gradient(135deg, #555 50%, transparent 50%);
+  background-color: var(--profile-surface-2) !important;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-secondary) 50%),
+    linear-gradient(135deg, var(--text-secondary) 50%, transparent 50%);
   background-position:
     calc(100% - 18px) calc(50% - 3px),
     calc(100% - 12px) calc(50% - 3px);
   background-size: 6px 6px, 6px 6px;
   background-repeat: no-repeat;
-  color: #111111 !important;
-  border: 1px solid #dddddd !important;
+  color: var(--profile-heading) !important;
+  border: 1px solid var(--profile-border) !important;
   -webkit-appearance: none;
   appearance: none;
   position: relative;
@@ -6887,7 +6948,7 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
 .profile-layout--settings-jiji .settings-jiji-form .char-count {
   display: block;
   font-size: 0.75rem;
-  color: #666666;
+  color: var(--profile-muted);
   margin-bottom: 0.35rem;
 }
 
@@ -7054,7 +7115,7 @@ body.mobile-tab-bar-pad .settings-jiji-fab {
 }
 
 .profile-section-header--settings-jiji {
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--profile-border);
 }
 
 /* /profile/settings — Nuvelo orange accents (sidebar + form; scoped to settings layout) */

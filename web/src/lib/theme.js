@@ -53,7 +53,14 @@ export function applyTheme(preference) {
     /* ignore */
   }
   document.documentElement.setAttribute("data-theme-pref", pref);
-  const resolved = getResolvedColorScheme();
+  const resolved =
+    pref === "dark"
+      ? "dark"
+      : pref === "light"
+        ? "light"
+        : window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
   document.documentElement.setAttribute("data-color-scheme", resolved);
   setMetaThemeColor(resolved);
   syncThemeSelects(pref);
