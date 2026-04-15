@@ -4,6 +4,25 @@ import { defineConfig } from "vite";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
+const DEFAULT_ADMIN_SUPABASE_URL = "https://ahiujuljjbozmfwoqtli.supabase.co";
+
+/** Bake VITE_SUPABASE_* into admin.html at build (Vercel env). Dev: use web/.env */
+function injectAdminHtmlEnv() {
+  return {
+    name: "inject-admin-html-env",
+    transformIndexHtml(html) {
+      if (!html.includes("__ADMIN_VITE_SUPABASE_URL_JSON__")) {
+        return html;
+      }
+      const url = process.env.VITE_SUPABASE_URL || DEFAULT_ADMIN_SUPABASE_URL;
+      const anon = process.env.VITE_SUPABASE_ANON_KEY || "";
+      return html
+        .replaceAll("__ADMIN_VITE_SUPABASE_URL_JSON__", JSON.stringify(url))
+        .replaceAll("__ADMIN_VITE_SUPABASE_ANON_JSON__", JSON.stringify(anon));
+    }
+  };
+}
+
 /** Vite injects the entry script in <head>; modules are deferred but resolving #app at top-level is safer after <body> exists. */
 function moveModuleScriptToBody() {
   return {
@@ -54,7 +73,7 @@ function spaHistoryFallback() {
 export default defineConfig({
   root: ".",
   publicDir: "public",
-  plugins: [moveModuleScriptToBody(), spaHistoryFallback()],
+  plugins: [injectAdminHtmlEnv(), moveModuleScriptToBody(), spaHistoryFallback()],
   server: {
     proxy: {
       "/api": {

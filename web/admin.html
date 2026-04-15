@@ -9,11 +9,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <script>
     window.__env = window.__env || {};
-    window.__env.VITE_SUPABASE_URL =
-      window.__env.VITE_SUPABASE_URL || "https://ahiujuljjbozmfwoqtli.supabase.co";
-    if (!window.__env.VITE_SUPABASE_ANON_KEY) {
-      window.__env.VITE_SUPABASE_ANON_KEY = "";
-    }
+    /* Replaced at `vite build` with JSON string literals from VITE_SUPABASE_* */
+    window.__env.VITE_SUPABASE_URL = __ADMIN_VITE_SUPABASE_URL_JSON__;
+    window.__env.VITE_SUPABASE_ANON_KEY = __ADMIN_VITE_SUPABASE_ANON_JSON__;
     window.__env.LISTINGS_BACKEND_URL =
       window.__env.LISTINGS_BACKEND_URL || "https://nuvelo-backend.onrender.com";
   </script>
@@ -244,9 +242,18 @@
       <form id="gate-form">
         <label for="gate-pw">Password</label>
         <input id="gate-pw" type="password" autocomplete="current-password" required />
-        <label for="gate-anon">Supabase anon key (optional)</label>
-        <input id="gate-anon" type="text" placeholder="Paste if not injected in __env" autocomplete="off" />
-        <p style="font-size:0.75rem;color:var(--muted);margin:0 0 1rem">Stored in sessionStorage for this tab only. Project: <code>ahiujuljjbozmfwoqtli</code></p>
+        <div id="gate-anon-block">
+          <label for="gate-anon">Supabase anon key (optional)</label>
+          <input id="gate-anon" type="text" placeholder="Override deploy key for this tab only" autocomplete="off" />
+          <p style="font-size:0.75rem;color:var(--muted);margin:0 0 1rem">
+            If the deploy has no key, paste your anon key here. It is stored in sessionStorage for this tab only. Project:
+            <code>ahiujuljjbozmfwoqtli</code>
+          </p>
+        </div>
+        <p id="gate-anon-deploy-note" class="hidden" style="font-size:0.75rem;color:var(--muted);margin:0 0 1rem">
+          Supabase anon key is set for this deployment — you only need the password below. Use the optional field above only
+          to override for debugging.
+        </p>
         <button type="submit" class="btn btn-primary" style="width:100%">Continue</button>
         <p id="gate-err" class="hidden" style="color:var(--danger);margin-top:0.75rem;font-size:0.85rem">Access denied</p>
       </form>
@@ -417,6 +424,7 @@
   }
 
   function showGate() {
+    syncGateAnonUi();
     const err = $("#gate-err");
     if (err) err.classList.add("hidden");
     const gate = $("#gate");
@@ -1674,7 +1682,21 @@
     $("#btn-logout").addEventListener("click", () => { sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem("nuvelo_admin_anon"); showGate(); });
   }
 
+  function syncGateAnonUi() {
+    const fromEnv = String(window.__env?.VITE_SUPABASE_ANON_KEY || "").trim();
+    const blk = $("#gate-anon-block");
+    const note = $("#gate-anon-deploy-note");
+    if (fromEnv) {
+      if (blk) blk.classList.add("hidden");
+      if (note) note.classList.remove("hidden");
+    } else {
+      if (blk) blk.classList.remove("hidden");
+      if (note) note.classList.add("hidden");
+    }
+  }
+
   async function boot() {
+    syncGateAnonUi();
     const stored = sessionStorage.getItem(SESSION_KEY);
     const anonStored = sessionStorage.getItem("nuvelo_admin_anon");
     if (anonStored) SUPABASE_ANON = anonStored;
@@ -1687,8 +1709,14 @@
       const ok = await verifyPassword(pw);
       if (!ok) { $("#gate-err").classList.remove("hidden"); return; }
       $("#gate-err").classList.add("hidden");
-      const extra = $("#gate-anon").value.trim();
-      if (extra) { sessionStorage.setItem("nuvelo_admin_anon", extra); SUPABASE_ANON = extra; }
+      const extra = ($("#gate-anon") && $("#gate-anon").value ? $("#gate-anon").value : "").trim();
+      if (extra) {
+        sessionStorage.setItem("nuvelo_admin_anon", extra);
+        SUPABASE_ANON = extra;
+      } else {
+        sessionStorage.removeItem("nuvelo_admin_anon");
+        SUPABASE_ANON = String(window.__env?.VITE_SUPABASE_ANON_KEY || "").trim();
+      }
       sessionStorage.setItem(SESSION_KEY, "1");
       sb = initSupabase();
       showApp();
