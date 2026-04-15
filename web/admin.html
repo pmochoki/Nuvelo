@@ -41,14 +41,28 @@
       font-family: inherit; border-radius: var(--radius-sm); border: 1px solid var(--border);
       background: #0b0e14; color: var(--text); padding: 0.45rem 0.6rem;
     }
-    /* Above #toast-root (9990) and #modal-root (9000) so login always receives clicks */
+    /* Full viewport; must not be clipped by #app grid (use hidden attribute when logged in) */
     .gate {
-      position: fixed; inset: 0; z-index: 100000;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      width: 100%;
+      min-height: 100vh;
+      min-height: 100dvh;
+      z-index: 100000;
       isolation: isolate;
       background: rgba(0, 0, 0, 0.85);
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       padding: 2rem;
       pointer-events: auto;
+    }
+    #gate[hidden] {
+      display: none !important;
+      pointer-events: none !important;
     }
     .gate-card {
       position: relative;
@@ -76,7 +90,17 @@
     .btn-ghost { background: transparent; }
     .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
     .btn-icon { width: 2rem; height: 2rem; padding: 0; border-radius: var(--radius-sm); }
-    #app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    /* Flex + margin-left avoids broken overlap when sidebar is position:fixed inside a grid */
+    #app {
+      display: flex;
+      flex-direction: row;
+      align-items: stretch;
+      min-height: 100vh;
+      min-height: 100dvh;
+    }
+    #app[hidden] {
+      display: none !important;
+    }
     .sidebar {
       background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column;
       position: fixed; left: 0; top: 0; bottom: 0; width: 220px; z-index: 40;
@@ -93,13 +117,44 @@
       background: rgba(249, 115, 22, 0.12); color: var(--accent); border-left-color: var(--accent);
     }
     .sidebar-footer { margin-top: auto; padding: 1rem; font-size: 0.7rem; color: var(--muted); border-top: 1px solid var(--border); }
-    .main-wrap { margin-left: 220px; display: flex; flex-direction: column; min-height: 100vh; min-width: 0; flex: 1; }
-    .topbar {
-      height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem;
-      padding: 0 1.25rem; background: var(--bg); position: sticky; top: 0; z-index: 30;
+    .main-wrap {
+      margin-left: 220px;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      min-height: 100dvh;
+      min-width: 0;
+      flex: 1 1 auto;
+      width: 100%;
     }
-    .topbar h1 { margin: 0; font-size: 1rem; font-weight: 600; flex: 1; min-width: 0; }
-    .topbar-search { flex: 0 1 280px; }
+    .topbar {
+      min-height: 56px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      flex-wrap: nowrap;
+      align-items: center;
+      gap: 0.75rem 1rem;
+      padding: 0.5rem 1.25rem;
+      background: var(--bg);
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    .topbar h1 {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 600;
+      flex: 1 1 auto;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .topbar-search { flex: 0 1 280px; min-width: 0; }
+    .topbar .btn-ghost,
+    .topbar .avatar-pill {
+      flex-shrink: 0;
+    }
     .topbar-search input { width: 100%; }
     .avatar-pill {
       width: 32px; height: 32px; border-radius: 999px; background: var(--card); border: 1px solid var(--border);
@@ -199,7 +254,7 @@
     </div>
   </div>
 
-  <div id="app" class="hidden">
+  <div id="app" hidden>
     <aside class="sidebar">
       <div class="sidebar-brand">Nuvelo</div>
       <nav class="nav-section">
@@ -364,14 +419,18 @@
   function showGate() {
     const err = $("#gate-err");
     if (err) err.classList.add("hidden");
-    $("#gate").classList.remove("hidden");
-    $("#app").classList.add("hidden");
+    const gate = $("#gate");
+    const app = $("#app");
+    if (gate) gate.hidden = false;
+    if (app) app.hidden = true;
     document.body.style.overflow = "hidden";
   }
 
   function showApp() {
-    $("#gate").classList.add("hidden");
-    $("#app").classList.remove("hidden");
+    const gate = $("#gate");
+    const app = $("#app");
+    if (gate) gate.hidden = true;
+    if (app) app.hidden = false;
     document.body.style.overflow = "";
   }
 
