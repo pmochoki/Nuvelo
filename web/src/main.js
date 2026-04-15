@@ -2125,20 +2125,21 @@ function ensureNavUserDropdown() {
     return;
   }
   wrap.dataset.bound = "1";
+  const setOpen = (open) => {
+    dd.hidden = !open;
+    trigger.setAttribute("aria-expanded", open ? "true" : "false");
+  };
   trigger.addEventListener("click", (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const willOpen = dd.hidden;
-    dd.hidden = !willOpen;
-    trigger.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    setOpen(dd.hidden);
   });
-  document.addEventListener("click", (e) => {
+  document.addEventListener("mousedown", (e) => {
     if (dd.hidden || !(e.target instanceof Node)) {
       return;
     }
     if (!wrap.contains(e.target)) {
-      dd.hidden = true;
-      trigger.setAttribute("aria-expanded", "false");
+      setOpen(false);
     }
   });
   document.getElementById("nav-dropdown-signout")?.addEventListener("click", () => void signOutNuvelo());
@@ -5226,6 +5227,7 @@ const render = async () => {
   migrateLegacyHashToPath();
   setNavDrawerOpen(false);
   updateAuthUi();
+  ensureNavUserDropdown();
   const route = parseRoute();
   applyRouteMeta(route);
   document.body.classList.toggle("is-landing", route.view === "landing");
@@ -5305,7 +5307,6 @@ const render = async () => {
     if (tr) {
       tr.setAttribute("aria-expanded", "false");
     }
-    ensureNavUserDropdown();
     syncGlobalHeaderDrawerSearch();
   }
 };
@@ -5507,6 +5508,7 @@ void (async () => {
   await initAuth();
   syncAuthSignInAvailability();
   bindAuthPhoneFocusHint();
+  ensureNavUserDropdown();
   await render().catch((e) => console.error(e));
 })();
 
