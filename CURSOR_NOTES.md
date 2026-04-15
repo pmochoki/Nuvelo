@@ -206,26 +206,38 @@
 - **Site settings**: reads/writes `public.site_config` when table/policies permit.
 - **API health / system**: live checks for Supabase Auth and `/api/health` + optional `/api/meta`.
 
-### Pages currently placeholder/empty (schema pending)
+### Admin v2 — DB-backed sections (2026-04-09 follow-up)
 
-- Flagged users, verification queue
-- Reported listings (dedicated table not wired yet)
-- Banned content list, appeals
-- Revenue/boost/payout data (payments table not present)
-- Categories and locations management pages
-- Admin accounts management page
+Apply migration **`supabase/migrations/20260412130000_admin_moderation_finance_content.sql`** in Supabase (SQL Editor or CLI). RLS policies are **permissive for anon** (demo/admin SPA pattern — tighten for production).
+
+**Wired in `web/admin.html`**
+
+| Nav | Data source |
+|-----|-------------|
+| Reports queue | `public.moderation_reports` (falls back to `localStorage` demo if no Supabase / table error) |
+| Reported listings | Aggregates `moderation_reports` where `target_type = listing` + listing titles from `/api/listings` cache |
+| Expired listings | Heuristic: approved listings older than **90 days** (no `expires_at` on listings API model yet) |
+| Flagged users | `public.user_flags` + `profiles` names |
+| Verification queue | `public.verification_requests` (approve/reject updates row) |
+| Banned content | Listings cache with `status = hidden` |
+| Appeals | `public.moderation_appeals` |
+| Revenue / Boost purchases | `public.boost_purchases` (KPIs, table, weekly chart) |
+| Boost (nav) | Same table, full list |
+| Payouts | `public.payout_requests` |
+| Categories | `public.admin_marketplace_categories` CRUD |
+| Locations | `public.admin_marketplace_locations` CRUD |
+| Admin accounts | `profiles` where `role = admin` |
+
+**Still external / not automatic**
+
+- Real payment provider writes to `boost_purchases` / `payout_requests`.
+- Production admin should use **service role** or Edge Functions instead of wide-open RLS.
 
 ### Tables needed for full functionality
 
 - **Required for connected features**:
   - `public.profiles`
   - `public.nuvelo_listings` (or compatible backend admin API)
-  - `public.site_config` (new migration added)
-- **Recommended for complete admin product**:
-  - `public.reports` (listing/user reports queue)
-  - `public.user_flags`
-  - `public.verification_requests`
-  - `public.appeals`
-  - `public.payments` / `public.boost_purchases`
-  - `public.payouts`
-  - `public.admin_accounts` (or roles mapped in `profiles`)
+  - `public.site_config` (migration exists)
+- **Admin support (migration `20260412130000`)**:
+  - `public.moderation_reports`, `user_flags`, `verification_requests`, `moderation_appeals`, `boost_purchases`, `payout_requests`, `admin_marketplace_categories`, `admin_marketplace_locations`

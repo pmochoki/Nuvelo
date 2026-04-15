@@ -293,6 +293,7 @@
   let currentPage = "dashboard";
   let chartLine = null;
   let chartDonut = null;
+  let chartRev = null;
   let listingsCache = [];
   let profilesCache = [];
   let sortState = { key: "createdAt", dir: "desc" };
@@ -527,7 +528,7 @@
     const keys = Object.keys(rows[0]);
     const esc = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
     const lines = [keys.join(",")].concat(rows.map((r) => keys.map((k) => esc(r[k])).join(",")));
-    const blob = new Blob([lines.join("\\n")], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = filename;
@@ -813,40 +814,698 @@
       $("#bn-go").onclick = () => { audit("ban_user", uid, "user", $("#bn-reason").value); closeModal(); toast("Ban recorded locally — wire auth admin for production", "warn"); };
     }
     function openUserPanel(uid) {
-      const u = profilesCache.find((x) => String(x.id) === uid); const theirs = listingsCache.filter((l) => l.userId === uid);
-      $("#slide-panel").innerHTML = `<h2 style="margin-top:0;font-size:1rem">${esc(u?.display_name || "User")}</h2><p style="color:#94a3b8;font-size:0.85rem">${esc(uid)}</p><h3 style="font-size:0.8rem;text-transform:uppercase;color:#94a3b8">Listings</h3><div class="table-wrap" style="max-height:200px;overflow:auto"><table><thead><tr><th>Title</th><th>Status</th></tr></thead><tbody>${theirs.map((l) => `<tr><td>${esc(l.title)}</td><td>${esc(l.status)}</td></tr>`).join("")}</tbody></table></div><h3 style="font-size:0.8rem;text-transform:uppercase;color:#94a3b8">Reports</h3><p style="color:#94a3b8;font-size:0.85rem">No reports (no table).</p><button type="button" class="btn btn-danger" style="width:100%;margin-top:1rem" id="pn-close">Close</button>`;
-      $("#slide-panel").classList.add("open"); $("#backdrop-panel").classList.add("show");
-      $("#pn-close").onclick = () => { $("#slide-panel").classList.remove("open"); $("#backdrop-panel").classList.remove("show"); };
-      $("#backdrop-panel").onclick = () => { $("#slide-panel").classList.remove("open"); $("#backdrop-panel").classList.remove("show"); };
+      const u = profilesCache.find((x) => String(x.id) === uid);
+      const theirs = listingsCache.filter((l) => l.userId === uid);
+      $("#slide-panel").innerHTML =
+        `<h2 style="margin-top:0;font-size:1rem">${esc(u?.display_name || "User")}</h2><p style="color:#94a3b8;font-size:0.85rem">${esc(uid)}</p>` +
+        `<h3 style="font-size:0.8rem;text-transform:uppercase;color:#94a3b8">Listings</h3>` +
+        `<div class="table-wrap" style="max-height:200px;overflow:auto"><table><thead><tr><th>Title</th><th>Status</th></tr></thead><tbody>${theirs.map((l) => `<tr><td>${esc(l.title)}</td><td>${esc(l.status)}</td></tr>`).join("")}</tbody></table></div>` +
+        `<h3 style="font-size:0.8rem;text-transform:uppercase;color:#94a3b8;margin-top:0.75rem">Reports (user targets)</h3><div id="user-reports-slot" style="color:#94a3b8;font-size:0.85rem">Loading…</div>` +
+        `<button type="button" class="btn btn-danger" style="width:100%;margin-top:1rem" id="pn-close">Close</button>`;
+      $("#slide-panel").classList.add("open");
+      $("#backdrop-panel").classList.add("show");
+      $("#pn-close").onclick = () => {
+        $("#slide-panel").classList.remove("open");
+        $("#backdrop-panel").classList.remove("show");
+      };
+      $("#backdrop-panel").onclick = () => {
+        $("#slide-panel").classList.remove("open");
+        $("#backdrop-panel").classList.remove("show");
+      };
+      const slot = $("#user-reports-slot");
+      if (sb && slot) {
+        void (async () => {
+          const { data, error } = await sb
+            .from("moderation_reports")
+            .select("reason,status,created_at")
+            .eq("target_type", "user")
+            .eq("target_id", uid)
+            .order("created_at", { ascending: false })
+            .limit(20);
+          if (error) slot.textContent = error.message || "Could not load reports.";
+          else if (!data || !data.length) slot.textContent = "No moderation reports for this user.";
+          else {
+            slot.innerHTML =
+              '<div class="table-wrap" style="max-height:180px;overflow:auto"><table><thead><tr><th>When</th><th>Status</th><th>Reason</th></tr></thead><tbody>' +
+              data
+                .map(
+                  (r) =>
+                    `<tr><td>${esc(formatDate(r.created_at))}</td><td>${esc(String(r.status || "").replace(/_/g, " "))}</td><td>${esc(r.reason || "—")}</td></tr>`
+                )
+                .join("") +
+              "</tbody></table></div>";
+          }
+        })();
+      } else if (slot) slot.textContent = "Connect Supabase to load moderation_reports.";
     }
     ["#uf-search", "#uf-role", "#uf-from"].forEach((sel) => { $(sel).addEventListener("input", rowHtml); $(sel).addEventListener("change", rowHtml); });
     rowHtml();
   }
 
-  function loadDemoReports() { try { const x = JSON.parse(localStorage.getItem(REPORTS_LS) || "[]"); return Array.isArray(x) ? x : []; } catch { return []; } }
-  function saveDemoReports(rows) { localStorage.setItem(REPORTS_LS, JSON.stringify(rows.slice(0, 500))); }
+  function loadDemoReports() {
+    try {
+      const x = JSON.parse(localStorage.getItem(REPORTS_LS) || "[]");
+      return Array.isArray(x) ? x : [];
+    } catch {
+      return [];
+    }
+  }
+  function saveDemoReports(rows) {
+    localStorage.setItem(REPORTS_LS, JSON.stringify(rows.slice(0, 500)));
+  }
+
+  function mapDbReportRow(r) {
+    return {
+      id: r.id,
+      reporter: r.reporter_label || (r.reporter_user_id ? String(r.reporter_user_id).slice(0, 12) + "…" : "—"),
+      target: `${r.target_type}:${r.target_id}`,
+      reason: r.reason || "",
+      date: r.created_at,
+      status: String(r.status || "open").replace(/_/g, " "),
+      rawStatus: r.status || "open",
+      _db: true
+    };
+  }
+
+  function mapLegacyReportRow(r) {
+    return {
+      id: r.id,
+      reporter: r.reporter,
+      target: r.target,
+      reason: r.reason,
+      date: r.date,
+      status: String(r.status || "open").replace(/_/g, " "),
+      rawStatus: r.status === "in review" ? "in_review" : r.status || "open",
+      _db: false
+    };
+  }
 
   async function renderReportsQueue() {
     $("#page-title").textContent = TITLES["mod-reports"];
-    let rows = loadDemoReports();
-    if (!rows.length) { rows = [{ id: "demo-1", reporter: "user-a", target: "listing:demo", reason: "Spam", date: new Date().toISOString(), status: "open" }]; saveDemoReports(rows); }
-    function priorityFor(target) { const n = rows.filter((r) => r.target === target).length; if (n >= 3) return { label: "HIGH", cls: "badge-rejected" }; if (n >= 2) return { label: "MEDIUM", cls: "badge-pending" }; return { label: "LOW", cls: "badge-expired" }; }
+    let rows = [];
+    let useDb = false;
+    let sbErr = "";
+    if (sb) {
+      const { data, error } = await sb.from("moderation_reports").select("*").order("created_at", { ascending: false }).limit(500);
+      if (error) sbErr = error.message || String(error);
+      else {
+        useDb = true;
+        rows = (data || []).map(mapDbReportRow);
+      }
+    }
+    if (!useDb) {
+      let legacy = loadDemoReports();
+      if (!legacy.length) {
+        legacy = [
+          { id: "demo-1", reporter: "user-a", target: "listing:demo", reason: "Spam", date: new Date().toISOString(), status: "open" }
+        ];
+        saveDemoReports(legacy);
+      }
+      rows = legacy.map(mapLegacyReportRow);
+    }
+    if (sbErr && !rows.length) {
+      $("#content").innerHTML =
+        '<div class="empty"><p><strong>Reports queue</strong></p><p style="color:var(--muted)">' +
+        esc(sbErr) +
+        '</p><p style="font-size:0.85rem;color:var(--muted)">Apply migration <code>20260412130000_admin_moderation_finance_content.sql</code> or check RLS. Demo data loads when the table is reachable.</p></div>';
+      return;
+    }
+
+    function rowTargetKey(r) {
+      return r.target || "";
+    }
+    function priorityFor(tk) {
+      const n = rows.filter((r) => rowTargetKey(r) === tk).length;
+      if (n >= 3) return { label: "HIGH", cls: "badge-rejected" };
+      if (n >= 2) return { label: "MEDIUM", cls: "badge-pending" };
+      return { label: "LOW", cls: "badge-expired" };
+    }
+
+    async function persistStatus(id, nextRaw) {
+      const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id));
+      if (sb && uuidLike) {
+        const { error } = await sb
+          .from("moderation_reports")
+          .update({ status: nextRaw, updated_at: new Date().toISOString() })
+          .eq("id", id);
+        if (error) {
+          toast(error.message || "Update failed", "error");
+          return false;
+        }
+        return true;
+      }
+      const legacy = loadDemoReports().map((r) =>
+        String(r.id) === String(id) ? { ...r, status: nextRaw === "dismissed" ? "dismissed" : "in review" } : r
+      );
+      saveDemoReports(legacy);
+      return true;
+    }
+
+    async function reloadRows() {
+      if (useDb && sb) {
+        const { data } = await sb.from("moderation_reports").select("*").order("created_at", { ascending: false }).limit(500);
+        rows = (data || []).map(mapDbReportRow);
+      } else {
+        rows = loadDemoReports().map(mapLegacyReportRow);
+      }
+    }
+
     function render() {
-      $("#content").innerHTML = '<div class="table-wrap"><table><thead><tr><th>Reporter</th><th>Target</th><th>Reason</th><th>Date</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + rows.map((r) => {
-        const pr = priorityFor(r.target);
-        return `<tr><td>${esc(r.reporter)}</td><td>${esc(r.target)}</td><td>${esc(r.reason)}</td><td>${esc(formatDate(r.date))}</td><td><span class="badge ${pr.cls}">${esc(pr.label)}</span></td><td>${esc(r.status)}</td><td><button type="button" class="btn btn-sm" data-rid="${esc(r.id)}" data-act="rev">Review</button><button type="button" class="btn btn-sm" data-rid="${esc(r.id)}" data-act="dis">Dismiss</button></td></tr>`;
-      }).join("") + "</tbody></table></div>";
-      $("#content").querySelectorAll("button[data-act]").forEach((btn) => btn.addEventListener("click", () => { const id = btn.getAttribute("data-rid"); const act = btn.getAttribute("data-act"); rows = rows.map((r) => r.id === id ? { ...r, status: act === "dis" ? "dismissed" : "in review" } : r); saveDemoReports(rows); audit("report_" + act, id, "report", ""); toast("Updated", "ok"); render(); }));
+      const warn = sbErr && rows.length ? '<p style="color:var(--warning);font-size:0.85rem;margin:0 0 0.75rem">' + esc(sbErr) + "</p>" : "";
+      const body =
+        !rows.length && useDb
+          ? '<tr><td colspan="7" style="text-align:center;color:#64748b">No reports yet.</td></tr>'
+          : rows
+              .map((r) => {
+                const tk = rowTargetKey(r);
+                const pr = priorityFor(tk || r.target);
+                return (
+                  "<tr><td>" +
+                  esc(r.reporter) +
+                  "</td><td>" +
+                  esc(r.target) +
+                  "</td><td>" +
+                  esc(r.reason) +
+                  "</td><td>" +
+                  esc(formatDate(r.date)) +
+                  '</td><td><span class="badge ' +
+                  pr.cls +
+                  '">' +
+                  esc(pr.label) +
+                  '</span></td><td>' +
+                  esc(r.status) +
+                  '</td><td><button type="button" class="btn btn-sm" data-rid="' +
+                  esc(String(r.id)) +
+                  '" data-act="rev">Review</button><button type="button" class="btn btn-sm" data-rid="' +
+                  esc(String(r.id)) +
+                  '" data-act="dis">Dismiss</button></td></tr>'
+                );
+              })
+              .join("");
+      $("#content").innerHTML =
+        warn +
+        '<div class="table-wrap"><table><thead><tr><th>Reporter</th><th>Target</th><th>Reason</th><th>Date</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>' +
+        body +
+        "</tbody></table></div>";
+      $("#content").querySelectorAll("button[data-act]").forEach((btn) =>
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-rid");
+          const act = btn.getAttribute("data-act");
+          const nextRaw = act === "dis" ? "dismissed" : "in_review";
+          const ok = await persistStatus(id, nextRaw);
+          if (!ok) return;
+          await reloadRows();
+          audit("report_" + act, id, "report", "");
+          toast("Updated", "ok");
+          render();
+        })
+      );
     }
     render();
   }
 
+  async function renderListingsReported() {
+    $("#page-title").textContent = TITLES["listings-reported"];
+    await loadListings();
+    let repRows = [];
+    let errMsg = "";
+    if (sb) {
+      const { data, error } = await sb
+        .from("moderation_reports")
+        .select("*")
+        .eq("target_type", "listing")
+        .order("created_at", { ascending: false })
+        .limit(500);
+      if (error) errMsg = error.message || String(error);
+      else repRows = data || [];
+    }
+    const byListing = new Map();
+    for (const r of repRows) {
+      const lid = String(r.target_id || "");
+      if (!lid) continue;
+      if (!byListing.has(lid)) byListing.set(lid, { count: 0, last: r.created_at });
+      const agg = byListing.get(lid);
+      agg.count++;
+      if (new Date(r.created_at) > new Date(agg.last)) agg.last = r.created_at;
+    }
+    const tableRows = [...byListing.keys()].map((id) => {
+      const L = listingsCache.find((l) => l.id === id);
+      const st = L ? listingUiStatus(L.status) : { label: "—", cls: "badge-expired" };
+      return { id, title: L?.title || "(not loaded in API cache)", city: L?.location || "—", count: byListing.get(id).count, last: byListing.get(id).last, st };
+    });
+    const banner =
+      '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 1rem">Listings with <code>moderation_reports</code> where <code>target_type = listing</code>. Titles come from the listings API cache.</p>';
+    const errBlock = errMsg
+      ? '<div class="config-banner">' + esc(errMsg) + " — apply migration or check Supabase.</div>"
+      : !sb
+        ? '<div class="config-banner">Supabase not connected — reported listings need DB.</div>'
+        : "";
+    $("#content").innerHTML =
+      errBlock +
+      banner +
+      '<div class="table-wrap"><table><thead><tr><th>Listing ID</th><th>Title</th><th>City</th><th>Reports</th><th>Last report</th><th>Listing status</th></tr></thead><tbody>' +
+      (tableRows.length
+        ? tableRows
+            .map(
+              (r) =>
+                `<tr><td><code>${esc(r.id.slice(0, 12))}…</code></td><td>${esc(r.title)}</td><td>${esc(r.city)}</td><td>${r.count}</td><td>${esc(formatDate(r.last))}</td><td><span class="badge ${r.st.cls}">${esc(r.st.label)}</span></td></tr>`
+            )
+            .join("")
+        : '<tr><td colspan="6" style="text-align:center;color:#64748b">No reported listings in DB.</td></tr>') +
+      "</tbody></table></div>";
+  }
+
+  async function renderListingsExpired() {
+    $("#page-title").textContent = TITLES["listings-expired"];
+    await loadListings();
+    const staleDays = 90;
+    const now = Date.now();
+    const rows = listingsCache.filter((l) => {
+      if (String(l.status).toLowerCase() !== "approved") return false;
+      const t = new Date(l.createdAt || 0).getTime();
+      return t > 0 && (now - t) / 864e5 >= staleDays;
+    });
+    $("#content").innerHTML =
+      '<div class="config-banner">There is no <code>expires_at</code> on listings yet — showing <strong>approved</strong> listings older than ' +
+      staleDays +
+      " days as <strong>renewal candidates</strong> (not true expiry).</div>" +
+      '<div class="table-wrap"><table><thead><tr><th>Title</th><th>Category</th><th>City</th><th>Posted</th><th>Status</th></tr></thead><tbody>' +
+      (rows.length
+        ? rows
+            .map((l) => {
+              const st = listingUiStatus(l.status);
+              return `<tr><td>${esc(l.title)}</td><td>${esc(l.categoryId)}</td><td>${esc(l.location)}</td><td>${esc(formatDate(l.createdAt))}</td><td><span class="badge ${st.cls}">${esc(st.label)}</span></td></tr>`;
+            })
+            .join("")
+        : '<tr><td colspan="5" style="text-align:center;color:#64748b">No stale approved listings in cache.</td></tr>') +
+      "</tbody></table></div>";
+  }
+
+  async function renderUsersFlagged() {
+    $("#page-title").textContent = TITLES["users-flagged"];
+    await loadProfiles();
+    let flags = [];
+    let errMsg = "";
+    if (sb) {
+      const { data, error } = await sb.from("user_flags").select("*").order("created_at", { ascending: false }).limit(500);
+      if (error) errMsg = error.message || String(error);
+      else flags = data || [];
+    }
+    const errBlock = errMsg ? '<div class="config-banner">' + esc(errMsg) + "</div>" : !sb ? '<div class="config-banner">Supabase not connected.</div>' : "";
+    $("#content").innerHTML =
+      errBlock +
+      '<div class="table-wrap"><table><thead><tr><th>User</th><th>Reason</th><th>Flagged by</th><th>Status</th><th>When</th></tr></thead><tbody>' +
+      (flags.length
+        ? flags
+            .map((f) => {
+              const u = profilesCache.find((p) => String(p.id) === String(f.user_id));
+              return `<tr><td>${esc(u?.display_name || String(f.user_id).slice(0, 8) + "…")}</td><td>${esc(f.reason)}</td><td>${esc(f.flagged_by || "—")}</td><td>${esc(String(f.status || "").replace(/_/g, " "))}</td><td>${esc(formatDate(f.created_at))}</td></tr>`;
+            })
+            .join("")
+        : '<tr><td colspan="5" style="text-align:center;color:#64748b">No rows in user_flags.</td></tr>') +
+      "</tbody></table></div>";
+  }
+
+  async function renderUsersVerify() {
+    $("#page-title").textContent = TITLES["users-verify"];
+    await loadProfiles();
+    let reqs = [];
+    let errMsg = "";
+    if (sb) {
+      const { data, error } = await sb.from("verification_requests").select("*").order("created_at", { ascending: false }).limit(500);
+      if (error) errMsg = error.message || String(error);
+      else reqs = data || [];
+    }
+    const errBlock = errMsg ? '<div class="config-banner">' + esc(errMsg) + "</div>" : !sb ? '<div class="config-banner">Supabase not connected.</div>' : "";
+    function row(r) {
+      const u = profilesCache.find((p) => String(p.id) === String(r.user_id));
+      return `<tr data-vid="${esc(String(r.id))}"><td>${esc(u?.display_name || String(r.user_id).slice(0, 8) + "…")}</td><td>${esc(r.notes || "—")}</td><td>${esc(r.status)}</td><td>${esc(formatDate(r.created_at))}</td><td><button type="button" class="btn btn-sm" data-act="ok">Approve</button> <button type="button" class="btn btn-sm" data-act="no">Reject</button></td></tr>`;
+    }
+    $("#content").innerHTML =
+      errBlock +
+      '<div class="table-wrap"><table><thead><tr><th>User</th><th>Notes</th><th>Status</th><th>Requested</th><th>Actions</th></tr></thead><tbody>' +
+      (reqs.length ? reqs.map(row).join("") : '<tr><td colspan="5" style="text-align:center;color:#64748b">No verification requests.</td></tr>') +
+      "</tbody></table></div>";
+    if (!sb) return;
+    $("#content").querySelectorAll("button[data-act]").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const tr = btn.closest("tr");
+        const id = tr?.getAttribute("data-vid");
+        const act = btn.getAttribute("data-act");
+        if (!id) return;
+        const next = act === "ok" ? "approved" : "rejected";
+        const { error } = await sb.from("verification_requests").update({ status: next }).eq("id", id);
+        if (error) toast(error.message, "error");
+        else {
+          audit("verification_" + next, id, "verification", "");
+          toast("Updated", "ok");
+          await renderUsersVerify();
+        }
+      })
+    );
+  }
+
+  async function renderModBanned() {
+    $("#page-title").textContent = TITLES["mod-banned"];
+    await loadListings();
+    const rows = listingsCache.filter((l) => String(l.status).toLowerCase() === "hidden");
+    $("#content").innerHTML =
+      '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 1rem">Listings with status <strong>hidden</strong> from the listings API cache (ban/hide).</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>Title</th><th>Category</th><th>City</th><th>Seller</th><th>Posted</th></tr></thead><tbody>' +
+      (rows.length
+        ? rows
+            .map(
+              (l) =>
+                `<tr><td>${esc(l.title)}</td><td>${esc(l.categoryId)}</td><td>${esc(l.location)}</td><td><code>${esc(String(l.userId).slice(0, 12))}…</code></td><td>${esc(formatDate(l.createdAt))}</td></tr>`
+            )
+            .join("")
+        : '<tr><td colspan="5" style="text-align:center;color:#64748b">No hidden listings in cache.</td></tr>') +
+      "</tbody></table></div>";
+  }
+
+  async function renderModAppeals() {
+    $("#page-title").textContent = TITLES["mod-appeals"];
+    await loadProfiles();
+    let appeals = [];
+    let errMsg = "";
+    if (sb) {
+      const { data, error } = await sb.from("moderation_appeals").select("*").order("created_at", { ascending: false }).limit(500);
+      if (error) errMsg = error.message || String(error);
+      else appeals = data || [];
+    }
+    const errBlock = errMsg ? '<div class="config-banner">' + esc(errMsg) + "</div>" : !sb ? '<div class="config-banner">Supabase not connected.</div>' : "";
+    $("#content").innerHTML =
+      errBlock +
+      '<div class="table-wrap"><table><thead><tr><th>Subject</th><th>User</th><th>Body</th><th>Status</th><th>When</th></tr></thead><tbody>' +
+      (appeals.length
+        ? appeals
+            .map((a) => {
+              const u = a.user_id ? profilesCache.find((p) => String(p.id) === String(a.user_id)) : null;
+              return `<tr><td>${esc(a.subject)}</td><td>${esc(u?.display_name || "—")}</td><td style="max-width:280px">${esc((a.body || "").slice(0, 200))}${(a.body || "").length > 200 ? "…" : ""}</td><td>${esc(String(a.status || "").replace(/_/g, " "))}</td><td>${esc(formatDate(a.created_at))}</td></tr>`;
+            })
+            .join("")
+        : '<tr><td colspan="5" style="text-align:center;color:#64748b">No appeals.</td></tr>') +
+      "</tbody></table></div>";
+  }
+
+  async function fetchBoostPurchases() {
+    if (!sb) return { rows: [], error: "no_sb" };
+    const { data, error } = await sb.from("boost_purchases").select("*").order("purchased_at", { ascending: false }).limit(500);
+    if (error) return { rows: [], error: error.message };
+    return { rows: data || [], error: null };
+  }
+
+  async function renderFinBoost() {
+    $("#page-title").textContent = TITLES["fin-boost"];
+    const { rows, error } = await fetchBoostPurchases();
+    const errBlock = error && error !== "no_sb" ? '<div class="config-banner">' + esc(error) + "</div>" : !sb ? '<div class="config-banner">Supabase not connected.</div>' : "";
+    $("#content").innerHTML =
+      errBlock +
+      '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 1rem">Rows from <code>boost_purchases</code>. Wire your PSP to insert real payment events.</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>User</th><th>Listing</th><th>Amount (HUF)</th><th>Status</th><th>Purchased</th></tr></thead><tbody>' +
+      (rows && rows.length
+        ? rows
+            .map(
+              (p) =>
+                `<tr><td><code>${esc(String(p.user_id).slice(0, 14))}</code></td><td><code>${esc(String(p.listing_id).slice(0, 14))}</code></td><td>${esc(String(p.amount_huf ?? "—"))}</td><td>${esc(p.status)}</td><td>${esc(formatDate(p.purchased_at))}</td></tr>`
+            )
+            .join("")
+        : '<tr><td colspan="5" style="text-align:center;color:#64748b">No boost purchases.</td></tr>') +
+      "</tbody></table></div>";
+  }
+
+  async function renderFinPayout() {
+    $("#page-title").textContent = TITLES["fin-payout"];
+    let rows = [];
+    let errMsg = "";
+    if (sb) {
+      const { data, error } = await sb.from("payout_requests").select("*").order("requested_at", { ascending: false }).limit(500);
+      if (error) errMsg = error.message || String(error);
+      else rows = data || [];
+    }
+    const errBlock = errMsg ? '<div class="config-banner">' + esc(errMsg) + "</div>" : !sb ? '<div class="config-banner">Supabase not connected.</div>' : "";
+    $("#content").innerHTML =
+      errBlock +
+      '<div class="table-wrap"><table><thead><tr><th>User</th><th>Amount (HUF)</th><th>Status</th><th>Requested</th></tr></thead><tbody>' +
+      (rows.length
+        ? rows
+            .map(
+              (p) =>
+                `<tr><td><code>${esc(String(p.user_id).slice(0, 18))}</code></td><td>${esc(String(p.amount_huf ?? "—"))}</td><td>${esc(String(p.status || "").replace(/_/g, " "))}</td><td>${esc(formatDate(p.requested_at))}</td></tr>`
+            )
+            .join("")
+        : '<tr><td colspan="4" style="text-align:center;color:#64748b">No payout requests.</td></tr>') +
+      "</tbody></table></div>";
+  }
+
+  async function renderContentCategories() {
+    $("#page-title").textContent = TITLES["content-categories"];
+    if (!sb) {
+      $("#content").innerHTML = '<div class="empty">Connect Supabase to manage <code>admin_marketplace_categories</code>.</div>';
+      return;
+    }
+    async function refresh() {
+      const { data, error } = await sb.from("admin_marketplace_categories").select("*").order("sort_order", { ascending: true });
+      if (error) {
+        $("#content").innerHTML = '<div class="config-banner">' + esc(error.message) + "</div>";
+        return;
+      }
+      const rows = data || [];
+      $("#content").innerHTML =
+        '<div class="toolbar"><input id="nc-slug" placeholder="slug" /><input id="nc-label" placeholder="label" /><button type="button" class="btn btn-primary btn-sm" id="nc-add">Add</button></div>' +
+        '<div class="table-wrap"><table><thead><tr><th>Slug</th><th>Label</th><th>Sort</th><th>Active</th><th></th></tr></thead><tbody>' +
+        rows
+          .map(
+            (c) =>
+              `<tr data-slug="${esc(c.slug)}"><td><code>${esc(c.slug)}</code></td><td><input class="cat-lbl" data-slug="${esc(c.slug)}" value="${esc(c.label)}" style="width:100%;max-width:220px"/></td><td><input type="number" class="cat-sort" data-slug="${esc(
+                c.slug
+              )}" value="${esc(String(c.sort_order ?? 0))}" style="width:72px"/></td><td><input type="checkbox" class="cat-act" data-slug="${esc(c.slug)}" ${c.is_active ? "checked" : ""}/></td><td><button type="button" class="btn btn-sm cat-save" data-slug="${esc(
+                c.slug
+              )}">Save</button> <button type="button" class="btn btn-sm cat-del" data-slug="${esc(c.slug)}">Delete</button></td></tr>`
+          )
+          .join("") +
+        "</tbody></table></div>";
+      $("#nc-add").onclick = async () => {
+        const slug = ($("#nc-slug").value || "").trim().toLowerCase().replace(/\s+/g, "-");
+        const label = ($("#nc-label").value || "").trim();
+        if (!slug || !label) {
+          toast("Slug and label required", "warn");
+          return;
+        }
+        const { error: e2 } = await sb.from("admin_marketplace_categories").insert({ slug, label, sort_order: 0, is_active: true, updated_at: new Date().toISOString() });
+        if (e2) toast(e2.message, "error");
+        else {
+          audit("category_add", slug, "category", "");
+          toast("Added", "ok");
+          await refresh();
+        }
+      };
+      $$(".cat-save").forEach((b) =>
+        b.addEventListener("click", async () => {
+          const slug = b.getAttribute("data-slug");
+          const lbl = $(`.cat-lbl[data-slug="${slug}"]`);
+          const sortEl = $(`.cat-sort[data-slug="${slug}"]`);
+          const actEl = $(`.cat-act[data-slug="${slug}"]`);
+          const { error: e2 } = await sb
+            .from("admin_marketplace_categories")
+            .update({
+              label: lbl?.value || "",
+              sort_order: Number(sortEl?.value || 0),
+              is_active: !!actEl?.checked,
+              updated_at: new Date().toISOString()
+            })
+            .eq("slug", slug);
+          if (e2) toast(e2.message, "error");
+          else {
+            audit("category_save", slug, "category", "");
+            toast("Saved", "ok");
+          }
+        })
+      );
+      $$(".cat-del").forEach((b) =>
+        b.addEventListener("click", async () => {
+          const slug = b.getAttribute("data-slug");
+          if (!confirm("Delete category " + slug + "?")) return;
+          const { error: e2 } = await sb.from("admin_marketplace_categories").delete().eq("slug", slug);
+          if (e2) toast(e2.message, "error");
+          else {
+            audit("category_delete", slug, "category", "");
+            toast("Deleted", "ok");
+            await refresh();
+          }
+        })
+      );
+    }
+    await refresh();
+  }
+
+  async function renderContentLocations() {
+    $("#page-title").textContent = TITLES["content-locations"];
+    if (!sb) {
+      $("#content").innerHTML = '<div class="empty">Connect Supabase to manage <code>admin_marketplace_locations</code>.</div>';
+      return;
+    }
+    async function refresh() {
+      const { data, error } = await sb.from("admin_marketplace_locations").select("*").order("label", { ascending: true });
+      if (error) {
+        $("#content").innerHTML = '<div class="config-banner">' + esc(error.message) + "</div>";
+        return;
+      }
+      const rows = data || [];
+      $("#content").innerHTML =
+        '<div class="toolbar"><input id="nl-slug" placeholder="slug" /><input id="nl-label" placeholder="label" /><input id="nl-region" placeholder="region" /><button type="button" class="btn btn-primary btn-sm" id="nl-add">Add</button></div>' +
+        '<div class="table-wrap"><table><thead><tr><th>Slug</th><th>Label</th><th>Region</th><th>Active</th><th></th></tr></thead><tbody>' +
+        rows
+          .map(
+            (loc) =>
+              `<tr data-id="${esc(String(loc.id))}"><td><code>${esc(loc.slug)}</code></td><td><input class="loc-lbl" data-id="${esc(String(loc.id))}" value="${esc(loc.label)}" style="width:100%;max-width:200px"/></td><td><input class="loc-reg" data-id="${esc(String(loc.id))}" value="${esc(
+                loc.region || ""
+              )}" style="width:100%;max-width:160px"/></td><td><input type="checkbox" class="loc-act" data-id="${esc(String(loc.id))}" ${loc.is_active ? "checked" : ""}/></td><td><button type="button" class="btn btn-sm loc-save" data-id="${esc(
+                String(loc.id)
+              )}">Save</button> <button type="button" class="btn btn-sm loc-del" data-id="${esc(String(loc.id))}">Delete</button></td></tr>`
+          )
+          .join("") +
+        "</tbody></table></div>";
+      $("#nl-add").onclick = async () => {
+        const slug = ($("#nl-slug").value || "").trim().toLowerCase().replace(/\s+/g, "-");
+        const label = ($("#nl-label").value || "").trim();
+        const region = ($("#nl-region").value || "").trim();
+        if (!slug || !label) {
+          toast("Slug and label required", "warn");
+          return;
+        }
+        const { error: e2 } = await sb
+          .from("admin_marketplace_locations")
+          .insert({ slug, label, region, is_active: true, updated_at: new Date().toISOString() });
+        if (e2) toast(e2.message, "error");
+        else {
+          audit("location_add", slug, "location", "");
+          toast("Added", "ok");
+          await refresh();
+        }
+      };
+      $$(".loc-save").forEach((b) =>
+        b.addEventListener("click", async () => {
+          const id = b.getAttribute("data-id");
+          const lbl = $(`.loc-lbl[data-id="${id}"]`);
+          const reg = $(`.loc-reg[data-id="${id}"]`);
+          const actEl = $(`.loc-act[data-id="${id}"]`);
+          const { error: e2 } = await sb
+            .from("admin_marketplace_locations")
+            .update({
+              label: lbl?.value || "",
+              region: reg?.value || "",
+              is_active: !!actEl?.checked,
+              updated_at: new Date().toISOString()
+            })
+            .eq("id", id);
+          if (e2) toast(e2.message, "error");
+          else {
+            audit("location_save", id, "location", "");
+            toast("Saved", "ok");
+          }
+        })
+      );
+      $$(".loc-del").forEach((b) =>
+        b.addEventListener("click", async () => {
+          const id = b.getAttribute("data-id");
+          if (!confirm("Delete this location?")) return;
+          const { error: e2 } = await sb.from("admin_marketplace_locations").delete().eq("id", id);
+          if (e2) toast(e2.message, "error");
+          else {
+            audit("location_delete", id, "location", "");
+            toast("Deleted", "ok");
+            await refresh();
+          }
+        })
+      );
+    }
+    await refresh();
+  }
+
+  async function renderSysAdmins() {
+    $("#page-title").textContent = TITLES["sys-admins"];
+    await loadProfiles();
+    const rows = profilesCache.filter((p) => String(p.role || "").toLowerCase() === "admin");
+    $("#content").innerHTML =
+      '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 1rem">Profiles where <code>role = admin</code>. Auth users are still managed in Supabase Auth.</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>Name</th><th>User ID</th><th>Joined</th></tr></thead><tbody>' +
+      (rows.length
+        ? rows
+            .map((u) => `<tr><td>${esc(u.display_name || "—")}</td><td><code>${esc(String(u.id))}</code></td><td>${esc(formatDate(u.created_at))}</td></tr>`)
+            .join("")
+        : '<tr><td colspan="3" style="text-align:center;color:#64748b">No admin profiles in cache (check RLS / role column).</td></tr>') +
+      "</tbody></table></div>";
+  }
+
   async function renderRevenue() {
     $("#page-title").textContent = TITLES["fin-revenue"];
-    $("#content").innerHTML = '<div class="kpi-grid" style="margin-bottom:1rem"><div class="kpi"><div class="label">Total revenue (HUF)</div><div class="value">0</div></div><div class="kpi"><div class="label">This month</div><div class="value">0</div></div><div class="kpi"><div class="label">Active subscriptions</div><div class="value">0</div></div></div><div class="panel"><h2>Boost purchases</h2><p style="color:#94a3b8;font-size:0.9rem">No payment data yet. Connect your payment provider to populate this section.</p><div class="table-wrap"><table><thead><tr><th>User</th><th>Listing</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead><tbody><tr><td colspan="5" style="text-align:center;color:#64748b">—</td></tr></tbody></table></div><div class="chart-box" style="margin-top:1rem;height:220px"><canvas id="rev-chart"></canvas></div></div>';
+    const { rows: purchases, error } = await fetchBoostPurchases();
+    const paid = (purchases || []).filter((p) => String(p.status).toLowerCase() === "paid");
+    const total = paid.reduce((s, p) => s + (Number(p.amount_huf) || 0), 0);
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth();
+    const monthTotal = paid
+      .filter((p) => {
+        const d = new Date(p.purchased_at || 0);
+        return d.getFullYear() === y && d.getMonth() === m;
+      })
+      .reduce((s, p) => s + (Number(p.amount_huf) || 0), 0);
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    start.setDate(start.getDate() - 12 * 7);
+    const bucket = Array(12).fill(0);
+    for (const p of paid) {
+      const t = new Date(p.purchased_at || 0).getTime();
+      const wi = Math.floor((t - start.getTime()) / (7 * 864e5));
+      if (wi >= 0 && wi < 12) bucket[wi] += Number(p.amount_huf) || 0;
+    }
+    const labels = Array.from({ length: 12 }, (_, i) => "W" + (i + 1));
+    const warn =
+      error && error !== "no_sb"
+        ? '<div class="config-banner">' + esc(error) + "</div>"
+        : !sb
+          ? '<div class="config-banner">Supabase not connected — revenue KPIs stay at 0.</div>'
+          : "";
+    $("#content").innerHTML =
+      warn +
+      '<div class="kpi-grid" style="margin-bottom:1rem">' +
+      '<div class="kpi"><div class="label">Boost revenue (HUF, paid)</div><div class="value">' +
+      esc(String(total)) +
+      '</div></div><div class="kpi"><div class="label">This month (paid)</div><div class="value">' +
+      esc(String(monthTotal)) +
+      '</div></div><div class="kpi"><div class="label">Boost rows</div><div class="value">' +
+      esc(String((purchases || []).length)) +
+      "</div></div></div>" +
+      '<div class="panel"><h2>Boost purchases</h2><p style="color:#94a3b8;font-size:0.9rem">Data from <code>boost_purchases</code>. Chart: paid HUF per week (last 12 weeks, bucketed).</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>User</th><th>Listing</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead><tbody>' +
+      (purchases && purchases.length
+        ? purchases
+            .slice(0, 50)
+            .map(
+              (p) =>
+                `<tr><td><code>${esc(String(p.user_id).slice(0, 12))}…</code></td><td><code>${esc(String(p.listing_id).slice(0, 12))}…</code></td><td>${esc(String(p.amount_huf ?? "—"))}</td><td>${esc(formatDate(p.purchased_at))}</td><td>${esc(p.status)}</td></tr>`
+            )
+            .join("")
+        : '<tr><td colspan="5" style="text-align:center;color:#64748b">No rows in boost_purchases.</td></tr>') +
+      '</tbody></table></div><div class="chart-box" style="margin-top:1rem;height:220px"><canvas id="rev-chart"></canvas></div></div>';
     const ctx = $("#rev-chart");
     if (ctx && window.Chart) {
-      new Chart(ctx, { type: "line", data: { labels: Array.from({ length: 12 }, (_, i) => "W" + (i + 1)), datasets: [{ label: "HUF", data: Array(12).fill(0), borderColor: "#f97316", tension: 0.2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: "#94a3b8" } }, y: { ticks: { color: "#94a3b8" } } } } });
+      if (chartRev) chartRev.destroy();
+      chartRev = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels,
+          datasets: [{ label: "HUF (paid)", data: bucket, borderColor: "#f97316", tension: 0.2 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { ticks: { color: "#94a3b8" } }, y: { ticks: { color: "#94a3b8" } } }
+        }
+      });
     }
   }
 
@@ -904,27 +1563,28 @@
     $("#page-title").textContent = TITLES[page] || "Admin";
     if (chartLine) { chartLine.destroy(); chartLine = null; }
     if (chartDonut) { chartDonut.destroy(); chartDonut = null; }
+    if (chartRev) { chartRev.destroy(); chartRev = null; }
     const loaders = {
       dashboard: renderDashboard,
       "listings-all": () => renderListingsAll(false),
       "listings-pending": renderPendingReview,
-      "listings-reported": () => renderPlaceholder("Reported listings", "No reports table connected — use Reports queue."),
-      "listings-expired": () => renderPlaceholder("Expired listings", "No expiry field on nuvelo_listings yet."),
+      "listings-reported": renderListingsReported,
+      "listings-expired": renderListingsExpired,
       "users-all": renderUsers,
-      "users-flagged": () => renderPlaceholder("Flagged users", "Add flagged_users table to enable this view."),
-      "users-verify": () => renderPlaceholder("Verification queue", "Add verification_requests table."),
+      "users-flagged": renderUsersFlagged,
+      "users-verify": renderUsersVerify,
       "mod-reports": renderReportsQueue,
-      "mod-banned": () => renderPlaceholder("Banned content", "Query hidden listings or add bans table."),
-      "mod-appeals": () => renderPlaceholder("Appeals", "Add appeals table."),
+      "mod-banned": renderModBanned,
+      "mod-appeals": renderModAppeals,
       "fin-revenue": renderRevenue,
-      "fin-boost": () => renderPlaceholder("Boost purchases", "Same as revenue — connect payments."),
-      "fin-payout": () => renderPlaceholder("Payouts", "Connect payout provider."),
-      "content-categories": () => renderPlaceholder("Categories", "Manage categories in code or add categories table."),
-      "content-locations": () => renderPlaceholder("Locations", "Hungarian locations are static in app data."),
+      "fin-boost": renderFinBoost,
+      "fin-payout": renderFinPayout,
+      "content-categories": renderContentCategories,
+      "content-locations": renderContentLocations,
       "site-settings": renderSiteSettings,
       "sys-logs": () => { $("#page-title").textContent = TITLES["sys-logs"]; const log = JSON.parse(sessionStorage.getItem(AUDIT_KEY) || "[]"); $("#content").innerHTML = '<div class="table-wrap"><table><thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Note</th></tr></thead><tbody>' + log.map((a) => `<tr><td>${esc(a.timestamp)}</td><td>${esc(a.action)}</td><td>${esc(a.targetType)}</td><td>${esc(a.adminNote)}</td></tr>`).join("") + "</tbody></table></div>"; },
       "sys-health": renderApiHealth,
-      "sys-admins": () => renderPlaceholder("Admin accounts", "Manage Supabase Auth admin users in dashboard.")
+      "sys-admins": renderSysAdmins
     };
     const fn = loaders[page] || (() => renderPlaceholder(page, "Not implemented."));
     $("#content").innerHTML = '<div class="empty"><div class="skeleton" style="height:120px"></div></div>';
