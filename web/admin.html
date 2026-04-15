@@ -1,12 +1,966 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nuvelo Admin — Moderation</title>
-  </head>
-  <body>
-    <div id="admin-root"></div>
-    <script type="module" src="/src/adminMain.js"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nuvelo Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    window.__env = window.__env || {};
+    window.__env.VITE_SUPABASE_URL =
+      window.__env.VITE_SUPABASE_URL || "https://ahiujuljjbozmfwoqtli.supabase.co";
+    if (!window.__env.VITE_SUPABASE_ANON_KEY) {
+      window.__env.VITE_SUPABASE_ANON_KEY = "";
+    }
+    window.__env.LISTINGS_BACKEND_URL =
+      window.__env.LISTINGS_BACKEND_URL || "https://nuvelo-backend.onrender.com";
+  </script>
+  <style>
+    :root {
+      --bg: #0f1117;
+      --sidebar: #161b27;
+      --card: #1e2535;
+      --accent: #f97316;
+      --success: #22c55e;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text: #f1f5f9;
+      --muted: #94a3b8;
+      --border: #2a3347;
+      --radius: 8px;
+      --radius-sm: 6px;
+      --font: Inter, system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; font-family: var(--font); background: var(--bg); color: var(--text); }
+    a { color: var(--accent); }
+    button { font-family: inherit; cursor: pointer; }
+    input, select, textarea {
+      font-family: inherit; border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: #0b0e14; color: var(--text); padding: 0.45rem 0.6rem;
+    }
+    .gate {
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 2rem;
+    }
+    .gate-card {
+      width: 100%; max-width: 400px; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 1.75rem;
+    }
+    .gate h1 { margin: 0 0 0.5rem; font-size: 1.35rem; }
+    .gate p { margin: 0 0 1rem; color: var(--muted); font-size: 0.9rem; }
+    .gate label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); margin-bottom: 0.35rem; }
+    .gate input[type="password"], .gate input[type="text"] { width: 100%; margin-bottom: 1rem; }
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.35rem;
+      padding: 0.5rem 1rem; border-radius: var(--radius-sm); border: 1px solid var(--border);
+      background: var(--card); color: var(--text); font-weight: 600; font-size: 0.875rem;
+    }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #0f1117; }
+    .btn-danger { background: rgba(239, 68, 68, 0.15); border-color: var(--danger); color: #fecaca; }
+    .btn-ghost { background: transparent; }
+    .btn-sm { padding: 0.25rem 0.5rem; font-size: 0.75rem; }
+    .btn-icon { width: 2rem; height: 2rem; padding: 0; border-radius: var(--radius-sm); }
+    #app { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+    .sidebar {
+      background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column;
+      position: fixed; left: 0; top: 0; bottom: 0; width: 220px; z-index: 40;
+    }
+    .sidebar-brand { padding: 1rem 1rem 0.5rem; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; }
+    .nav-section { margin-top: 0.75rem; padding: 0 0.5rem; }
+    .nav-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 0.35rem 0.5rem; }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.5rem; padding: 0.45rem 0.65rem; border-radius: var(--radius-sm);
+      color: var(--muted); text-decoration: none; font-size: 0.8rem; font-weight: 500; border-left: 3px solid transparent;
+    }
+    .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+    .nav-item.active {
+      background: rgba(249, 115, 22, 0.12); color: var(--accent); border-left-color: var(--accent);
+    }
+    .sidebar-footer { margin-top: auto; padding: 1rem; font-size: 0.7rem; color: var(--muted); border-top: 1px solid var(--border); }
+    .main-wrap { margin-left: 220px; display: flex; flex-direction: column; min-height: 100vh; min-width: 0; flex: 1; }
+    .topbar {
+      height: 56px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem;
+      padding: 0 1.25rem; background: var(--bg); position: sticky; top: 0; z-index: 30;
+    }
+    .topbar h1 { margin: 0; font-size: 1rem; font-weight: 600; flex: 1; min-width: 0; }
+    .topbar-search { flex: 0 1 280px; }
+    .topbar-search input { width: 100%; }
+    .avatar-pill {
+      width: 32px; height: 32px; border-radius: 999px; background: var(--card); border: 1px solid var(--border);
+      display: grid; place-items: center; font-size: 0.75rem; font-weight: 700;
+    }
+    #content { padding: 1.25rem; flex: 1; overflow: auto; }
+    .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.25rem; }
+    @media (max-width: 1279px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+    .kpi {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;
+    }
+    .kpi .label { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); }
+    .kpi .value { font-size: 1.65rem; font-weight: 700; margin-top: 0.35rem; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem; }
+    @media (max-width: 1279px) { .grid-2 { grid-template-columns: 1fr; } }
+    .panel {
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;
+      min-height: 280px;
+    }
+    .panel h2 { margin: 0 0 1rem; font-size: 0.85rem; font-weight: 600; }
+    .chart-box { position: relative; height: 260px; }
+    .health-bar {
+      display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 0.85rem 1rem; font-size: 0.8rem;
+    }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 0.35rem; }
+    .dot.ok { background: var(--success); }
+    .dot.bad { background: var(--danger); }
+    .table-wrap { overflow: auto; border: 1px solid var(--border); border-radius: var(--radius); background: #0b0e14; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+    th, td { padding: 0.55rem 0.65rem; text-align: left; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { color: var(--muted); font-weight: 600; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; cursor: pointer; user-select: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .thumb { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; background: var(--card); }
+    .badge { display: inline-block; padding: 0.15rem 0.45rem; border-radius: 4px; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-active { background: rgba(34,197,94,0.2); color: var(--success); }
+    .badge-pending { background: rgba(245,158,11,0.2); color: var(--warning); }
+    .badge-rejected { background: rgba(239,68,68,0.2); color: #fecaca; }
+    .badge-expired { background: rgba(148,163,184,0.2); color: var(--muted); }
+    .badge-banned { background: rgba(127,29,29,0.4); color: #fecaca; }
+    .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
+    .toolbar input, .toolbar select { max-width: 180px; }
+    .skeleton { animation: pulse 1.2s ease-in-out infinite; background: linear-gradient(90deg, #1e2535 25%, #2a3347 50%, #1e2535 75%); background-size: 200% 100%; border-radius: 4px; height: 1rem; }
+    @keyframes pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    .empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
+    .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
+    #toast-root { position: fixed; top: 1rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
+    .toast {
+      min-width: 240px; max-width: 360px; padding: 0.65rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem;
+      border: 1px solid var(--border); background: var(--card); box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    }
+    .toast.ok { border-color: var(--success); }
+    .toast.err { border-color: var(--danger); }
+    .toast.warn { border-color: var(--warning); }
+    #modal-root { position: fixed; inset: 0; z-index: 9000; pointer-events: none; }
+    .modal-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.55); pointer-events: auto; opacity: 0; transition: opacity 0.15s; }
+    .modal-backdrop.show { opacity: 1; }
+    .modal {
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%) scale(0.96);
+      background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; min-width: 400px; max-width: 90vw; pointer-events: auto; opacity: 0; transition: opacity 0.15s, transform 0.15s;
+    }
+    .modal-backdrop.show .modal { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .modal h3 { margin: 0 0 0.75rem; font-size: 1rem; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1rem; }
+    #slide-panel {
+      position: fixed; top: 0; right: 0; bottom: 0; width: min(420px, 100%); background: var(--sidebar); border-left: 1px solid var(--border);
+      z-index: 8000; transform: translateX(100%); transition: transform 0.2s; overflow: auto; padding: 1.25rem;
+    }
+    #slide-panel.open { transform: translateX(0); }
+    .backdrop-panel { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 7990; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .backdrop-panel.show { opacity: 1; pointer-events: auto; }
+    .form-grid { display: grid; gap: 0.75rem; }
+    .form-grid label { font-size: 0.75rem; color: var(--muted); display: block; margin-bottom: 0.25rem; }
+    .expand-row td { background: #0b0e14 !important; padding: 1rem !important; }
+    .pagination { display: flex; gap: 0.5rem; align-items: center; justify-content: flex-end; margin-top: 0.75rem; font-size: 0.8rem; color: var(--muted); }
+    .hidden { display: none !important; }
+    .config-banner { background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.35); color: var(--warning); padding: 0.65rem 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div id="gate" class="gate">
+    <div class="gate-card">
+      <h1>Nuvelo Admin</h1>
+      <p>Internal dashboard. Enter the admin password.</p>
+      <form id="gate-form">
+        <label for="gate-pw">Password</label>
+        <input id="gate-pw" type="password" autocomplete="current-password" required />
+        <label for="gate-anon">Supabase anon key (optional)</label>
+        <input id="gate-anon" type="text" placeholder="Paste if not injected in __env" autocomplete="off" />
+        <p style="font-size:0.75rem;color:var(--muted);margin:0 0 1rem">Stored in sessionStorage for this tab only. Project: <code>ahiujuljjbozmfwoqtli</code></p>
+        <button type="submit" class="btn btn-primary" style="width:100%">Continue</button>
+        <p id="gate-err" class="hidden" style="color:var(--danger);margin-top:0.75rem;font-size:0.85rem">Access denied</p>
+      </form>
+      <p style="margin-top:1rem"><a href="/">← Back to site</a></p>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <aside class="sidebar">
+      <div class="sidebar-brand">Nuvelo</div>
+      <nav class="nav-section">
+        <div class="nav-label">Overview</div>
+        <a href="#" class="nav-item active" data-page="dashboard"><span>▦</span> Dashboard</a>
+      </nav>
+      <nav class="nav-section">
+        <div class="nav-label">Users</div>
+        <a href="#" class="nav-item" data-page="users-all"><span>👤</span> All users</a>
+        <a href="#" class="nav-item" data-page="users-flagged"><span>⚑</span> Flagged users</a>
+        <a href="#" class="nav-item" data-page="users-verify"><span>✓</span> Verification queue</a>
+      </nav>
+      <nav class="nav-section">
+        <div class="nav-label">Listings</div>
+        <a href="#" class="nav-item" data-page="listings-all"><span>☰</span> All listings</a>
+        <a href="#" class="nav-item" data-page="listings-pending"><span>⏱</span> Pending review</a>
+        <a href="#" class="nav-item" data-page="listings-reported"><span>⚠</span> Reported</a>
+        <a href="#" class="nav-item" data-page="listings-expired"><span>⌛</span> Expired</a>
+      </nav>
+      <nav class="nav-section">
+        <div class="nav-label">Moderation</div>
+        <a href="#" class="nav-item" data-page="mod-reports"><span>⛁</span> Reports queue</a>
+        <a href="#" class="nav-item" data-page="mod-banned"><span>⛔</span> Banned content</a>
+        <a href="#" class="nav-item" data-page="mod-appeals"><span>📨</span> Appeals</a>
+      </nav>
+      <nav class="nav-section">
+        <div class="nav-label">Finance</div>
+        <a href="#" class="nav-item" data-page="fin-revenue"><span>◆</span> Revenue overview</a>
+        <a href="#" class="nav-item" data-page="fin-boost"><span>🚀</span> Boost purchases</a>
+        <a href="#" class="nav-item" data-page="fin-payout"><span>💸</span> Payouts</a>
+      </nav>
+      <nav class="nav-section">
+        <div class="nav-label">Content</div>
+        <a href="#" class="nav-item" data-page="content-categories"><span>📁</span> Categories</a>
+        <a href="#" class="nav-item" data-page="content-locations"><span>📍</span> Locations</a>
+        <a href="#" class="nav-item" data-page="site-settings"><span>⚙</span> Site settings</a>
+      </nav>
+      <nav class="nav-section">
+        <div class="nav-label">System</div>
+        <a href="#" class="nav-item" data-page="sys-logs"><span>📋</span> Logs</a>
+        <a href="#" class="nav-item" data-page="sys-health"><span>♥</span> API health</a>
+        <a href="#" class="nav-item" data-page="sys-admins"><span>🔐</span> Admin accounts</a>
+      </nav>
+      <div class="sidebar-footer">Nuvelo Admin v2.0</div>
+    </aside>
+    <div class="main-wrap">
+      <header class="topbar">
+        <h1 id="page-title">Dashboard</h1>
+        <div class="topbar-search"><input type="search" id="global-search" placeholder="Search…" /></div>
+        <button type="button" class="btn btn-ghost" id="btn-logout">Log out</button>
+        <div class="avatar-pill" title="Admin">A</div>
+      </header>
+      <main id="content"></main>
+    </div>
+  </div>
+
+  <div id="slide-panel" aria-hidden="true"></div>
+  <div id="backdrop-panel" class="backdrop-panel"></div>
+  <div id="modal-root"><div id="modal-backdrop" class="modal-backdrop"></div></div>
+  <div id="toast-root"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.js"></script>
+  <script>
+/* Nuvelo Admin v2 — bundled for inlining into admin.html */
+(function () {
+  "use strict";
+
+  const SESSION_KEY = "nuvelo_admin_v2_session";
+  const AUDIT_KEY = "nuvelo_admin_audit_log";
+  const SITE_CFG_LS = "nuvelo_site_config_fallback";
+  const REPORTS_LS = "nuvelo_admin_reports_demo";
+
+  const SUPABASE_URL =
+    window.__env?.VITE_SUPABASE_URL || "https://ahiujuljjbozmfwoqtli.supabase.co";
+  let SUPABASE_ANON = window.__env?.VITE_SUPABASE_ANON_KEY || "";
+  const BACKEND_URL = (window.__env?.LISTINGS_BACKEND_URL || "https://nuvelo-backend.onrender.com").replace(
+    /\/+$/,
+    ""
+  );
+
+  const TITLES = {
+    dashboard: "Dashboard",
+    "users-all": "All users",
+    "users-flagged": "Flagged users",
+    "users-verify": "Verification queue",
+    "listings-all": "All listings",
+    "listings-pending": "Pending review",
+    "listings-reported": "Reported listings",
+    "listings-expired": "Expired listings",
+    "mod-reports": "Reports queue",
+    "mod-banned": "Banned content",
+    "mod-appeals": "Appeals",
+    "fin-revenue": "Revenue overview",
+    "fin-boost": "Boost purchases",
+    "fin-payout": "Payouts",
+    "content-categories": "Categories",
+    "content-locations": "Locations",
+    "site-settings": "Site settings",
+    "sys-logs": "Logs",
+    "sys-health": "API health",
+    "sys-admins": "Admin accounts"
+  };
+
+  let sb = null;
+  let currentPage = "dashboard";
+  let chartLine = null;
+  let chartDonut = null;
+  let listingsCache = [];
+  let profilesCache = [];
+  let sortState = { key: "createdAt", dir: "desc" };
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+
+  async function sha256Hex(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function verifyPassword(plain) {
+    const a = await sha256Hex(plain);
+    const b = await sha256Hex("nuvelo-admin");
+    return a === b;
+  }
+
+  function toast(msg, type = "ok") {
+    const el = document.createElement("div");
+    el.className = "toast " + (type === "error" ? "err" : type === "warn" ? "warn" : "ok");
+    el.textContent = msg;
+    $("#toast-root").appendChild(el);
+    setTimeout(() => {
+      el.remove();
+    }, 3000);
+  }
+
+  function audit(action, targetId, targetType, adminNote) {
+    try {
+      const log = JSON.parse(sessionStorage.getItem(AUDIT_KEY) || "[]");
+      log.unshift({
+        timestamp: new Date().toISOString(),
+        action,
+        targetId: String(targetId || ""),
+        targetType: String(targetType || ""),
+        adminNote: String(adminNote || "")
+      });
+      sessionStorage.setItem(AUDIT_KEY, JSON.stringify(log.slice(0, 200)));
+    } catch (_) {}
+  }
+
+  function initSupabase() {
+    if (!SUPABASE_ANON) {
+      return null;
+    }
+    const { createClient } = window.supabase;
+    return createClient(SUPABASE_URL, SUPABASE_ANON, {
+      auth: { persistSession: false, autoRefreshToken: false }
+    });
+  }
+
+  function showGate() {
+    $("#gate").classList.remove("hidden");
+    $("#app").classList.add("hidden");
+  }
+
+  function showApp() {
+    $("#gate").classList.add("hidden");
+    $("#app").classList.remove("hidden");
+  }
+
+  async function fetchJson(url, opts) {
+    const r = await fetch(url, opts);
+    const t = await r.text();
+    let j = null;
+    try {
+      j = t ? JSON.parse(t) : null;
+    } catch {
+      j = null;
+    }
+    if (!r.ok) {
+      throw new Error(j?.error || j?.message || `HTTP ${r.status}`);
+    }
+    return j;
+  }
+
+  async function fetchAllListingsFromApi() {
+    const statuses = ["pending", "approved", "rejected", "hidden"];
+    const chunks = await Promise.all(
+      statuses.map((st) =>
+        fetchJson(`/api/listings?status=${encodeURIComponent(st)}`).catch(() => [])
+      )
+    );
+    const map = new Map();
+    for (const arr of chunks) {
+      if (!Array.isArray(arr)) continue;
+      for (const row of arr) {
+        map.set(String(row.id), normalizeListing(row));
+      }
+    }
+    return [...map.values()];
+  }
+
+  function normalizeListing(row) {
+    const imgs = Array.isArray(row.images) ? row.images : [];
+    return {
+      id: String(row.id),
+      title: row.title || "",
+      description: row.description || "",
+      categoryId: row.categoryId || row.category_id || "—",
+      location: row.location || "—",
+      price: row.price,
+      currency: row.currency || "HUF",
+      userId: String(row.userId || row.user_id || ""),
+      status: String(row.status || "pending"),
+      images: imgs,
+      createdAt: row.createdAt || row.created_at || "",
+      thumb: imgs[0] || ""
+    };
+  }
+
+  async function loadListings() {
+    try {
+      listingsCache = await fetchAllListingsFromApi();
+      return listingsCache;
+    } catch (e) {
+      console.warn(e);
+      listingsCache = [];
+      return [];
+    }
+  }
+
+  async function loadProfiles() {
+    if (!sb) {
+      profilesCache = [];
+      return [];
+    }
+    const { data, error } = await sb.from("profiles").select("*").order("created_at", { ascending: false }).limit(500);
+    if (error) {
+      console.warn(error);
+      profilesCache = [];
+      return [];
+    }
+    profilesCache = data || [];
+    return profilesCache;
+  }
+
+  function listingUiStatus(s) {
+    const x = String(s || "").toLowerCase();
+    if (x === "approved") return { label: "ACTIVE", cls: "badge-active" };
+    if (x === "pending") return { label: "PENDING REVIEW", cls: "badge-pending" };
+    if (x === "rejected") return { label: "REJECTED", cls: "badge-rejected" };
+    if (x === "hidden") return { label: "BANNED", cls: "badge-banned" };
+    if (x === "expired") return { label: "EXPIRED", cls: "badge-expired" };
+    return { label: x.toUpperCase() || "—", cls: "badge-expired" };
+  }
+
+  async function postListingStatus(id, status, moderationNote) {
+    const url = `/api/admin/listings/${encodeURIComponent(id)}/status`;
+    try {
+      await fetchJson(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status, moderation_note: moderationNote || "" })
+      });
+      audit("listing_status", id, "listing", moderationNote);
+      toast("Listing updated", "ok");
+      return true;
+    } catch (e) {
+      if (sb) {
+        const { error } = await sb
+          .from("nuvelo_listings")
+          .update({
+            status,
+            moderation_note: moderationNote || null,
+            moderated_at: new Date().toISOString()
+          })
+          .eq("id", id);
+        if (!error) {
+          audit("listing_status", id, "listing", moderationNote);
+          toast("Listing updated (Supabase)", "ok");
+          return true;
+        }
+        toast(error.message || String(e), "error");
+        return false;
+      }
+      toast(e.message || "Update failed — check admin API / RLS", "error");
+      return false;
+    }
+  }
+
+  function openModal(html) {
+    const root = $("#modal-root");
+    root.innerHTML =
+      '<div id="mb" class="modal-backdrop show"><div class="modal" role="dialog">' +
+      html +
+      "</div></div>";
+    const mb = $("#mb");
+    mb.addEventListener("click", (ev) => {
+      if (ev.target === mb) closeModal();
+    });
+  }
+
+  function closeModal() {
+    $("#modal-root").innerHTML = '<div id="modal-backdrop" class="modal-backdrop"></div>';
+  }
+
+  function formatDate(iso) {
+    if (!iso) return "—";
+    try {
+      return new Date(iso).toLocaleString();
+    } catch {
+      return iso;
+    }
+  }
+
+  function sortRows(rows, key, dir) {
+    const m = dir === "asc" ? 1 : -1;
+    return [...rows].sort((a, b) => {
+      const va = a[key];
+      const vb = b[key];
+      if (va == null && vb == null) return 0;
+      if (va == null) return 1;
+      if (vb == null) return -1;
+      if (typeof va === "number" && typeof vb === "number") return (va - vb) * m;
+      return String(va).localeCompare(String(vb)) * m;
+    });
+  }
+
+  function paginate(arr, page, perPage) {
+    const p = Math.max(1, page);
+    const start = (p - 1) * perPage;
+    return { slice: arr.slice(start, start + perPage), totalPages: Math.max(1, Math.ceil(arr.length / perPage)), page: p };
+  }
+
+  function exportCsv(rows, filename) {
+    if (!rows.length) {
+      toast("Nothing to export", "warn");
+      return;
+    }
+    const keys = Object.keys(rows[0]);
+    const esc = (v) => '"' + String(v ?? "").replace(/"/g, '""') + '"';
+    const lines = [keys.join(",")].concat(rows.map((r) => keys.map((k) => esc(r[k])).join(",")));
+    const blob = new Blob([lines.join("\\n")], { type: "text/csv;charset=utf-8" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(a.href);
+    toast("CSV exported", "ok");
+  }
+
+  async function renderDashboard() {
+    $("#page-title").textContent = TITLES.dashboard;
+    $("#content").innerHTML =
+      '<div class="config-banner hidden" id="cfg-warn"></div>' +
+      '<div class="kpi-grid" id="kpi"></div>' +
+      '<div class="grid-2"><div class="panel"><h2>Listings per day (30d)</h2><div class="chart-box"><canvas id="ch-line"></canvas></div></div>' +
+      '<div class="panel"><h2>Listings by category</h2><div class="chart-box"><canvas id="ch-donut"></canvas></div></div></div>' +
+      '<div class="grid-2"><div class="panel"><h2>Recent listings</h2><div id="tbl-rec-l"></div></div>' +
+      '<div class="panel"><h2>Recent users</h2><div id="tbl-rec-u"></div></div></div>' +
+      '<div class="health-bar" id="health-row"></div>';
+
+    if (!SUPABASE_ANON) {
+      $("#cfg-warn").classList.remove("hidden");
+      $("#cfg-warn").textContent =
+        "Supabase anon key missing — paste at login or set window.__env.VITE_SUPABASE_ANON_KEY. KPIs that need DB will show 0.";
+    }
+
+    await loadListings();
+    await loadProfiles();
+
+    const listings = listingsCache;
+    const profiles = profilesCache;
+    let userCount = profiles.length;
+    if (sb) {
+      const c = await sb.from("profiles").select("id", { count: "exact", head: true });
+      if (!c.error && c.count != null) userCount = c.count;
+    }
+
+    const now = new Date();
+    const dayStr = (d) => d.toISOString().slice(0, 10);
+    const today = dayStr(now);
+    const weekAgo = new Date(now.getTime() - 7 * 864e5);
+    const activeToday = listings.filter((l) => dayStr(new Date(l.createdAt || 0)) === today).length;
+    const newUsersWeek = profiles.filter((p) => new Date(p.created_at || 0) >= weekAgo).length;
+
+    $("#kpi").innerHTML = `
+      <div class="kpi"><div class="label">Total users</div><div class="value">${userCount}</div></div>
+      <div class="kpi"><div class="label">Total listings</div><div class="value">${listings.length}</div></div>
+      <div class="kpi"><div class="label">New listings today</div><div class="value">${activeToday}</div></div>
+      <div class="kpi"><div class="label">New users (7d)</div><div class="value">${newUsersWeek}</div></div>`;
+
+    const byDay = {};
+    const since = new Date(now.getTime() - 30 * 864e5);
+    for (let i = 0; i < 30; i++) {
+      const d = new Date(since.getTime() + i * 864e5);
+      byDay[dayStr(d)] = 0;
+    }
+    listings.forEach((l) => {
+      const d = new Date(l.createdAt || 0);
+      if (d >= since) {
+        const k = dayStr(d);
+        if (k in byDay) byDay[k]++;
+      }
+    });
+
+    const labels = Object.keys(byDay);
+    const vals = Object.values(byDay);
+    if (chartLine) chartLine.destroy();
+    if (chartDonut) chartDonut.destroy();
+
+    const ctxL = $("#ch-line");
+    if (ctxL && window.Chart) {
+      chartLine = new Chart(ctxL, {
+        type: "line",
+        data: { labels, datasets: [{ label: "Listings", data: vals, borderColor: "#f97316", backgroundColor: "rgba(249,115,22,0.1)", fill: true, tension: 0.25, pointRadius: 0 }] },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { x: { ticks: { color: "#94a3b8", maxRotation: 45, minRotation: 45 } }, y: { ticks: { color: "#94a3b8" }, grid: { color: "#2a3347" } } }
+        }
+      });
+    }
+
+    const catMap = {};
+    listings.forEach((l) => { const c = l.categoryId || "—"; catMap[c] = (catMap[c] || 0) + 1; });
+    const ctxD = $("#ch-donut");
+    if (ctxD && window.Chart) {
+      chartDonut = new Chart(ctxD, {
+        type: "doughnut",
+        data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: ["#f97316", "#22c55e", "#3b82f6", "#a855f7", "#eab308", "#64748b"] }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#94a3b8" } } } }
+      });
+    }
+
+    const recentL = sortRows(listings, "createdAt", "desc").slice(0, 10);
+    $("#tbl-rec-l").innerHTML = '<div class="table-wrap"><table><thead><tr><th>Title</th><th>Category</th><th>City</th><th>Seller</th><th>Posted</th><th>Status</th></tr></thead><tbody>' +
+      recentL.map((l) => {
+        const st = listingUiStatus(l.status);
+        return `<tr><td>${esc(l.title)}</td><td>${esc(l.categoryId)}</td><td>${esc(l.location)}</td><td>${esc(l.userId.slice(0, 8))}…</td><td>${esc(formatDate(l.createdAt))}</td><td><span class="badge ${st.cls}">${esc(st.label)}</span></td></tr>`;
+      }).join("") + "</tbody></table></div>";
+
+    const recentU = profiles.slice(0, 10);
+    $("#tbl-rec-u").innerHTML = '<div class="table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Role</th><th>Status</th></tr></thead><tbody>' +
+      recentU.map((u) => `<tr><td>${esc(u.display_name || "—")}</td><td>—</td><td>${esc(formatDate(u.created_at))}</td><td>${esc(u.role || "—")}</td><td><span class="badge badge-active">ACTIVE</span></td></tr>`).join("") +
+      "</tbody></table></div>";
+
+    const supaMs = await pingSupabase();
+    const apiMs = await pingBackendHealth();
+    $("#health-row").innerHTML = `
+      <span><span class="dot ${supaMs.ok ? "ok" : "bad"}"></span>Supabase: ${supaMs.ok ? "Connected" : "Error"} ${supaMs.ms != null ? "(" + supaMs.ms + "ms)" : ""}</span>
+      <span><span class="dot ${apiMs.ok ? "ok" : "bad"}"></span>Backend /health: ${apiMs.ok ? "OK" : "Down"} ${apiMs.ms != null ? "(" + apiMs.ms + "ms)" : ""}</span>
+      <span>Last deploy: ${new Date().toLocaleString()}</span>
+      <span>Admin session: <strong>Active</strong></span>`;
+  }
+
+  async function pingSupabase() {
+    const t0 = performance.now();
+    try {
+      if (!SUPABASE_ANON) return { ok: false, ms: null };
+      const r = await fetch(SUPABASE_URL + "/auth/v1/health", { headers: { apikey: SUPABASE_ANON } });
+      return { ok: r.ok, ms: Math.round(performance.now() - t0) };
+    } catch { return { ok: false, ms: null }; }
+  }
+
+  async function pingBackendHealth() {
+    const t0 = performance.now();
+    try {
+      const r = await fetch("/api/health", { cache: "no-store" });
+      return { ok: r.ok, ms: Math.round(performance.now() - t0) };
+    } catch {
+      try {
+        const r2 = await fetch(BACKEND_URL + "/health", { cache: "no-store" });
+        return { ok: r2.ok, ms: Math.round(performance.now() - t0) };
+      } catch { return { ok: false, ms: null }; }
+    }
+  }
+
+  function esc(s) { const d = document.createElement("div"); d.textContent = s ?? ""; return d.innerHTML; }
+  let listingsPageState = { page: 1, filter: "", status: "", category: "", city: "", from: "", to: "" };
+
+  async function renderListingsAll(preStatus) {
+    $("#page-title").textContent = preStatus ? TITLES["listings-pending"] : TITLES["listings-all"];
+    $("#content").innerHTML = '<div class="toolbar">' +
+      '<input type="search" id="lf-search" placeholder="Search title/desc" />' +
+      '<select id="lf-status"><option value="">All statuses</option><option value="approved">Approved</option><option value="pending">Pending</option><option value="rejected">Rejected</option><option value="hidden">Hidden</option></select>' +
+      '<select id="lf-cat"><option value="">All categories</option></select>' +
+      '<input id="lf-city" placeholder="City" />' +
+      '<input type="date" id="lf-from" />' +
+      '<input type="date" id="lf-to" />' +
+      '<button type="button" class="btn btn-primary btn-sm" id="lf-export">Export CSV</button>' +
+      '</div><div id="listings-sk" class="table-wrap">' + skeletonTable(8) + '</div><div class="pagination" id="listings-pg"></div>';
+    if (preStatus) { $("#lf-status").value = "pending"; listingsPageState.status = "pending"; }
+    await loadListings();
+    const cats = [...new Set(listingsCache.map((l) => l.categoryId))];
+    $("#lf-cat").innerHTML = '<option value="">All categories</option>' + cats.map((c) => `<option value="${esc(c)}">${esc(c)}</option>`).join("");
+
+    function filtered() {
+      let rows = [...listingsCache];
+      const q = ($("#lf-search").value || "").toLowerCase();
+      if (q) rows = rows.filter((l) => (l.title + " " + l.description).toLowerCase().includes(q) || String(l.id).toLowerCase().includes(q));
+      const st = $("#lf-status").value; if (st) rows = rows.filter((l) => l.status === st);
+      const cat = $("#lf-cat").value; if (cat) rows = rows.filter((l) => l.categoryId === cat);
+      const city = ($("#lf-city").value || "").toLowerCase(); if (city) rows = rows.filter((l) => (l.location || "").toLowerCase().includes(city));
+      const from = $("#lf-from").value; if (from) { const f = new Date(from).getTime(); rows = rows.filter((l) => new Date(l.createdAt || 0).getTime() >= f); }
+      const to = $("#lf-to").value; if (to) { const t = new Date(to).getTime() + 864e5; rows = rows.filter((l) => new Date(l.createdAt || 0).getTime() < t); }
+      return rows;
+    }
+
+    function openListingModal(row) {
+      const imgs = (row.images || []).map((u) => `<img src="${esc(u)}" style="max-width:120px;border-radius:6px;margin:4px" loading="lazy"/>`).join("");
+      openModal(`<h3>${esc(row.title)}</h3><p style="color:#94a3b8;font-size:0.85rem">${esc(row.categoryId)} · ${esc(row.location)}</p>
+        <div style="margin:0.75rem 0">${imgs || "<span class=muted>No images</span>"}</div><p style="font-size:0.9rem;line-height:1.45">${esc(row.description)}</p>
+        <div class="modal-actions"><button type="button" class="btn btn-primary" id="lm-close">Close</button></div>`);
+      $("#lm-close").onclick = () => closeModal();
+    }
+    function openRejectModal(id, rerender) {
+      openModal(`<h3>Reject listing</h3><label>Reason</label><textarea id="rj-reason" rows="3" style="width:100%"></textarea>
+      <label style="margin-top:0.5rem;display:flex;align-items:center;gap:0.35rem"><input type="checkbox" id="rj-mail" /> Notify seller by email (placeholder)</label>
+      <div class="modal-actions"><button type="button" class="btn" id="rj-x">Cancel</button><button type="button" class="btn btn-primary" id="rj-go">Confirm</button></div>`);
+      $("#rj-x").onclick = () => closeModal();
+      $("#rj-go").onclick = async () => { const note = $("#rj-reason").value || ""; closeModal(); await postListingStatus(id, "rejected", note); await loadListings(); rerender(); };
+    }
+
+    function renderTable() {
+      let rows = sortRows(filtered(), sortState.key, sortState.dir);
+      const { slice, totalPages, page } = paginate(rows, listingsPageState.page, 25);
+      $("#listings-sk").innerHTML = '<table data-sortable="1"><thead><tr>' +
+        [["thumb",""],["title","Title"],["categoryId","Category"],["location","City"],["price","Price"],["userId","Seller"],["createdAt","Posted"],["status","Status"],["_actions","Actions"]]
+          .map(([k, lab]) => k === "thumb" ? "<th></th>" : `<th data-sort="${k}">${esc(lab)}</th>`).join("") +
+        '</tr></thead><tbody>' +
+        slice.map((l) => {
+          const st = listingUiStatus(l.status);
+          const thumb = l.thumb ? `<img class="thumb" src="${esc(l.thumb)}" alt="" loading="lazy"/>` : `<div class="thumb"></div>`;
+          return `<tr data-id="${esc(l.id)}"><td>${thumb}</td><td>${esc(l.title)}</td><td>${esc(l.categoryId)}</td><td>${esc(l.location)}</td>
+            <td>${l.price != null ? esc(String(l.price)) + " " + esc(l.currency || "HUF") : "—"}</td><td>${esc(l.userId.slice(0, 12))}</td>
+            <td>${esc(formatDate(l.createdAt))}</td><td><span class="badge ${st.cls}">${esc(st.label)}</span></td>
+            <td><button type="button" class="btn btn-icon btn-ghost" data-act="view" title="View">👁</button><button type="button" class="btn btn-icon btn-ghost" data-act="ok" title="Approve">✓</button>
+            <button type="button" class="btn btn-icon btn-ghost" data-act="rej" title="Reject">✕</button><button type="button" class="btn btn-icon btn-ghost" data-act="ban" title="Ban/hide">⛔</button>
+            <button type="button" class="btn btn-icon btn-ghost" data-act="del" title="Delete">🗑</button></td></tr>`;
+        }).join("") + "</tbody></table>";
+      $("#listings-pg").innerHTML = `Page ${page} / ${totalPages} — ${rows.length} rows <button type="button" class="btn btn-sm" id="pg-prev">Prev</button><button type="button" class="btn btn-sm" id="pg-next">Next</button>`;
+
+      $("#listings-sk").querySelectorAll("th[data-sort]").forEach((th) => th.addEventListener("click", () => {
+        const k = th.getAttribute("data-sort"); if (!k || k === "_actions") return;
+        if (sortState.key === k) sortState.dir = sortState.dir === "asc" ? "desc" : "asc"; else { sortState.key = k; sortState.dir = "asc"; }
+        renderTable();
+      }));
+      $("#listings-sk").querySelectorAll("button[data-act]").forEach((btn) => btn.addEventListener("click", async () => {
+        const tr = btn.closest("tr"); const id = tr?.getAttribute("data-id"); const act = btn.getAttribute("data-act");
+        const row = listingsCache.find((x) => x.id === id); if (!row) return;
+        if (act === "view") { window.open("/listing/" + encodeURIComponent(id), "_blank"); openListingModal(row); }
+        if (act === "ok") { await postListingStatus(id, "approved", ""); await loadListings(); renderTable(); }
+        if (act === "rej") openRejectModal(id, renderTable);
+        if (act === "ban") {
+          openModal(`<h3>Ban / hide listing</h3><p style="color:#94a3b8;font-size:0.85rem">Sets status to hidden.</p><div class="modal-actions"><button type="button" class="btn" id="m-cancel">Cancel</button><button type="button" class="btn btn-danger" id="m-confirm">Hide listing</button></div>`);
+          $("#m-cancel").onclick = () => closeModal();
+          $("#m-confirm").onclick = async () => { closeModal(); await postListingStatus(id, "hidden", "Banned by admin"); await loadListings(); renderTable(); };
+        }
+        if (act === "del") {
+          openModal(`<h3>Delete listing?</h3><p>${esc(row.title)}</p><div class="modal-actions"><button type="button" class="btn" id="d-cancel">Cancel</button><button type="button" class="btn btn-danger" id="d-go">Delete</button></div>`);
+          $("#d-cancel").onclick = () => closeModal();
+          $("#d-go").onclick = () => { closeModal(); toast("Permanent delete requires service role — hid listing instead", "warn"); void postListingStatus(id, "hidden", "Marked for deletion"); };
+        }
+      }));
+      $("#pg-prev").onclick = () => { listingsPageState.page = Math.max(1, page - 1); renderTable(); };
+      $("#pg-next").onclick = () => { listingsPageState.page = Math.min(totalPages, page + 1); renderTable(); };
+    }
+
+    ["#lf-search", "#lf-status", "#lf-cat", "#lf-city", "#lf-from", "#lf-to"].forEach((sel) => {
+      $(sel).addEventListener("input", () => { listingsPageState.page = 1; renderTable(); });
+      $(sel).addEventListener("change", () => { listingsPageState.page = 1; renderTable(); });
+    });
+    $("#lf-export").onclick = () => exportCsv(filtered().map((l) => ({ id: l.id, title: l.title, category: l.categoryId, city: l.location, price: l.price, seller: l.userId, posted: l.createdAt, status: l.status })), "nuvelo-listings.csv");
+    renderTable();
+  }
+
+  function skeletonTable(cols) { return "<table><thead><tr>" + Array.from({ length: cols }, () => "<th><div class=skeleton style=height:12px></div></th>").join("") + "</tr></thead><tbody>" + Array.from({ length: 6 }, () => "<tr>" + Array.from({ length: cols }, () => "<td><div class=skeleton></div></td>").join("") + "</tr>").join("") + "</tbody></table>"; }
+
+  async function renderPendingReview() {
+    $("#page-title").textContent = TITLES["listings-pending"];
+    $("#content").innerHTML = '<div class="toolbar"><button type="button" class="btn btn-primary btn-sm" id="bulk-ap">Bulk approve</button><button type="button" class="btn btn-danger btn-sm" id="bulk-rj">Bulk reject</button></div><p style="color:#94a3b8;font-size:0.85rem;margin:0 0 1rem">Expand rows to review full description and photos.</p><div id="pend-wrap"></div>';
+    await loadListings();
+    const pending = listingsCache.filter((l) => l.status === "pending");
+    function render() {
+      $("#pend-wrap").innerHTML = '<div class="table-wrap"><table><thead><tr><th><input type="checkbox" id="chk-all"/></th><th>Listing</th><th>Category</th><th>Posted</th><th>Actions</th></tr></thead><tbody>' + pending.map((l) => {
+        const imgs = (l.images || []).slice(0, 6).map((u) => `<img src="${esc(u)}" style="height:64px;border-radius:6px;margin:2px" loading="lazy"/>`).join("");
+        return `<tr class="row-main" data-id="${esc(l.id)}"><td><input type="checkbox" class="chk-row" data-id="${esc(l.id)}"/></td><td>${esc(l.title)}</td><td>${esc(l.categoryId)}</td><td>${esc(formatDate(l.createdAt))}</td><td><button type="button" class="btn btn-sm btn-primary" data-exp>Toggle</button><button type="button" class="btn btn-sm" data-ap>Approve</button></td></tr><tr class="expand-row hidden" data-exp="${esc(l.id)}"><td colspan="5"><p style="margin:0 0 0.5rem;font-size:0.9rem">${esc(l.description || "—")}</p><div>${imgs || "No photos"}</div></td></tr>`;
+      }).join("") + "</tbody></table></div>";
+      const chkAll = $("#chk-all"); if (chkAll) chkAll.addEventListener("change", (e) => $$(".chk-row").forEach((c) => (c.checked = e.target.checked)));
+      $("#pend-wrap").querySelectorAll("button[data-exp]").forEach((b) => b.addEventListener("click", () => { const id = b.closest("tr")?.getAttribute("data-id"); const ex = $(`tr[data-exp="${id}"]`); if (ex) ex.classList.toggle("hidden"); }));
+      $("#pend-wrap").querySelectorAll("button[data-ap]").forEach((b) => b.addEventListener("click", async () => { const id = b.closest("tr")?.getAttribute("data-id"); if (!id) return; await postListingStatus(id, "approved", ""); await loadListings(); render(); }));
+    }
+    render();
+    $("#bulk-ap").onclick = async () => { const ids = $$(".chk-row:checked").map((c) => c.getAttribute("data-id")); for (const id of ids) await postListingStatus(id, "approved", ""); await loadListings(); render(); toast("Bulk approve done", "ok"); };
+    $("#bulk-rj").onclick = () => {
+      const ids = $$(".chk-row:checked").map((c) => c.getAttribute("data-id")); if (!ids.length) return;
+      openModal(`<h3>Bulk reject</h3><textarea id="br-reason" rows="3" style="width:100%"></textarea><div class="modal-actions"><button type="button" class="btn" id="br-x">Cancel</button><button type="button" class="btn btn-danger" id="br-go">Reject all</button></div>`);
+      $("#br-x").onclick = () => closeModal();
+      $("#br-go").onclick = async () => { const note = $("#br-reason").value || ""; closeModal(); for (const id of ids) await postListingStatus(id, "rejected", note); await loadListings(); render(); };
+    };
+  }
+
+  async function renderUsers() {
+    $("#page-title").textContent = TITLES["users-all"];
+    $("#content").innerHTML = '<div class="toolbar"><input type="search" id="uf-search" placeholder="Name" /><select id="uf-role"><option value="">All roles</option><option value="buyer">buyer</option><option value="seller">seller</option><option value="admin">admin</option></select><input type="date" id="uf-from" /></div><div id="users-tbl" class="table-wrap">' + skeletonTable(10) + "</div>";
+    await loadProfiles(); await loadListings();
+    function rowHtml() {
+      let rows = [...profilesCache];
+      const q = ($("#uf-search").value || "").toLowerCase(); if (q) rows = rows.filter((u) => (u.display_name || "").toLowerCase().includes(q));
+      const role = $("#uf-role").value; if (role) rows = rows.filter((u) => (u.role || "") === role);
+      const from = $("#uf-from").value; if (from) { const t = new Date(from).getTime(); rows = rows.filter((u) => new Date(u.created_at || 0).getTime() >= t); }
+      const listingCount = (uid) => listingsCache.filter((l) => l.userId === uid).length;
+      $("#users-tbl").innerHTML = "<table><thead><tr><th></th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>City</th><th>Joined</th><th>Listings</th><th>Status</th><th>Actions</th></tr></thead><tbody>" +
+        rows.map((u) => {
+          const av = u.avatar_url ? `<img src="${esc(u.avatar_url)}" width="32" height="32" style="border-radius:50%;object-fit:cover"/>` : `<div style="width:32px;height:32px;border-radius:50%;background:#2a3347"></div>`;
+          return `<tr data-uid="${esc(u.id)}" style="cursor:pointer"><td>${av}</td><td>${esc(u.display_name || "—")}</td><td>—</td><td>${esc(u.phone || "—")}</td><td>${esc(u.role || "—")}</td><td>—</td><td>${esc(formatDate(u.created_at))}</td><td>${listingCount(String(u.id))}</td><td><span class="badge badge-active">ACTIVE</span></td><td><button type="button" class="btn btn-sm" data-a="v">View</button><button type="button" class="btn btn-sm" data-a="w">Warn</button><button type="button" class="btn btn-sm" data-a="s">Suspend</button></td></tr>`;
+        }).join("") + "</tbody></table>";
+      $("#users-tbl").querySelectorAll("tr[data-uid]").forEach((tr) => tr.addEventListener("click", (ev) => { if (ev.target.closest("button")) return; openUserPanel(tr.getAttribute("data-uid")); }));
+      $("#users-tbl").querySelectorAll("button[data-a]").forEach((btn) => btn.addEventListener("click", (ev) => { ev.stopPropagation(); const tr = btn.closest("tr"); const uid = tr?.getAttribute("data-uid"); const u = profilesCache.find((x) => String(x.id) === uid); if (btn.getAttribute("data-a") === "v") openUserPanel(uid); if (btn.getAttribute("data-a") === "w") toast("Warn sent (demo)", "warn"); if (btn.getAttribute("data-a") === "s") openBanModal(uid, u); }));
+    }
+    function openBanModal(uid, u) {
+      openModal(`<h3>Suspend / ban user</h3><p>${esc(u?.display_name || uid)}</p><label>Reason</label><textarea id="bn-reason" rows="2" style="width:100%"></textarea><label>Duration</label><select id="bn-dur" style="width:100%"><option value="1">1 day</option><option value="7">7 days</option><option value="30">30 days</option><option value="p">Permanent</option></select><label style="margin-top:0.5rem;display:flex;align-items:center;gap:0.35rem"><input type="checkbox" id="bn-mail"/> Notify user</label><div class="modal-actions"><button type="button" class="btn" id="bn-x">Cancel</button><button type="button" class="btn btn-danger" id="bn-go">Confirm</button></div>`);
+      $("#bn-x").onclick = () => closeModal();
+      $("#bn-go").onclick = () => { audit("ban_user", uid, "user", $("#bn-reason").value); closeModal(); toast("Ban recorded locally — wire auth admin for production", "warn"); };
+    }
+    function openUserPanel(uid) {
+      const u = profilesCache.find((x) => String(x.id) === uid); const theirs = listingsCache.filter((l) => l.userId === uid);
+      $("#slide-panel").innerHTML = `<h2 style="margin-top:0;font-size:1rem">${esc(u?.display_name || "User")}</h2><p style="color:#94a3b8;font-size:0.85rem">${esc(uid)}</p><h3 style="font-size:0.8rem;text-transform:uppercase;color:#94a3b8">Listings</h3><div class="table-wrap" style="max-height:200px;overflow:auto"><table><thead><tr><th>Title</th><th>Status</th></tr></thead><tbody>${theirs.map((l) => `<tr><td>${esc(l.title)}</td><td>${esc(l.status)}</td></tr>`).join("")}</tbody></table></div><h3 style="font-size:0.8rem;text-transform:uppercase;color:#94a3b8">Reports</h3><p style="color:#94a3b8;font-size:0.85rem">No reports (no table).</p><button type="button" class="btn btn-danger" style="width:100%;margin-top:1rem" id="pn-close">Close</button>`;
+      $("#slide-panel").classList.add("open"); $("#backdrop-panel").classList.add("show");
+      $("#pn-close").onclick = () => { $("#slide-panel").classList.remove("open"); $("#backdrop-panel").classList.remove("show"); };
+      $("#backdrop-panel").onclick = () => { $("#slide-panel").classList.remove("open"); $("#backdrop-panel").classList.remove("show"); };
+    }
+    ["#uf-search", "#uf-role", "#uf-from"].forEach((sel) => { $(sel).addEventListener("input", rowHtml); $(sel).addEventListener("change", rowHtml); });
+    rowHtml();
+  }
+
+  function loadDemoReports() { try { const x = JSON.parse(localStorage.getItem(REPORTS_LS) || "[]"); return Array.isArray(x) ? x : []; } catch { return []; } }
+  function saveDemoReports(rows) { localStorage.setItem(REPORTS_LS, JSON.stringify(rows.slice(0, 500))); }
+
+  async function renderReportsQueue() {
+    $("#page-title").textContent = TITLES["mod-reports"];
+    let rows = loadDemoReports();
+    if (!rows.length) { rows = [{ id: "demo-1", reporter: "user-a", target: "listing:demo", reason: "Spam", date: new Date().toISOString(), status: "open" }]; saveDemoReports(rows); }
+    function priorityFor(target) { const n = rows.filter((r) => r.target === target).length; if (n >= 3) return { label: "HIGH", cls: "badge-rejected" }; if (n >= 2) return { label: "MEDIUM", cls: "badge-pending" }; return { label: "LOW", cls: "badge-expired" }; }
+    function render() {
+      $("#content").innerHTML = '<div class="table-wrap"><table><thead><tr><th>Reporter</th><th>Target</th><th>Reason</th><th>Date</th><th>Priority</th><th>Status</th><th>Actions</th></tr></thead><tbody>' + rows.map((r) => {
+        const pr = priorityFor(r.target);
+        return `<tr><td>${esc(r.reporter)}</td><td>${esc(r.target)}</td><td>${esc(r.reason)}</td><td>${esc(formatDate(r.date))}</td><td><span class="badge ${pr.cls}">${esc(pr.label)}</span></td><td>${esc(r.status)}</td><td><button type="button" class="btn btn-sm" data-rid="${esc(r.id)}" data-act="rev">Review</button><button type="button" class="btn btn-sm" data-rid="${esc(r.id)}" data-act="dis">Dismiss</button></td></tr>`;
+      }).join("") + "</tbody></table></div>";
+      $("#content").querySelectorAll("button[data-act]").forEach((btn) => btn.addEventListener("click", () => { const id = btn.getAttribute("data-rid"); const act = btn.getAttribute("data-act"); rows = rows.map((r) => r.id === id ? { ...r, status: act === "dis" ? "dismissed" : "in review" } : r); saveDemoReports(rows); audit("report_" + act, id, "report", ""); toast("Updated", "ok"); render(); }));
+    }
+    render();
+  }
+
+  async function renderRevenue() {
+    $("#page-title").textContent = TITLES["fin-revenue"];
+    $("#content").innerHTML = '<div class="kpi-grid" style="margin-bottom:1rem"><div class="kpi"><div class="label">Total revenue (HUF)</div><div class="value">0</div></div><div class="kpi"><div class="label">This month</div><div class="value">0</div></div><div class="kpi"><div class="label">Active subscriptions</div><div class="value">0</div></div></div><div class="panel"><h2>Boost purchases</h2><p style="color:#94a3b8;font-size:0.9rem">No payment data yet. Connect your payment provider to populate this section.</p><div class="table-wrap"><table><thead><tr><th>User</th><th>Listing</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead><tbody><tr><td colspan="5" style="text-align:center;color:#64748b">—</td></tr></tbody></table></div><div class="chart-box" style="margin-top:1rem;height:220px"><canvas id="rev-chart"></canvas></div></div>';
+    const ctx = $("#rev-chart");
+    if (ctx && window.Chart) {
+      new Chart(ctx, { type: "line", data: { labels: Array.from({ length: 12 }, (_, i) => "W" + (i + 1)), datasets: [{ label: "HUF", data: Array(12).fill(0), borderColor: "#f97316", tension: 0.2 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { ticks: { color: "#94a3b8" } }, y: { ticks: { color: "#94a3b8" } } } } });
+    }
+  }
+
+  async function renderSiteSettings() {
+    $("#page-title").textContent = TITLES["site-settings"];
+    let cfg = {};
+    if (sb) { const { data, error } = await sb.from("site_config").select("*").eq("id", 1).maybeSingle(); if (!error && data) cfg = data; }
+    if (!Object.keys(cfg).length) { try { cfg = JSON.parse(localStorage.getItem(SITE_CFG_LS) || "{}"); } catch { cfg = {}; } }
+    const field = (id, label, val) => `<div><label>${esc(label)}</label><input id="f-${id}" value="${esc(String(val))}" /></div>`;
+    const toggle = (id, label, on) => `<div><label style="display:flex;align-items:center;gap:0.5rem"><input type="checkbox" id="f-${id}" ${on ? "checked" : ""}/> ${esc(label)}</label></div>`;
+    const num = (id, label, val) => `<div><label>${esc(label)}</label><input type="number" id="f-${id}" value="${esc(String(val))}" /></div>`;
+    $("#content").innerHTML = '<div class="panel" style="max-width:560px"><div class="form-grid">' +
+      field("site_name", "Site name", cfg.site_name || "Nuvelo") +
+      field("site_url", "Site URL", cfg.site_url || "https://nuvelo.one") +
+      field("support_email", "Support email", cfg.support_email || "support@nuvelo.one") +
+      toggle("maintenance_mode", "Maintenance mode", !!cfg.maintenance_mode) +
+      toggle("listings_require_approval", "New listings require approval", cfg.listings_require_approval !== false) +
+      num("max_photos_per_listing", "Max photos per listing", cfg.max_photos_per_listing ?? 8) +
+      num("max_active_listings_free", "Max active listings (free user)", cfg.max_active_listings_free ?? 5) +
+      num("featured_price_huf", "Featured listing price (HUF)", cfg.featured_price_huf ?? 0) +
+      num("boost_7d_price_huf", "Boost 7-day (HUF)", cfg.boost_7d_price_huf ?? 0) +
+      num("boost_30d_price_huf", "Boost 30-day (HUF)", cfg.boost_30d_price_huf ?? 0) +
+      '</div><button type="button" class="btn btn-primary" id="save-site" style="margin-top:1rem">Save</button><p style="font-size:0.8rem;color:#94a3b8;margin-top:0.75rem">If <code>site_config</code> is missing or RLS blocks writes, settings are saved to localStorage.</p></div>';
+    $("#save-site").onclick = async () => {
+      const payload = { id: 1, site_name: $("#f-site_name").value, site_url: $("#f-site_url").value, support_email: $("#f-support_email").value, maintenance_mode: $("#f-maintenance_mode").checked, listings_require_approval: $("#f-listings_require_approval").checked, max_photos_per_listing: Number($("#f-max_photos_per_listing").value || 8), max_active_listings_free: Number($("#f-max_active_listings_free").value || 5), featured_price_huf: Number($("#f-featured_price_huf").value || 0), boost_7d_price_huf: Number($("#f-boost_7d_price_huf").value || 0), boost_30d_price_huf: Number($("#f-boost_30d_price_huf").value || 0), updated_at: new Date().toISOString() };
+      if (sb) { const { error } = await sb.from("site_config").upsert(payload, { onConflict: "id" }); if (!error) { toast("Saved to Supabase", "ok"); audit("site_config", "1", "config", ""); return; } localStorage.setItem(SITE_CFG_LS, JSON.stringify(payload)); toast("Saved locally — " + error.message, "warn"); audit("site_config", "1", "config", ""); return; }
+      localStorage.setItem(SITE_CFG_LS, JSON.stringify(payload)); toast("Saved locally", "ok");
+    };
+  }
+
+  async function renderApiHealth() {
+    $("#page-title").textContent = TITLES["sys-health"];
+    $("#content").innerHTML = '<div id="health-grid" class="panel"></div><button type="button" class="btn" id="health-refresh" style="margin-top:1rem">Refresh</button>';
+    async function run() {
+      const rows = [];
+      const t0 = performance.now();
+      try { const r = await fetch(SUPABASE_URL + "/auth/v1/health", { headers: { apikey: SUPABASE_ANON || "" } }); rows.push({ name: "Supabase Auth", ok: r.ok, ms: Math.round(performance.now() - t0) }); } catch { rows.push({ name: "Supabase Auth", ok: false, ms: null }); }
+      const t1 = performance.now(); let dbOk = false; let dbMs = null;
+      if (sb) { const { error } = await sb.from("profiles").select("id", { head: true, count: "exact" }); dbOk = !error; dbMs = Math.round(performance.now() - t1); }
+      rows.push({ name: "Supabase DB (profiles)", ok: dbOk, ms: dbMs });
+      const t2 = performance.now();
+      try { const r = await fetch("/api/health", { cache: "no-store" }); rows.push({ name: "Listings API (/api/health)", ok: r.ok, ms: Math.round(performance.now() - t2) }); } catch { rows.push({ name: "Listings API", ok: false, ms: null }); }
+      let meta = "—"; try { const r = await fetch("/api/meta", { cache: "no-store" }); if (r.ok) { const j = await r.json(); meta = j.deployedAt || j.lastDeploy || "—"; } } catch { meta = "No /api/meta"; }
+      const auditLog = JSON.parse(sessionStorage.getItem(AUDIT_KEY) || "[]").slice(0, 20);
+      $("#health-grid").innerHTML = "<table><thead><tr><th>Check</th><th>Status</th><th>ms</th></tr></thead><tbody>" + rows.map((r) => `<tr><td>${esc(r.name)}</td><td>${r.ok ? "OK" : "FAIL"}</td><td>${r.ms != null ? r.ms : "—"}</td></tr>`).join("") + `<tr><td colspan="3">Deploy meta: ${esc(String(meta))}</td></tr></tbody></table>` + "<h3 style='margin:1rem 0 0.5rem;font-size:0.85rem'>Recent admin actions</h3>" + '<div class="table-wrap"><table><thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Note</th></tr></thead><tbody>' + auditLog.map((a) => `<tr><td>${esc(a.timestamp)}</td><td>${esc(a.action)}</td><td>${esc(a.targetType)}:${esc(a.targetId)}</td><td>${esc(a.adminNote)}</td></tr>`).join("") + "</tbody></table></div>";
+    }
+    await run(); $("#health-refresh").onclick = () => run();
+  }
+
+  function renderPlaceholder(title, msg) { $("#page-title").textContent = title; $("#content").innerHTML = '<div class="empty"><div class="empty-icon">◇</div><p><strong>' + esc(title) + "</strong></p><p>" + esc(msg) + "</p></div>"; }
+
+  async function navigate(page) {
+    currentPage = page;
+    $$(".nav-item").forEach((n) => n.classList.toggle("active", n.getAttribute("data-page") === page));
+    $("#page-title").textContent = TITLES[page] || "Admin";
+    if (chartLine) { chartLine.destroy(); chartLine = null; }
+    if (chartDonut) { chartDonut.destroy(); chartDonut = null; }
+    const loaders = {
+      dashboard: renderDashboard,
+      "listings-all": () => renderListingsAll(false),
+      "listings-pending": renderPendingReview,
+      "listings-reported": () => renderPlaceholder("Reported listings", "No reports table connected — use Reports queue."),
+      "listings-expired": () => renderPlaceholder("Expired listings", "No expiry field on nuvelo_listings yet."),
+      "users-all": renderUsers,
+      "users-flagged": () => renderPlaceholder("Flagged users", "Add flagged_users table to enable this view."),
+      "users-verify": () => renderPlaceholder("Verification queue", "Add verification_requests table."),
+      "mod-reports": renderReportsQueue,
+      "mod-banned": () => renderPlaceholder("Banned content", "Query hidden listings or add bans table."),
+      "mod-appeals": () => renderPlaceholder("Appeals", "Add appeals table."),
+      "fin-revenue": renderRevenue,
+      "fin-boost": () => renderPlaceholder("Boost purchases", "Same as revenue — connect payments."),
+      "fin-payout": () => renderPlaceholder("Payouts", "Connect payout provider."),
+      "content-categories": () => renderPlaceholder("Categories", "Manage categories in code or add categories table."),
+      "content-locations": () => renderPlaceholder("Locations", "Hungarian locations are static in app data."),
+      "site-settings": renderSiteSettings,
+      "sys-logs": () => { $("#page-title").textContent = TITLES["sys-logs"]; const log = JSON.parse(sessionStorage.getItem(AUDIT_KEY) || "[]"); $("#content").innerHTML = '<div class="table-wrap"><table><thead><tr><th>Time</th><th>Action</th><th>Target</th><th>Note</th></tr></thead><tbody>' + log.map((a) => `<tr><td>${esc(a.timestamp)}</td><td>${esc(a.action)}</td><td>${esc(a.targetType)}</td><td>${esc(a.adminNote)}</td></tr>`).join("") + "</tbody></table></div>"; },
+      "sys-health": renderApiHealth,
+      "sys-admins": () => renderPlaceholder("Admin accounts", "Manage Supabase Auth admin users in dashboard.")
+    };
+    const fn = loaders[page] || (() => renderPlaceholder(page, "Not implemented."));
+    $("#content").innerHTML = '<div class="empty"><div class="skeleton" style="height:120px"></div></div>';
+    await fn();
+  }
+
+  function wireNav() {
+    $$(".nav-item").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); navigate(a.getAttribute("data-page")); }));
+    $("#btn-logout").addEventListener("click", () => { sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem("nuvelo_admin_anon"); showGate(); });
+  }
+
+  async function boot() {
+    const stored = sessionStorage.getItem(SESSION_KEY);
+    const anonStored = sessionStorage.getItem("nuvelo_admin_anon");
+    if (anonStored) SUPABASE_ANON = anonStored;
+    if (stored === "1") { sb = initSupabase(); showApp(); wireNav(); await navigate("dashboard"); return; }
+    showGate();
+    $("#gate-form").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const pw = $("#gate-pw").value || "";
+      const ok = await verifyPassword(pw);
+      if (!ok) { $("#gate-err").classList.remove("hidden"); return; }
+      $("#gate-err").classList.add("hidden");
+      const extra = $("#gate-anon").value.trim();
+      if (extra) { sessionStorage.setItem("nuvelo_admin_anon", extra); SUPABASE_ANON = extra; }
+      sessionStorage.setItem(SESSION_KEY, "1");
+      sb = initSupabase();
+      showApp();
+      wireNav();
+      await navigate("dashboard");
+    });
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot);
+  else void boot();
+})();
+  </script>
+</body>
 </html>

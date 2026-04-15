@@ -187,3 +187,45 @@
 
 - **Supabase SQL** was **not** executed from this environment — apply migrations in the Dashboard.
 - **`storage.foldername(name)`** in **`storage_avatars.sql`** is the usual Supabase helper; if your project errors, replace checks with e.g. **`split_part(name, '/', 1) = auth.uid()::text`**.
+
+---
+
+## Admin dashboard rebuild — 2026-04-09
+
+### What was replaced
+
+- Replaced **`web/admin.html`** from a minimal moderation shell with a full internal admin dashboard UI (single-file app with inline CSS + JS).
+- Kept password gate behavior but upgraded to **SHA-256 hash comparison** for `nuvelo-admin` and session stored in `sessionStorage`.
+- Added Supabase env bootstrap via `window.__env` with fallback URL `https://ahiujuljjbozmfwoqtli.supabase.co`.
+
+### Pages currently connected to live Supabase/API data
+
+- **Dashboard**: live listings (via `/api/listings` fan-out by status), live profiles from `public.profiles`, live chart/table generation.
+- **All listings** + **Pending review**: live rows from listings API; approve/reject/ban uses `/api/admin/listings/:id/status` first, with direct `public.nuvelo_listings` fallback when available.
+- **All users**: live rows from `public.profiles`.
+- **Site settings**: reads/writes `public.site_config` when table/policies permit.
+- **API health / system**: live checks for Supabase Auth and `/api/health` + optional `/api/meta`.
+
+### Pages currently placeholder/empty (schema pending)
+
+- Flagged users, verification queue
+- Reported listings (dedicated table not wired yet)
+- Banned content list, appeals
+- Revenue/boost/payout data (payments table not present)
+- Categories and locations management pages
+- Admin accounts management page
+
+### Tables needed for full functionality
+
+- **Required for connected features**:
+  - `public.profiles`
+  - `public.nuvelo_listings` (or compatible backend admin API)
+  - `public.site_config` (new migration added)
+- **Recommended for complete admin product**:
+  - `public.reports` (listing/user reports queue)
+  - `public.user_flags`
+  - `public.verification_requests`
+  - `public.appeals`
+  - `public.payments` / `public.boost_purchases`
+  - `public.payouts`
+  - `public.admin_accounts` (or roles mapped in `profiles`)
