@@ -152,11 +152,15 @@ const showOAuthUnavailable = (providerLabel) => {
   showLoginError(t("auth.err.signin_down"));
 };
 
-/** Empty listings grid — same message when API returns nothing or fetch fails (no fake “could not load”). */
+/** Successful fetch, zero listings (broad browse or filters yielding no rows — handled in renderList). */
 const browseEmptyGridHtml = () => `<div class="empty-state" role="status">
               <p>${esc(t("browse.empty"))}</p>
               <p style="margin-top:0.75rem"><a class="btn btn--primary" href="/post">${esc(t("browse.post_cta"))}</a></p>
             </div>`;
+
+/** Listings API request failed (network / HTTP error), not an empty 200 response. */
+const browseListingsFetchErrorHtml = () =>
+  `<p class="browse-listings-soft-msg muted" role="alert">${esc(t("browse.error"))}</p>`;
 const LISTING_DETAIL_UNAVAILABLE_MSG = () => t("listing.unavailable");
 const USER_STORE_KEY = "nuvelo_user";
 const PROFILE_FIELDS_KEY = "nuvelo_profile_fields";
@@ -3469,7 +3473,9 @@ const renderLanding = async () => {
   `;
 
   const grid = document.getElementById("home-listing-grid");
-  if (listingsLoadFailed || !listings.length) {
+  if (listingsLoadFailed) {
+    grid.innerHTML = browseListingsFetchErrorHtml();
+  } else if (!listings.length) {
     grid.innerHTML = browseEmptyGridHtml();
   } else {
     trending.forEach((listing, i) => {
@@ -3754,9 +3760,11 @@ const renderList = async () => {
           <div class="sort-bar sort-bar--jiji">
             <div>
               <h1 class="feed-head__title" style="margin:0;font-size:1.125rem">${feedTitle}</h1>
-              <p class="muted" style="margin:0.15rem 0 0;font-size:0.875rem">${esc(
-                tfn("browse.results", listingsLoadFailed ? 0 : totalCount)
-              )}</p>
+              <p class="muted" style="margin:0.15rem 0 0;font-size:0.875rem">${
+                listingsLoadFailed
+                  ? esc(t("browse.results_error"))
+                  : esc(tfn("browse.results", totalCount))
+              }</p>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
               <label class="sort-bar__sort">
@@ -3847,7 +3855,7 @@ const renderList = async () => {
 
   if (!pageSlice.length) {
     if (listingsLoadFailed) {
-      grid.innerHTML = browseEmptyGridHtml();
+      grid.innerHTML = browseListingsFetchErrorHtml();
       return;
     }
     if (rawListingCountPreEvents === 0) {
