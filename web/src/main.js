@@ -3554,13 +3554,6 @@ const renderList = async () => {
     maxPrice: filters.maxPrice
   };
 
-  const browseFetchIsBroad =
-    !fetchFilters.query &&
-    !fetchFilters.categoryId &&
-    !fetchFilters.location &&
-    fetchFilters.minPrice == null &&
-    fetchFilters.maxPrice == null;
-
   const hf = document.getElementById("header-search-form");
   if (hf?.elements?.q) {
     hf.elements.q.value = filters.query;
@@ -3589,7 +3582,6 @@ const renderList = async () => {
     listingsLoadFailed = true;
     browseListingsCache = { key: "", data: [] };
   }
-  const rawListingCountPreEvents = listingsLoadFailed ? 0 : listings.length;
   if (!listingsLoadFailed) {
     listings = listings.filter((l) => l.categoryId !== EVENTS_CATEGORY);
   }
@@ -3858,14 +3850,8 @@ const renderList = async () => {
       grid.innerHTML = browseListingsFetchErrorHtml();
       return;
     }
-    if (rawListingCountPreEvents === 0) {
-      grid.innerHTML =
-        browseFetchIsBroad && filters.page <= 1
-          ? browseEmptyGridHtml()
-          : `<div class="empty-state" role="status">${tf("browse.no_match_search", { link: `<a href="/browse">${esc(t("browse.view_all"))}</a>` })}</div>`;
-    } else {
-      grid.innerHTML = `<div class="empty-state" role="status">${esc(t("browse.no_match_filters"))}</div>`;
-    }
+    /* Same friendly empty catalog everywhere (category, filters, search)—not separate “no match” copy. */
+    grid.innerHTML = browseEmptyGridHtml();
     return;
   }
 
