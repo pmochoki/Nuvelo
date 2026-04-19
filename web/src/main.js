@@ -39,9 +39,10 @@ import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
 import { fetchNotificationsForCurrentUser } from "./lib/notificationsApi.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 import { initTheme } from "./lib/theme.js";
+import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
 
-const FALLBACK_HUNGARIAN_LOCATIONS = [
-  { value: "all", label: "All Hungary" },
+const FALLBACK_HUNGARIAN_LOCATIONS = () => [
+  { value: "all", label: t("search.allhungary") },
   { value: "budapest", label: "Budapest" },
   { value: "debrecen", label: "Debrecen" },
   { value: "miskolc", label: "Miskolc" },
@@ -54,7 +55,7 @@ const FALLBACK_HUNGARIAN_LOCATIONS = [
 const HUNGARIAN_LOCATIONS =
   Array.isArray(IMPORTED_HUNGARIAN_LOCATIONS) && IMPORTED_HUNGARIAN_LOCATIONS.length > 2
     ? IMPORTED_HUNGARIAN_LOCATIONS
-    : FALLBACK_HUNGARIAN_LOCATIONS;
+    : FALLBACK_HUNGARIAN_LOCATIONS();
 
 if (import.meta.env.VITE_API_URL == null || String(import.meta.env.VITE_API_URL).trim() === "") {
   console.info(
@@ -82,11 +83,11 @@ const friendlyNetworkError = (err, context = "default") => {
     /load failed/i.test(msg)
   ) {
     if (context === "legacy") {
-      return "Could not reach the sign-in service. Check your connection and try again.";
+      return t("auth.err.network");
     }
-    return "Could not reach the sign-in service. Check your connection and try again.";
+    return t("auth.err.network");
   }
-  return msg || "Something went wrong. Please try again.";
+  return msg || t("auth.err.generic");
 };
 
 /** Listings, profile, and generic route errors — neutral wording (not sign-in specific). */
@@ -100,9 +101,9 @@ const friendlyPageLoadError = (err) => {
     /load failed/i.test(msg) ||
     /unable to reach the server/i.test(msg)
   ) {
-    return "Could not reach the server. Check your connection and try again shortly.";
+    return t("auth.err.network_server");
   }
-  return msg || "Something went wrong. Please try again.";
+  return msg || t("auth.err.generic");
 };
 
 /** Supabase SMS expects E.164 (e.g. +36201234567). Strips spaces, dashes, parentheses. */
@@ -132,7 +133,7 @@ function normalizePhoneE164(raw) {
 function mapSupabasePhoneError(message) {
   const m = String(message || "");
   if (/unsupported phone provider/i.test(m)) {
-    return "SMS isn’t available for this number with your project’s SMS provider (country or routing). Try email sign-in, or enable Hungary / configure Twilio (or another provider) in Supabase Dashboard → Authentication. Use E.164, e.g. +36201234567.";
+    return t("auth.err.sms_provider");
   }
   return m;
 }
@@ -143,19 +144,17 @@ const showOAuthUnavailable = (providerLabel) => {
     `[Nuvelo] ${providerLabel}: Supabase not configured — set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (e.g. Vercel env), then redeploy.`
   );
   if (!signInFlowsAvailable) {
-    showLoginError("Sign-in is temporarily unavailable. Please try again shortly.");
+    showLoginError(t("auth.err.signin_down"));
     return;
   }
-  showLoginError("Sign-in is temporarily unavailable. Please try again shortly.");
+  showLoginError(t("auth.err.signin_down"));
 };
 
-/** When the listings API fails (e.g. production with VITE_DEMO_LISTINGS=false); never surface raw stack traces. */
-const LISTINGS_UNAVAILABLE_MSG =
-  "We couldn’t load listings. Check your connection and try again.";
+/** When the listings API fails — text from i18n at render time. */
+const LISTINGS_UNAVAILABLE_MSG = () => t("listings.unavailable");
 /** Browse page fetch failure (user-facing). */
-const BROWSE_LISTINGS_ERROR_MSG = "Could not load listings. Try refreshing.";
-const LISTING_DETAIL_UNAVAILABLE_MSG =
-  "We couldn’t load this ad. Check your connection and try again.";
+const BROWSE_LISTINGS_ERROR_MSG = () => t("browse.error");
+const LISTING_DETAIL_UNAVAILABLE_MSG = () => t("listing.unavailable");
 const USER_STORE_KEY = "nuvelo_user";
 const PROFILE_FIELDS_KEY = "nuvelo_profile_fields";
 /** Canonical profile JSON for /profile/settings (merged with legacy key on read). */
@@ -259,15 +258,15 @@ const buildHomeCategoryGridHtml = () => {
   const parts = [];
   parts.push(`<a class="jiji-cat-tile jiji-cat-tile--post" href="/post">
     <span class="jiji-cat-tile__icon-wrap jiji-cat-tile__icon-wrap--post" aria-hidden="true"><span class="jiji-cat-tile__plus">+</span></span>
-    <span class="jiji-cat-tile__label">Post ad</span>
+    <span class="jiji-cat-tile__label">${esc(t("home.pill.post"))}</span>
   </a>`);
   parts.push(`<a class="jiji-cat-tile" href="/browse?sort=popular">
     <span class="jiji-cat-tile__icon-wrap" aria-hidden="true">🔥</span>
-    <span class="jiji-cat-tile__label">Trending</span>
+    <span class="jiji-cat-tile__label">${esc(t("home.pill.trending"))}</span>
   </a>`);
   parts.push(`<a class="jiji-cat-tile" href="/events">
     <span class="jiji-cat-tile__icon-wrap" aria-hidden="true">🎉</span>
-    <span class="jiji-cat-tile__label">Events</span>
+    <span class="jiji-cat-tile__label">${esc(t("home.pill.events"))}</span>
   </a>`);
   for (const slug of HOME_GRID_SLUG_ORDER) {
     const row = ADS_CATEGORIES.find((c) => c.slug === slug);
@@ -281,7 +280,7 @@ const buildHomeCategoryGridHtml = () => {
       <span class="jiji-cat-tile__label">${esc(label)}</span>
     </a>`);
   }
-  return `<nav class="jiji-cat-grid" aria-label="Browse categories">${parts.join("")}</nav>`;
+  return `<nav class="jiji-cat-grid" aria-label="${esc(t("home.section_cat"))}">${parts.join("")}</nav>`;
 };
 
 const mainShell = () => document.getElementById("app");
@@ -671,7 +670,7 @@ const openModal = (mode = "signin") => {
 
   if (!signInFlowsAvailable) {
     if (titleEl) {
-      titleEl.textContent = "Sign in";
+      titleEl.textContent = t("auth.title");
     }
     if (subEl) {
       subEl.textContent = "";
@@ -687,14 +686,14 @@ const openModal = (mode = "signin") => {
   }
 
   if (titleEl) {
-    titleEl.textContent = mode === "register" ? "Create account" : "Sign in";
+    titleEl.textContent = mode === "register" ? t("auth.title_create") : t("auth.title");
   }
   if (subEl) {
     subEl.hidden = false;
     subEl.textContent =
       mode === "register"
-        ? "Create your Nuvelo profile to post listings and message sellers."
-        : "Sign in with email (magic link) or phone (SMS code).";
+        ? t("auth.subtitle_register")
+        : t("auth.subtitle_signin_flow");
   }
   if (errEl) {
     errEl.textContent = "";
@@ -716,7 +715,7 @@ const openModal = (mode = "signin") => {
   }
   if (switchBtn) {
     switchBtn.textContent =
-      mode === "register" ? "Already have an account? Sign in" : "Don’t have an account? Register";
+      mode === "register" ? t("auth.haveaccount") : t("auth.register");
   }
   loginModal.hidden = false;
   syncAuthSignInAvailability();
@@ -733,6 +732,30 @@ const closeModal = () => {
   }
   loginModal.hidden = true;
   resetAuthModalMessages();
+};
+
+/** Refresh auth modal copy when locale changes while the modal is closed. */
+const syncAuthModalStaticCopy = () => {
+  if (!loginModal || !loginModal.hidden || !signInFlowsAvailable) {
+    return;
+  }
+  const titleEl = document.getElementById("login-title");
+  const subEl = document.getElementById("login-subtitle");
+  const switchBtn = document.getElementById("auth-switch-mode");
+  if (titleEl) {
+    titleEl.textContent = authModalMode === "register" ? t("auth.title_create") : t("auth.title");
+  }
+  if (subEl) {
+    subEl.hidden = false;
+    subEl.textContent =
+      authModalMode === "register"
+        ? t("auth.subtitle_register")
+        : t("auth.subtitle_signin_flow");
+  }
+  if (switchBtn) {
+    switchBtn.textContent =
+      authModalMode === "register" ? t("auth.haveaccount") : t("auth.register");
+  }
 };
 
 loginModal?.addEventListener("click", (e) => {
@@ -767,7 +790,7 @@ document.getElementById("auth-google-stub")?.addEventListener("click", async () 
     options: { redirectTo }
   });
   if (error) {
-    showLoginError(error.message || "Google sign-in failed.");
+    showLoginError(error.message || t("auth.err.google"));
   }
 });
 
@@ -784,7 +807,7 @@ document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
     options: { redirectTo }
   });
   if (error) {
-    showLoginError(error.message || "Facebook sign-in failed.");
+    showLoginError(error.message || t("auth.err.facebook"));
   }
 });
 
@@ -862,20 +885,18 @@ loginForm?.addEventListener("submit", async (e) => {
   const phone = String(fd.get("phone") || "").trim() || "";
 
   if (!email && !phone) {
-    showLoginError("Enter an email (magic link) or phone (SMS code) to continue.");
+    showLoginError(t("auth.err.need_email_phone"));
     return;
   }
 
   /* Email branch runs first; both filled would skip SMS and leave phoneOtpPending unset */
   if (email && phone) {
-    showLoginError(
-      "Use email or phone — not both at once. For SMS: clear the email field, enter phone (+36…), then tap Continue."
-    );
+    showLoginError(t("auth.err.not_both"));
     return;
   }
 
   if (authModalMode === "register" && (!name || name.length < 2)) {
-    showLoginError("Enter your display name (at least 2 characters).");
+    showLoginError(t("auth.err.display_name"));
     return;
   }
 
@@ -885,7 +906,7 @@ loginForm?.addEventListener("submit", async (e) => {
     }
     setLoginContinueLoading(true);
     loginContinueSlowTimer = setTimeout(() => {
-      showLoginError("This is taking longer than expected. Please try again.");
+      showLoginError(t("auth.err.slow"));
     }, 30000);
     try {
       const redirectTo = getAuthRedirectUrl();
@@ -907,18 +928,16 @@ loginForm?.addEventListener("submit", async (e) => {
           }
         });
         if (error) {
-          showLoginError(error.message || "Could not send email link.");
+          showLoginError(error.message || t("auth.err.email_send"));
           return;
         }
-        showLoginSuccess("Check your email — we sent you a sign-in link.");
+        showLoginSuccess(t("auth.success.email"));
         return;
       }
 
       const normalizedPhone = normalizePhoneE164(phone);
       if (!normalizedPhone) {
-        showLoginError(
-          "Enter a valid international phone number (e.g. +36201234567). You can include spaces; we normalize to E.164."
-        );
+        showLoginError(t("auth.err.phone_format"));
         return;
       }
       const phoneInput = loginForm?.querySelector("input[name='phone']");
@@ -931,7 +950,7 @@ loginForm?.addEventListener("submit", async (e) => {
         options: { data: meta }
       });
       if (error) {
-        showLoginError(mapSupabasePhoneError(error.message) || "Could not send SMS.");
+        showLoginError(mapSupabasePhoneError(error.message) || t("auth.err.sms_send"));
         return;
       }
       phoneOtpPending = normalizedPhone;
@@ -942,7 +961,7 @@ loginForm?.addEventListener("submit", async (e) => {
           behavior: "smooth"
         });
       });
-      showLoginSuccess("Enter the code we sent to your phone.");
+      showLoginSuccess(t("auth.success.sms_prompt"));
     } catch (err) {
       console.error(err);
       showLoginError(friendlyNetworkError(err));
@@ -957,7 +976,7 @@ loginForm?.addEventListener("submit", async (e) => {
   }
 
   if (!deploymentAllowsLegacyBackendLogin) {
-    showLoginError("Sign-in is temporarily unavailable. Please try again shortly.");
+    showLoginError(t("auth.err.signin_down"));
     return;
   }
 
@@ -966,7 +985,7 @@ loginForm?.addEventListener("submit", async (e) => {
   }
   setLoginContinueLoading(true);
   loginContinueSlowTimer = setTimeout(() => {
-    showLoginError("This is taking longer than expected. Please try again.");
+    showLoginError(t("auth.err.slow"));
   }, 30000);
   try {
     const user = await loginUser({
@@ -993,16 +1012,12 @@ loginForm?.addEventListener("submit", async (e) => {
 
 document.getElementById("auth-phone-verify-btn")?.addEventListener("click", async () => {
   if (!supabase || !phoneOtpPending || !smsSent) {
-    showLoginError(
-      supabase
-        ? "No SMS was sent yet. Enter your phone (+36…), leave email empty, tap Continue, wait for the text, then enter the code here."
-        : "SMS sign-in requires Supabase to be configured."
-    );
+    showLoginError(supabase ? t("auth.err.phone_flow") : t("auth.err.supabase_sms"));
     return;
   }
   const token = String(document.getElementById("auth-phone-otp-input")?.value || "").trim();
   if (!token) {
-    showLoginError("Enter the code from your SMS.");
+    showLoginError(t("auth.err.enter_code"));
     return;
   }
   const btn = document.getElementById("auth-phone-verify-btn");
@@ -1016,10 +1031,10 @@ document.getElementById("auth-phone-verify-btn")?.addEventListener("click", asyn
       type: "sms"
     });
     if (error) {
-      showLoginError(error.message || "Invalid code.");
+      showLoginError(error.message || t("auth.err.invalid_code"));
       return;
     }
-    showLoginSuccess("Signed in successfully.");
+    showLoginSuccess(t("auth.success.signed_in"));
   } finally {
     if (btn) {
       btn.disabled = false;
@@ -1789,7 +1804,7 @@ function initMessagesPageUi() {
         await reloadThreads();
         await refreshMessageNavBadge();
       } catch (err) {
-        showNuveloToast(String(err?.message || "Could not send"));
+        showNuveloToast(String(err?.message || t("general.error")));
       } finally {
         if (sendBtn instanceof HTMLButtonElement) {
           sendBtn.disabled = false;
@@ -1812,7 +1827,7 @@ function initMessagesPageUi() {
     const row = threadById.get(id);
     const u = getUser();
     if (!row || !u) {
-      showNuveloToast("Could not open this chat.");
+      showNuveloToast(t("general.error"));
       return;
     }
     activeThreadId = id;
@@ -1833,7 +1848,7 @@ function initMessagesPageUi() {
       );
     } catch (e) {
       console.error(e);
-      showNuveloToast("Could not load this conversation. Please try again.");
+      showNuveloToast(t("general.error"));
       return;
     }
     empty.hidden = true;
@@ -1870,7 +1885,7 @@ function initMessagesPageUi() {
 
   const listsWrap = root.querySelector("[data-msg-lists-wrap]");
   const emptyInbox = root.querySelector("[data-msg-empty-inbox]");
-  const MESSAGES_USER_FACING_ERROR = "Could not load messages. Try again.";
+  const MESSAGES_USER_FACING_ERROR = () => t("messages.banner_error");
 
   /**
    * @param {object[]} threads
@@ -1901,10 +1916,10 @@ function initMessagesPageUi() {
     const tabUnread = root.querySelector('[data-msg-tab="unread"]');
     const tabSpam = root.querySelector('[data-msg-tab="spam"]');
     if (tabUnread) {
-      tabUnread.textContent = `Unread (${unreadRows.length})`;
+      tabUnread.textContent = tf("messages.unread_count", { n: unreadRows.length });
     }
     if (tabSpam) {
-      tabSpam.textContent = "Spam (0)";
+      tabSpam.textContent = tf("messages.spam_count", { n: 0 });
     }
 
     const showEmptyInbox = loadState === "success" && threads.length === 0;
@@ -1925,7 +1940,7 @@ function initMessagesPageUi() {
       fillThreadLists([], "failure");
       if (banner) {
         banner.hidden = false;
-        banner.textContent = MESSAGES_USER_FACING_ERROR;
+        banner.textContent = MESSAGES_USER_FACING_ERROR();
       }
       return;
     }
@@ -1954,7 +1969,7 @@ function initMessagesPageUi() {
       fillThreadLists([], "failure");
       if (banner) {
         banner.hidden = false;
-        banner.textContent = MESSAGES_USER_FACING_ERROR;
+        banner.textContent = MESSAGES_USER_FACING_ERROR();
       }
     }
   }
@@ -1997,9 +2012,9 @@ function initFeedbackPageUi() {
       el?.getAttribute("data-link") || `${window.location.origin}/profile/adverts`;
     try {
       await navigator.clipboard.writeText(link);
-      showNuveloToast("Link copied!");
+      showNuveloToast(t("feedback.toast_ok"));
     } catch {
-      showNuveloToast("Could not copy — try again.");
+      showNuveloToast(t("feedback.toast_err"));
     }
   });
 }
@@ -2014,8 +2029,16 @@ function initPerformancePageUi() {
   /** No real time-series yet — keep a flat chart (no sample traffic curve). */
   const flatFill = "0,120 0,118 320,118 320,120";
   const flatLine = "0,118 320,118";
-  const labels = { daily: "Daily", weekly: "Weekly", monthly: "Monthly" };
-  const rangeBy = { daily: "Last 24 hours (no data yet)", weekly: "Last 7 days (no data yet)", monthly: "Last 30 days (no data yet)" };
+  const labels = {
+    daily: t("perf.toggle.daily"),
+    weekly: t("perf.toggle.weekly"),
+    monthly: t("perf.toggle.monthly")
+  };
+  const rangeBy = {
+    daily: t("perf.range.daily"),
+    weekly: t("perf.range.weekly"),
+    monthly: t("perf.range.monthly")
+  };
   root.querySelectorAll("[data-perf]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const p = btn.getAttribute("data-perf") || "daily";
@@ -2086,7 +2109,7 @@ async function initNotificationsPageUi() {
     if (!rows.length) {
       listEl.innerHTML = `<div class="profile-empty-state profile-empty-state--notifications" role="status">
         <p class="profile-empty-state__icon" aria-hidden="true">🔔</p>
-        <p>No notifications yet. We'll let you know when something happens.</p>
+        <p>${esc(t("notifications.empty_detail"))}</p>
       </div>`;
       return;
     }
@@ -2109,7 +2132,7 @@ async function initNotificationsPageUi() {
     }
     if (errEl) {
       errEl.hidden = false;
-      errEl.textContent = "Could not load notifications. Try again.";
+      errEl.textContent = t("notifications.load_error");
     }
     listEl.innerHTML = "";
   }
@@ -2189,13 +2212,27 @@ const locationApiText = (stored) => {
 const locationButtonLabel = (stored) => {
   const row = findHungarianLocationRow(stored);
   if (!row || row.value === "all") {
-    return "All Hungary";
+    return t("search.allhungary");
   }
   if (row) {
     return row.label;
   }
-  const t = String(stored || "").trim();
-  return t || "All Hungary";
+  const s = String(stored || "").trim();
+  return s || t("search.allhungary");
+};
+
+/** Preserves <span data-i18n> for the “all Hungary” state. */
+const setLocationComboboxButton = (btn, storedRaw) => {
+  if (!btn) {
+    return;
+  }
+  const row = findHungarianLocationRow(storedRaw);
+  if (!row || row.value === "all" || String(storedRaw || "").trim() === "") {
+    const lab = t("search.allhungary");
+    btn.innerHTML = `<span data-i18n="search.allhungary">${esc(lab)}</span>`;
+  } else {
+    btn.textContent = row ? row.label : String(storedRaw || "").trim() || t("search.allhungary");
+  }
 };
 
 const locationRowsForMode = (mode) =>
@@ -2217,7 +2254,7 @@ const locModalRowHtml = (r) =>
   `<button type="button" class="loc-modal__row" role="option" data-loc-opt data-loc-value="${esc(r.value)}" data-loc-label="${esc(r.label)}">
     <span class="loc-modal__row-main">
       <span class="loc-modal__row-name">${esc(r.label)}</span>
-      <span class="loc-modal__row-meta">• Ads</span>
+      <span class="loc-modal__row-meta">• <span data-i18n="loc.modal.ads_suffix">Ads</span></span>
     </span>
     <span class="loc-modal__row-chev" aria-hidden="true">›</span>
   </button>`;
@@ -2248,23 +2285,30 @@ const renderLocationModalContent = (root, searchQuery) => {
         r.label.toLowerCase().includes(q) || r.value.toLowerCase().includes(q)
     );
     if (titleEl) {
-      titleEl.textContent = "Search results";
+      titleEl.innerHTML = `<span data-i18n="loc.modal.search_results">Search results</span>`;
     }
     if (metaEl) {
-      metaEl.textContent = `${filtered.length} match${filtered.length !== 1 ? "es" : ""}`;
+      metaEl.textContent =
+        filtered.length === 1
+          ? tf("loc.modal.match_one", { n: filtered.length })
+          : tf("loc.modal.match_many", { n: filtered.length });
     }
     body.innerHTML =
       filtered.length === 0
-        ? `<p class="loc-modal__empty muted">No cities match your search.</p>`
+        ? `<p class="loc-modal__empty muted" data-i18n="loc.modal.no_match">No cities match your search.</p>`
         : `<div class="loc-modal__search-results">${filtered.map(locModalRowHtml).join("")}</div>`;
+    applyDomTranslations(root);
     return;
   }
 
   if (titleEl) {
-    titleEl.textContent = mode === "post" ? "Choose city" : "All Hungary";
+    titleEl.innerHTML =
+      mode === "post"
+        ? `<span data-i18n="loc.modal.choose_city">Choose city</span>`
+        : `<span data-i18n="search.allhungary">All Hungary</span>`;
   }
   if (metaEl) {
-    metaEl.textContent = "Select a city or town";
+    metaEl.innerHTML = `<span data-i18n="search.selectcity">Select a city or town</span>`;
   }
 
   const parts = [];
@@ -2273,7 +2317,7 @@ const renderLocationModalContent = (root, searchQuery) => {
     const allRow = HUNGARIAN_LOCATIONS.find((r) => r.value === "all");
     if (allRow) {
       parts.push(
-        `<section class="loc-modal__group"><h3 class="loc-modal__group-h">Whole country</h3>${locModalRowHtml(allRow)}</section>`
+        `<section class="loc-modal__group"><h3 class="loc-modal__group-h" data-i18n="loc.modal.whole_country">Whole country</h3>${locModalRowHtml(allRow)}</section>`
       );
     }
   }
@@ -2282,7 +2326,7 @@ const renderLocationModalContent = (root, searchQuery) => {
     (r) => r.value !== "all" && HUNGARY_POPULAR_VALUES.has(r.value)
   );
   if (popular.length) {
-    const rail = `<span class="loc-modal__rail" aria-hidden="true">POPULAR</span>`;
+    const rail = `<span class="loc-modal__rail" aria-hidden="true" data-i18n="loc.modal.popular">POPULAR</span>`;
     const inner = popular.map(locModalRowHtml).join("");
     parts.push(
       `<section class="loc-modal__group loc-modal__group--with-rail">${rail}<div class="loc-modal__group-rows">${inner}</div></section>`
@@ -2312,6 +2356,7 @@ const renderLocationModalContent = (root, searchQuery) => {
   }
 
   body.innerHTML = `<div class="loc-modal__multicolumn">${parts.join("")}</div>`;
+  applyDomTranslations(root);
 };
 
 const LOC_MODAL_CLOSE_MS = 280;
@@ -2328,9 +2373,10 @@ const closeLocationPanel = (root) => {
   if (btn) {
     btn.setAttribute("aria-expanded", "false");
     btn.removeAttribute("aria-busy");
-    if (btn.dataset.locPrevLabel != null) {
-      btn.textContent = btn.dataset.locPrevLabel;
-      delete btn.dataset.locPrevLabel;
+    if (btn.dataset.locPrevHtml != null) {
+      btn.innerHTML = btn.dataset.locPrevHtml;
+      delete btn.dataset.locPrevHtml;
+      applyDomTranslations(root);
     }
   }
   if (modal) {
@@ -2366,8 +2412,9 @@ const openLocationPanel = (root) => {
   if (btn) {
     btn.setAttribute("aria-expanded", "true");
     btn.setAttribute("aria-busy", "true");
-    btn.dataset.locPrevLabel = btn.textContent || "";
-    btn.textContent = "Loading locations…";
+    btn.dataset.locPrevHtml = btn.innerHTML || "";
+    btn.innerHTML = `<span data-i18n="general.loading">${esc(t("general.loading"))}</span>`;
+    applyDomTranslations(root);
   }
   if (modal) {
     clearTimeout(root._locModalCloseT);
@@ -2384,9 +2431,10 @@ const openLocationPanel = (root) => {
         modal.classList.add("is-visible");
         if (btn) {
           btn.removeAttribute("aria-busy");
-          if (btn.dataset.locPrevLabel != null) {
-            btn.textContent = btn.dataset.locPrevLabel;
-            delete btn.dataset.locPrevLabel;
+          if (btn.dataset.locPrevHtml != null) {
+            btn.innerHTML = btn.dataset.locPrevHtml;
+            delete btn.dataset.locPrevHtml;
+            applyDomTranslations(root);
           }
         }
         search?.focus();
@@ -2402,13 +2450,10 @@ const syncLocationCombobox = (root, storedRaw) => {
   const hidden = root.querySelector("[data-loc-hidden]");
   const btn = root.querySelector("[data-loc-btn]");
   const api = locationApiText(storedRaw);
-  const label = locationButtonLabel(storedRaw);
   if (hidden) {
     hidden.value = api;
   }
-  if (btn) {
-    btn.textContent = label;
-  }
+  setLocationComboboxButton(btn, storedRaw);
   closeLocationPanel(root);
 };
 
@@ -2437,7 +2482,8 @@ const applyLocationSelection = (root, value, label) => {
       hidden.value = "";
     }
     if (btn) {
-      btn.textContent = "All Hungary";
+      const lab = t("search.allhungary");
+      btn.innerHTML = `<span data-i18n="search.allhungary">${esc(lab)}</span>`;
     }
   } else {
     if (hidden) {
@@ -2525,25 +2571,29 @@ const buildLocationComboboxHtml = ({
   btnClass = "loc-dd__btn"
 }) => {
   const apiVal = locationApiText(storedRaw);
-  const btnText = locationButtonLabel(storedRaw);
+  const row = findHungarianLocationRow(storedRaw);
+  const isAll = !row || row.value === "all";
+  const btnInner = isAll
+    ? `<span data-i18n="search.allhungary">${esc(t("search.allhungary"))}</span>`
+    : esc(locationButtonLabel(storedRaw));
   const req = mode === "post" ? " required" : "";
   const wc = wrapClass ? `${wrapClass} ` : "";
   return `<div class="${wc}loc-dd" data-loc-combobox data-loc-mode="${esc(mode)}">
   <input type="hidden" name="${esc(fieldName)}" data-loc-hidden value="${esc(apiVal)}"${req} />
-  <button type="button" class="${btnClass}" data-loc-btn aria-haspopup="dialog" aria-expanded="false">${esc(btnText)}</button>
+  <button type="button" class="${btnClass}" data-loc-btn aria-haspopup="dialog" aria-expanded="false">${btnInner}</button>
   <div class="loc-modal" data-loc-modal hidden aria-hidden="true" inert>
     <div class="loc-modal__backdrop" data-loc-close tabindex="-1"></div>
-    <div class="loc-modal__dialog" role="dialog" aria-modal="true" aria-label="Choose location">
+    <div class="loc-modal__dialog" role="dialog" aria-modal="true" data-i18n-aria-label="header.choose_location" aria-label="Choose location">
       <div class="loc-modal__head">
         <div>
-          <h2 class="loc-modal__title" data-loc-modal-title>All Hungary</h2>
-          <p class="loc-modal__meta" data-loc-modal-meta>Select a city or town</p>
+          <h2 class="loc-modal__title" data-loc-modal-title data-i18n="search.allhungary">All Hungary</h2>
+          <p class="loc-modal__meta" data-loc-modal-meta data-i18n="search.selectcity">Select a city or town</p>
         </div>
-        <button type="button" class="loc-modal__x" data-loc-close aria-label="Close">×</button>
+        <button type="button" class="loc-modal__x" data-loc-close data-i18n-aria-label="header.close" aria-label="Close">×</button>
       </div>
       <div class="loc-modal__search-row">
         <span class="loc-modal__search-icon" aria-hidden="true">⌕</span>
-        <input type="search" class="loc-modal__search" data-loc-search placeholder="Find city or town…" autocomplete="off" aria-label="Search cities" />
+        <input type="search" class="loc-modal__search" data-loc-search data-i18n-placeholder="loc.find_placeholder" placeholder="Find city or town…" autocomplete="off" data-i18n-aria-label="search.placeholder" aria-label="Search cities" />
       </div>
       <div class="loc-modal__body" data-loc-body></div>
     </div>
@@ -3183,14 +3233,14 @@ const formatDisplayPrice = (listing) => {
   }
   const p = listing.price;
   if (p == null) {
-    return "Contact for price";
+    return t("listing.contact_price");
   }
   const n = Number(p);
   if (!Number.isFinite(n) || n < 0) {
-    return "Contact for price";
+    return t("listing.contact_price");
   }
   if (n === 0) {
-    return "Free";
+    return t("listing.free_short");
   }
   return `${listing.currency || "HUF"} ${n}`;
 };
@@ -3205,18 +3255,18 @@ const buildListingCardEl = (listing, opts = {}) => {
   const cf = listing.categoryFields || {};
   const isDonation = listing.categoryId === DONATIONS_CATEGORY_ID;
   const claimed = isDonation && Boolean(cf.claimed);
-  const priceLine = formatDisplayPrice(listing) ?? "Contact for price";
+  const priceLine = formatDisplayPrice(listing) ?? t("listing.contact_price");
   const tl = [];
   if (listing.featured || listing.isFeatured) {
-    tl.push(`<span class="lc__pill lc__pill--feat">FEATURED</span>`);
+    tl.push(`<span class="lc__pill lc__pill--feat">${esc(t("listing.pill_featured"))}</span>`);
   } else if (listing.urgent || listing.isUrgent) {
-    tl.push(`<span class="lc__pill lc__pill--urg">URGENT</span>`);
+    tl.push(`<span class="lc__pill lc__pill--urg">${esc(t("listing.pill_urgent"))}</span>`);
   } else if (markPopular && idx < 6) {
-    tl.push(`<span class="lc__pill lc__pill--pop">POPULAR</span>`);
+    tl.push(`<span class="lc__pill lc__pill--pop">${esc(t("listing.pill_popular"))}</span>`);
   }
   const tr =
     listing.sellerVerified || listing.enterprise
-      ? `<div class="lc__badges-tr"><span class="lc__pill lc__pill--ent">ENTERPRISE</span></div>`
+      ? `<div class="lc__badges-tr"><span class="lc__pill lc__pill--ent">${esc(t("listing.enterprise"))}</span></div>`
       : "";
   const imgHtml = thumb
     ? `<img src="${esc(thumb)}" alt="" loading="lazy" decoding="async" />`
@@ -3226,7 +3276,7 @@ const buildListingCardEl = (listing, opts = {}) => {
   const loc = listing.location || "—";
   const sellerIco =
     listing.sellerVerified || listing.enterprise
-      ? `<span class="lc__seller-ico" title="Verified">★</span>`
+      ? `<span class="lc__seller-ico" title="${esc(t("listing.verified_badge"))}">★</span>`
       : "";
 
   const condLine = isDonation
@@ -3239,19 +3289,19 @@ const buildListingCardEl = (listing, opts = {}) => {
       : "";
 
   const priceHtml = isDonation
-    ? `<p class="lc__price lc__price--donation"><span class="lc__free">FREE</span></p>`
+    ? `<p class="lc__price lc__price--donation"><span class="lc__free">${esc(t("listing.free"))}</span></p>`
     : `<p class="lc__price">${esc(priceLine)}</p>`;
 
   const claimOverlay = claimed
-    ? `<div class="lc__claimed-overlay" aria-hidden="true"><span>CLAIMED</span></div>`
+    ? `<div class="lc__claimed-overlay" aria-hidden="true"><span>${esc(t("listing.claimed"))}</span></div>`
     : "";
 
   const ctaRow = isDonation
-    ? `<p class="lc__cta"><button type="button" class="lc__claim-btn" data-donation-cta>${claimed ? "View listing" : "I want this"}</button></p>`
+    ? `<p class="lc__cta"><button type="button" class="lc__claim-btn" data-donation-cta>${claimed ? esc(t("listing.view_listing")) : esc(t("listing.i_want"))}</button></p>`
     : "";
 
   const saved = isListingSaved(listing.id);
-  const saveBtnHtml = `<button type="button" class="lc__save${saved ? " lc__save--active" : ""}" data-save-listing aria-label="${saved ? "Remove from saved" : "Save listing"}" aria-pressed="${saved ? "true" : "false"}" title="${saved ? "Saved" : "Save"}">
+  const saveBtnHtml = `<button type="button" class="lc__save${saved ? " lc__save--active" : ""}" data-save-listing aria-label="${saved ? esc(t("listing.save_aria_on")) : esc(t("listing.save_aria_off"))}" aria-pressed="${saved ? "true" : "false"}" title="${saved ? esc(t("listing.saved")) : esc(t("listing.save"))}">
         <svg class="lc__save-icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
           <path fill="${saved ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
         </svg>
@@ -3307,8 +3357,8 @@ const buildListingCardEl = (listing, opts = {}) => {
     const on = isListingSaved(listing.id);
     saveBtn.classList.toggle("lc__save--active", on);
     saveBtn.setAttribute("aria-pressed", on ? "true" : "false");
-    saveBtn.setAttribute("aria-label", on ? "Remove from saved" : "Save listing");
-    saveBtn.title = on ? "Saved" : "Save";
+    saveBtn.setAttribute("aria-label", on ? t("listing.save_aria_on") : t("listing.save_aria_off"));
+    saveBtn.title = on ? t("listing.saved") : t("listing.save");
     const path = saveBtn.querySelector("path");
     if (path) {
       path.setAttribute("fill", on ? "currentColor" : "none");
@@ -3337,9 +3387,9 @@ const renderLanding = async () => {
   const homeCategoryGrid = buildHomeCategoryGridHtml();
 
   const pills = [
-    `<button type="button" class="jiji-pill" data-home-pill="post">Post ad</button>`,
-    `<a class="jiji-pill" href="/events">🎉 Events</a>`,
-    `<button type="button" class="jiji-pill jiji-pill--active" data-home-pill="trending">Trending</button>`,
+    `<button type="button" class="jiji-pill" data-home-pill="post">${esc(t("home.pill.post"))}</button>`,
+    `<a class="jiji-pill" href="/events">🎉 ${esc(t("home.pill.events"))}</a>`,
+    `<button type="button" class="jiji-pill jiji-pill--active" data-home-pill="trending">${esc(t("home.pill.trending"))}</button>`,
     ...ADS_CATEGORIES.map((row) => {
       const catId = apiCategoryIdForSlug(row.slug);
       return `<button type="button" class="jiji-pill" data-home-pill="cat" data-cat="${esc(catId)}"><span aria-hidden="true">${row.icon}</span> ${esc(row.label)}</button>`;
@@ -3357,26 +3407,26 @@ const renderLanding = async () => {
 
   appEl.innerHTML = `
     <div class="jiji-home">
-      <section class="jiji-hero" aria-label="Search">
+      <section class="jiji-hero" aria-label="${esc(t("home.section_search"))}">
         <div class="jiji-hero__inner">
-          <h1 class="jiji-hero__title">What are you looking for?</h1>
+          <h1 class="jiji-hero__title">${esc(t("home.hero.title"))}</h1>
           <form id="home-hero-form" class="jiji-hero__search">
             ${heroLocCombobox}
             <div class="jiji-hero__q-wrap">
-              <input class="jiji-hero__q" name="q" type="search" placeholder="I am looking for…" />
+              <input class="jiji-hero__q" name="q" type="search" placeholder="${esc(t("home.hero.q_placeholder"))}" />
             </div>
-            <button type="submit" class="jiji-hero__submit" aria-label="Search">⌕</button>
+            <button type="submit" class="jiji-hero__submit" aria-label="${esc(t("home.hero.search_aria"))}">⌕</button>
           </form>
         </div>
       </section>
       <section class="jiji-cat-grid-section" aria-labelledby="home-cat-heading">
-        <h2 id="home-cat-heading" class="jiji-cat-grid-section__title">Categories</h2>
+        <h2 id="home-cat-heading" class="jiji-cat-grid-section__title">${esc(t("home.cat_title"))}</h2>
         ${homeCategoryGrid}
       </section>
       <div class="jiji-home__cols">
         <div class="jiji-home__main">
-          <div class="jiji-promo-strip" aria-label="Promotions">
-            <a href="/post" class="jiji-promo-card jiji-promo-card--a">Post your first ad</a>
+          <div class="jiji-promo-strip" aria-label="${esc(t("home.promo.section"))}">
+            <a href="/post" class="jiji-promo-card jiji-promo-card--a">${esc(t("home.promo.post_first"))}</a>
             <button
               type="button"
               id="promo-how-to-buy-btn"
@@ -3384,7 +3434,7 @@ const renderLanding = async () => {
               data-promo-dialog-open="dialog-how-to-buy"
               aria-haspopup="dialog"
             >
-              How to buy safely
+              ${esc(t("home.promo.safe_buy"))}
             </button>
             <button
               type="button"
@@ -3393,18 +3443,18 @@ const renderLanding = async () => {
               data-promo-dialog-open="dialog-verified-sellers"
               aria-haspopup="dialog"
             >
-              Verified sellers
+              ${esc(t("home.promo.verified"))}
             </button>
-            <a href="/faq" class="jiji-promo-card jiji-promo-card--d">How to sell</a>
-            <a href="/safety" class="jiji-promo-card jiji-promo-card--e">Safety tips</a>
+            <a href="/faq" class="jiji-promo-card jiji-promo-card--d">${esc(t("home.promo.sell"))}</a>
+            <a href="/safety" class="jiji-promo-card jiji-promo-card--e">${esc(t("home.promo.safety"))}</a>
           </div>
           <div class="jiji-pills" id="home-pills">${pills}</div>
-          <section class="jiji-trending" aria-label="Trending ads">
+          <section class="jiji-trending" aria-label="${esc(t("home.trending.section"))}">
             <div class="jiji-section-head">
-              <h2>Trending ads</h2>
-              <div class="jiji-view-toggle" role="group" aria-label="Listing view">
-                <button type="button" id="home-view-grid" aria-pressed="${viewMode === "grid"}" aria-label="Grid view" title="Grid">⊞</button>
-                <button type="button" id="home-view-list" aria-pressed="${viewMode === "list"}" aria-label="List view" title="List">☰</button>
+              <h2>${esc(t("home.trending.title"))}</h2>
+              <div class="jiji-view-toggle" role="group" aria-label="${esc(t("browse.listing_view"))}">
+                <button type="button" id="home-view-grid" aria-pressed="${viewMode === "grid"}" aria-label="${esc(t("browse.grid_view"))}" title="${esc(t("browse.grid_view"))}">⊞</button>
+                <button type="button" id="home-view-list" aria-pressed="${viewMode === "list"}" aria-label="${esc(t("browse.list_view"))}" title="${esc(t("browse.list_view"))}">☰</button>
               </div>
             </div>
             <div class="ad-grid--lc" id="home-listing-grid" data-view="${viewMode}"></div>
@@ -3416,9 +3466,9 @@ const renderLanding = async () => {
 
   const grid = document.getElementById("home-listing-grid");
   if (listingsLoadFailed) {
-    grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG)}</p>`;
+    grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG())}</p>`;
   } else if (!listings.length) {
-    grid.innerHTML = `<div class="listings-empty muted" role="status">No listings yet — be the first to post!</div>`;
+    grid.innerHTML = `<div class="listings-empty muted" role="status">${esc(t("browse.empty"))}</div>`;
   } else {
     trending.forEach((listing, i) => {
       grid.appendChild(
@@ -3472,8 +3522,8 @@ const buildBrowseSkeletonHtml = () => {
     )
     .join("");
   return `<div class="feed-layout feed-layout--browse">
-    <nav class="breadcrumb-jiji" aria-label="Breadcrumb"><a href="/browse">All ads</a></nav>
-    <p class="muted small browse-skeleton-status" style="margin:0.75rem 0" role="status">Loading listings…</p>
+    <nav class="breadcrumb-jiji" aria-label="${esc(t("breadcrumb.label"))}"><a href="/browse">${esc(t("browse.all_ads"))}</a></nav>
+    <p class="muted small browse-skeleton-status" style="margin:0.75rem 0" role="status">${esc(t("browse.loading"))}</p>
     <div class="ad-grid--lc browse-skeleton-grid" data-view="grid" aria-busy="true">${cards}</div>
   </div>`;
 };
@@ -3506,8 +3556,8 @@ const renderList = async () => {
   const hf = document.getElementById("header-search-form");
   if (hf?.elements?.q) {
     hf.elements.q.value = filters.query;
-    const catLabel = filters.categoryId ? categoryDisplayName(filters.categoryId) : "All ads";
-    hf.elements.q.placeholder = `Search in ${catLabel}`;
+    const catLabel = filters.categoryId ? categoryDisplayName(filters.categoryId) : t("browse.all_ads");
+    hf.elements.q.placeholder = tf("browse.search_in", { cat: catLabel });
   }
   syncGlobalHeaderDrawerSearch();
 
@@ -3552,8 +3602,8 @@ const renderList = async () => {
   const subCount = totalCount;
 
   const catChips = [
-    `<a href="/events" class="cat-chip"><span class="cat-chip__emoji" aria-hidden="true">🎉</span><span class="cat-chip__label">Events</span></a>`,
-    `<button type="button" class="cat-chip${!filters.categoryId ? " cat-chip--active" : ""}" data-cat=""><span class="cat-chip__emoji" aria-hidden="true">✨</span><span class="cat-chip__label">All</span></button>`,
+    `<a href="/events" class="cat-chip"><span class="cat-chip__emoji" aria-hidden="true">🎉</span><span class="cat-chip__label">${esc(t("browse.cat_events"))}</span></a>`,
+    `<button type="button" class="cat-chip${!filters.categoryId ? " cat-chip--active" : ""}" data-cat=""><span class="cat-chip__emoji" aria-hidden="true">✨</span><span class="cat-chip__label">${esc(t("browse.cat_all"))}</span></button>`,
     ...ADS_CATEGORIES.map((c) => {
       const apiId = apiCategoryIdForSlug(c.slug);
       const active = apiId === filters.categoryId ? " cat-chip--active" : "";
@@ -3563,17 +3613,17 @@ const renderList = async () => {
 
   const locChip =
     filters.location ?
-      `<div class="filter-chip-row"><span class="filter-chip">📍 ${esc(filters.location)} <button type="button" class="browse-loc-clear-btn" aria-label="Clear location">×</button></span></div>`
+      `<div class="filter-chip-row"><span class="filter-chip">📍 ${esc(filters.location)} <button type="button" class="browse-loc-clear-btn" aria-label="${esc(t("browse.clear_location"))}">×</button></span></div>`
     : "";
 
   const feedTitle = filters.categoryId
-    ? `${esc(categoryDisplayName(filters.categoryId))} in Hungary`
+    ? esc(tf("browse.feed.category_hungary", { cat: categoryDisplayName(filters.categoryId) }))
     : filters.location
-      ? `Ads in ${esc(filters.location)}`
-      : "All ads in Hungary";
+      ? esc(tf("browse.feed.ads_in", { place: filters.location }))
+      : esc(t("browse.feed.all_hungary"));
 
   const catOptions = [
-    `<option value=""${!filters.categoryId ? " selected" : ""}>All categories</option>`,
+    `<option value=""${!filters.categoryId ? " selected" : ""}>${esc(t("browse.all_categories"))}</option>`,
     ...ADS_CATEGORIES.map((c) => {
       const apiId = apiCategoryIdForSlug(c.slug);
       return `<option value="${esc(apiId)}"${apiId === filters.categoryId ? " selected" : ""}>${esc(c.label)}</option>`;
@@ -3586,20 +3636,21 @@ const renderList = async () => {
   const sell = filters.sellerFilter;
   const timeSel = filters.timeFilter;
   const filterCount = activeFilterCount(filters);
-  const filterBtnLabel = filterCount > 0 ? `Filters (${filterCount})` : "Filters";
+  const filterBtnLabel =
+    filterCount > 0 ? tf("browse.filters_count", { n: filterCount }) : t("browse.filters");
 
   const filterFieldsHtml = `
     <div class="filter-panel filter-panel--jiji">
       <div class="filter-section">
-        <h3>Categories</h3>
-        <p class="muted small" style="margin:0 0 0.5rem"><strong>${filters.categoryId ? esc(categoryDisplayName(filters.categoryId)) : "All categories"}</strong></p>
-        <a href="/browse" class="small">All in category · ${esc(formatListingCountLabel(subCount))}</a>
+        <h3>${esc(t("browse.filter_categories"))}</h3>
+        <p class="muted small" style="margin:0 0 0.5rem"><strong>${filters.categoryId ? esc(categoryDisplayName(filters.categoryId)) : esc(t("browse.all_categories"))}</strong></p>
+        <a href="/browse" class="small">${esc(tf("browse.all_in_cat", { count: formatListingCountLabel(subCount) }))}</a>
       </div>
       <div class="filter-section">
-        <h3>Location</h3>
+        <h3>${esc(t("browse.location_section"))}</h3>
         ${locChip}
         <label class="filter-panel__field">
-          <span class="filter-panel__label">City / region</span>
+          <span class="filter-panel__label">${esc(t("browse.city_region"))}</span>
           ${buildLocationComboboxHtml({
             fieldName: "loc",
             storedRaw: filters.location,
@@ -3610,42 +3661,42 @@ const renderList = async () => {
         </label>
       </div>
       <div class="filter-section">
-        <h3>Price</h3>
+        <h3>${esc(t("browse.price_section"))}</h3>
         <div class="filter-panel__row">
-          <label class="filter-panel__field filter-panel__field--half"><span class="filter-panel__label">Min</span><input name="minp" type="number" min="0" step="1" value="${filters.minPrice != null && !Number.isNaN(filters.minPrice) ? esc(String(filters.minPrice)) : ""}" /></label>
-          <label class="filter-panel__field filter-panel__field--half"><span class="filter-panel__label">Max</span><input name="maxp" type="number" min="0" step="1" value="${filters.maxPrice != null && !Number.isNaN(filters.maxPrice) ? esc(String(filters.maxPrice)) : ""}" /></label>
+          <label class="filter-panel__field filter-panel__field--half"><span class="filter-panel__label">${esc(t("browse.min"))}</span><input name="minp" type="number" min="0" step="1" value="${filters.minPrice != null && !Number.isNaN(filters.minPrice) ? esc(String(filters.minPrice)) : ""}" /></label>
+          <label class="filter-panel__field filter-panel__field--half"><span class="filter-panel__label">${esc(t("browse.max"))}</span><input name="maxp" type="number" min="0" step="1" value="${filters.maxPrice != null && !Number.isNaN(filters.maxPrice) ? esc(String(filters.maxPrice)) : ""}" /></label>
         </div>
         <div class="filter-radio">
-          <label><input type="radio" name="prb" value="" ${!prb ? "checked" : ""} /> Any price</label>
-          <label><input type="radio" name="prb" value="under50k" ${prb === "under50k" ? "checked" : ""} /> Under 50,000 Ft · quick filter</label>
-          <label><input type="radio" name="prb" value="50k200k" ${prb === "50k200k" ? "checked" : ""} /> 50K – 200K</label>
-          <label><input type="radio" name="prb" value="200k1m" ${prb === "200k1m" ? "checked" : ""} /> 200K – 1M</label>
-          <label><input type="radio" name="prb" value="over1m" ${prb === "over1m" ? "checked" : ""} /> Over 1M</label>
-        </div>
-      </div>
-      <div class="filter-section">
-        <h3>Condition</h3>
-        <div class="filter-radio">
-          <label><input type="radio" name="cond" value="all" ${cond === "all" ? "checked" : ""} /> Show all</label>
-          <label><input type="radio" name="cond" value="new" ${cond === "new" ? "checked" : ""} /> Brand New</label>
-          <label><input type="radio" name="cond" value="used" ${cond === "used" ? "checked" : ""} /> Used</label>
+          <label><input type="radio" name="prb" value="" ${!prb ? "checked" : ""} /> ${esc(t("browse.price_any"))}</label>
+          <label><input type="radio" name="prb" value="under50k" ${prb === "under50k" ? "checked" : ""} /> ${esc(t("browse.price_under50k"))}</label>
+          <label><input type="radio" name="prb" value="50k200k" ${prb === "50k200k" ? "checked" : ""} /> ${esc(t("browse.price_50k200k"))}</label>
+          <label><input type="radio" name="prb" value="200k1m" ${prb === "200k1m" ? "checked" : ""} /> ${esc(t("browse.price_200k1m"))}</label>
+          <label><input type="radio" name="prb" value="over1m" ${prb === "over1m" ? "checked" : ""} /> ${esc(t("browse.price_over1m"))}</label>
         </div>
       </div>
       <div class="filter-section">
-        <h3>Seller type</h3>
+        <h3>${esc(t("browse.condition_section"))}</h3>
         <div class="filter-radio">
-          <label><input type="radio" name="sell" value="all" ${sell === "all" ? "checked" : ""} /> Show all</label>
-          <label><input type="radio" name="sell" value="verified" ${sell === "verified" ? "checked" : ""} /> Verified sellers</label>
-          <label><input type="radio" name="sell" value="unverified" ${sell === "unverified" ? "checked" : ""} /> Unverified sellers</label>
+          <label><input type="radio" name="cond" value="all" ${cond === "all" ? "checked" : ""} /> ${esc(t("browse.cond_all"))}</label>
+          <label><input type="radio" name="cond" value="new" ${cond === "new" ? "checked" : ""} /> ${esc(t("browse.cond_new"))}</label>
+          <label><input type="radio" name="cond" value="used" ${cond === "used" ? "checked" : ""} /> ${esc(t("browse.cond_used"))}</label>
+        </div>
+      </div>
+      <div class="filter-section">
+        <h3>${esc(t("browse.seller_section"))}</h3>
+        <div class="filter-radio">
+          <label><input type="radio" name="sell" value="all" ${sell === "all" ? "checked" : ""} /> ${esc(t("browse.seller_all"))}</label>
+          <label><input type="radio" name="sell" value="verified" ${sell === "verified" ? "checked" : ""} /> ${esc(t("browse.seller_verified"))}</label>
+          <label><input type="radio" name="sell" value="unverified" ${sell === "unverified" ? "checked" : ""} /> ${esc(t("browse.seller_unverified"))}</label>
         </div>
       </div>
       <label class="filter-panel__field">
-        <span class="filter-panel__label">Category</span>
+        <span class="filter-panel__label">${esc(t("browse.category_field"))}</span>
         <select name="cat">${catOptions}</select>
       </label>
       <div class="filter-actions-row">
-        <button type="button" class="btn btn--ghost browse-filter-clear-btn">Clear</button>
-        <button type="submit" class="btn btn--primary">Save / Apply</button>
+        <button type="button" class="btn btn--ghost browse-filter-clear-btn">${esc(t("browse.clear"))}</button>
+        <button type="submit" class="btn btn--primary">${esc(t("browse.apply"))}</button>
       </div>
     </div>
   `;
@@ -3673,12 +3724,12 @@ const renderList = async () => {
       start = Math.max(1, totalPages - 4);
       end = totalPages;
     }
-    pagHtml = '<nav class="pagination-jiji" aria-label="Pages">';
-    pagHtml += `<a class="pag-arr" href="${esc(pageHref(curPage - 1))}" aria-label="Previous" ${curPage <= 1 ? 'style="pointer-events:none;opacity:.4"' : ""}>←</a>`;
+    pagHtml = `<nav class="pagination-jiji" aria-label="${esc(t("browse.pagination"))}">`;
+    pagHtml += `<a class="pag-arr" href="${esc(pageHref(curPage - 1))}" aria-label="${esc(t("browse.prev"))}" ${curPage <= 1 ? 'style="pointer-events:none;opacity:.4"' : ""}>←</a>`;
     for (let i = start; i <= end; i++) {
       pagHtml += `<a href="${esc(pageHref(i))}" class="${i === curPage ? "is-current" : ""}">${i}</a>`;
     }
-    pagHtml += `<a class="pag-arr" href="${esc(pageHref(curPage + 1))}" aria-label="Next" ${curPage >= totalPages ? 'style="pointer-events:none;opacity:.4"' : ""}>→</a>`;
+    pagHtml += `<a class="pag-arr" href="${esc(pageHref(curPage + 1))}" aria-label="${esc(t("browse.next"))}" ${curPage >= totalPages ? 'style="pointer-events:none;opacity:.4"' : ""}>→</a>`;
     pagHtml += "</nav>";
   }
 
@@ -3686,8 +3737,8 @@ const renderList = async () => {
 
   appEl.innerHTML = `
     <div class="feed-layout feed-layout--browse">
-      <nav class="breadcrumb-jiji" aria-label="Breadcrumb">
-        <a href="/browse">All ads</a>${bcCat}
+      <nav class="breadcrumb-jiji" aria-label="${esc(t("breadcrumb.label"))}">
+        <a href="/browse">${esc(t("browse.all_ads"))}</a>${bcCat}
       </nav>
       <div class="category-rail-wrap category-strip-wrap browse-cat-rail-mobile">
         <div class="category-strip" id="category-rail" role="tablist">${catChips}</div>
@@ -3695,11 +3746,11 @@ const renderList = async () => {
       <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="browse-filter-open">${filterBtnLabel}</button>
       ${
         listingsLoadFailed
-          ? `<p class="browse-listings-soft-msg muted" role="alert">${esc(BROWSE_LISTINGS_ERROR_MSG)}</p>`
+          ? `<p class="browse-listings-soft-msg muted" role="alert">${esc(BROWSE_LISTINGS_ERROR_MSG())}</p>`
           : ""
       }
       <div class="browse-layout browse-layout--jiji">
-        <aside class="browse-sidebar browse-sidebar--desktop" aria-label="Filters">
+        <aside class="browse-sidebar browse-sidebar--desktop" aria-label="${esc(t("browse.filters"))}">
           <form id="sidebar-filter-form" class="browse-filter-form">${filterFieldsHtml}</form>
         </aside>
         <div class="browse-main">
@@ -3708,36 +3759,36 @@ const renderList = async () => {
               <h1 class="feed-head__title" style="margin:0;font-size:1.125rem">${feedTitle}</h1>
               <p class="muted" style="margin:0.15rem 0 0;font-size:0.875rem">${
                 listingsLoadFailed
-                  ? "Unable to load results."
-                  : `${esc(String(totalCount))} results`
+                  ? esc(t("browse.results_error"))
+                  : esc(tf("browse.results", { n: totalCount }))
               }</p>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
               <label class="sort-bar__sort">
-                <span class="sort-bar__sort-label">Sort by:</span>
+                <span class="sort-bar__sort-label">${esc(t("browse.sort_by"))}</span>
                 <select id="browse-sort-select" class="sort-bar__select">
-                  <option value="recommended" ${sortSel === "recommended" ? "selected" : ""}>Recommended</option>
-                  <option value="latest" ${sortSel === "latest" ? "selected" : ""}>Newest first</option>
-                  <option value="price_asc" ${sortSel === "price_asc" ? "selected" : ""}>Price ↑</option>
-                  <option value="price_desc" ${sortSel === "price_desc" ? "selected" : ""}>Price ↓</option>
-                  <option value="popular" ${sortSel === "popular" ? "selected" : ""}>Most popular</option>
+                  <option value="recommended" ${sortSel === "recommended" ? "selected" : ""}>${esc(t("browse.sort.recommended"))}</option>
+                  <option value="latest" ${sortSel === "latest" ? "selected" : ""}>${esc(t("browse.sort.latest"))}</option>
+                  <option value="price_asc" ${sortSel === "price_asc" ? "selected" : ""}>${esc(t("browse.sort.price_asc"))}</option>
+                  <option value="price_desc" ${sortSel === "price_desc" ? "selected" : ""}>${esc(t("browse.sort.price_desc"))}</option>
+                  <option value="popular" ${sortSel === "popular" ? "selected" : ""}>${esc(t("browse.sort.popular"))}</option>
                 </select>
               </label>
               <label class="sort-bar__sort">
                 <select id="browse-time-select" class="sort-bar__select">
-                  <option value="any" ${timeSel === "any" ? "selected" : ""}>Any time</option>
-                  <option value="24h" ${timeSel === "24h" ? "selected" : ""}>Last 24 hours</option>
-                  <option value="7d" ${timeSel === "7d" ? "selected" : ""}>Last 7 days</option>
-                  <option value="30d" ${timeSel === "30d" ? "selected" : ""}>Last month</option>
-                  <option value="6m" ${timeSel === "6m" ? "selected" : ""}>Last 6 months</option>
+                  <option value="any" ${timeSel === "any" ? "selected" : ""}>${esc(t("browse.time.any"))}</option>
+                  <option value="24h" ${timeSel === "24h" ? "selected" : ""}>${esc(t("browse.time.24h"))}</option>
+                  <option value="7d" ${timeSel === "7d" ? "selected" : ""}>${esc(t("browse.time.7d"))}</option>
+                  <option value="30d" ${timeSel === "30d" ? "selected" : ""}>${esc(t("browse.time.30d"))}</option>
+                  <option value="6m" ${timeSel === "6m" ? "selected" : ""}>${esc(t("browse.time.6m"))}</option>
                 </select>
               </label>
             </div>
           </div>
           <div class="browse-view-toolbar">
-            <div class="jiji-view-toggle" role="group" aria-label="Listing view">
-              <button type="button" id="browse-view-grid" aria-pressed="${viewMode === "grid"}" aria-label="Grid view" title="Grid">⊞</button>
-              <button type="button" id="browse-view-list" aria-pressed="${viewMode === "list"}" aria-label="List view" title="List">☰</button>
+            <div class="jiji-view-toggle" role="group" aria-label="${esc(t("browse.listing_view"))}">
+              <button type="button" id="browse-view-grid" aria-pressed="${viewMode === "grid"}" aria-label="${esc(t("browse.grid_view"))}" title="${esc(t("browse.grid_view"))}">⊞</button>
+              <button type="button" id="browse-view-list" aria-pressed="${viewMode === "list"}" aria-label="${esc(t("browse.list_view"))}" title="${esc(t("browse.list_view"))}">☰</button>
             </div>
           </div>
           <div class="ad-grid--lc" id="listing-cards" data-view="${viewMode}"></div>
@@ -3804,18 +3855,18 @@ const renderList = async () => {
       grid.innerHTML =
         browseFetchIsBroad && filters.page <= 1
           ? `<div class="empty-state" role="status">
-              <p>No listings yet — be the first to post!</p>
-              <p style="margin-top:0.75rem"><a class="btn btn--primary" href="/post">Post an ad</a></p>
+              <p>${esc(t("browse.empty"))}</p>
+              <p style="margin-top:0.75rem"><a class="btn btn--primary" href="/post">${esc(t("browse.post_cta"))}</a></p>
             </div>`
-          : `<div class="empty-state" role="status">No ads match your search or filters yet. Try adjusting filters or <a href="/browse">view all ads</a>.</div>`;
+          : `<div class="empty-state" role="status">${tf("browse.no_match_search", { link: `<a href="/browse">${esc(t("browse.view_all"))}</a>` })}</div>`;
     } else {
-      grid.innerHTML = `<div class="empty-state" role="status">No ads match your filters yet.</div>`;
+      grid.innerHTML = `<div class="empty-state" role="status">${esc(t("browse.no_match_filters"))}</div>`;
     }
     return;
   }
 
   if (listingsLoadFailed) {
-    grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="alert">${esc(BROWSE_LISTINGS_ERROR_MSG)}</p>`;
+    grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="alert">${esc(BROWSE_LISTINGS_ERROR_MSG())}</p>`;
     return;
   }
 
@@ -3919,12 +3970,12 @@ const renderDetail = async (id) => {
     loadFailed = true;
   }
   if (loadFailed) {
-    appEl.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTING_DETAIL_UNAVAILABLE_MSG)}</p>
-      <p><a href="/browse">← Back to listings</a></p>`;
+    appEl.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTING_DETAIL_UNAVAILABLE_MSG())}</p>
+      <p><a href="/browse" data-i18n="listing.back_to_browse">← Back to listings</a></p>`;
     return;
   }
   if (!listing) {
-    appEl.innerHTML = `<p>Listing not found. <a href="/browse">Back to browse</a></p>`;
+    appEl.innerHTML = `<p><span data-i18n="listing.not_found">${esc(t("listing.not_found"))}</span> <a href="/browse" data-i18n="listing.not_found_link">Back to browse</a></p>`;
     return;
   }
 
@@ -3946,20 +3997,20 @@ const renderDetail = async (id) => {
   const collLine = coll
     ? `${coll.label}${
         cf.deliveryKm != null && cf.collectionMethod === "local_delivery"
-          ? ` (within ${cf.deliveryKm} km)`
+          ? ` ${tf("detail.collection_within_km", { n: cf.deliveryKm })}`
           : ""
       }`
     : "";
 
   const donationDetailsSection = isDonation
     ? `<section>
-        <h2 class="site-footer__heading" style="margin-top:1rem">Donation details</h2>
+        <h2 class="site-footer__heading" style="margin-top:1rem" data-i18n="detail.donation_details">Donation details</h2>
         <ul class="field-list">
-          <li><span>Sub-category</span><span>${esc(donationSubCategoryLabel(cf.donationSubCategory))}</span></li>
-          <li><span>Condition</span><span>${esc(donationConditionLabel(cf.donationCondition))}</span></li>
-          <li><span>Collection</span><span>${esc(collLine)}</span></li>
-          <li><span>Area / city</span><span>${esc(listing.location || "")}</span></li>
-          <li><span>Quantity</span><span>${esc(String(cf.quantity ?? 1))}</span></li>
+          <li><span data-i18n="detail.field.subcategory">Sub-category</span><span>${esc(donationSubCategoryLabel(cf.donationSubCategory))}</span></li>
+          <li><span data-i18n="detail.field.condition">Condition</span><span>${esc(donationConditionLabel(cf.donationCondition))}</span></li>
+          <li><span data-i18n="detail.field.collection">Collection</span><span>${esc(collLine)}</span></li>
+          <li><span data-i18n="detail.field.area">Area / city</span><span>${esc(listing.location || "")}</span></li>
+          <li><span data-i18n="detail.field.quantity">Quantity</span><span>${esc(String(cf.quantity ?? 1))}</span></li>
         </ul>
       </section>`
     : "";
@@ -3975,14 +4026,14 @@ const renderDetail = async (id) => {
     }
     const p = listing.price;
     if (p == null) {
-      return "Contact for price";
+      return t("listing.contact_price");
     }
     const n = Number(p);
     if (!Number.isFinite(n) || n < 0) {
-      return "Contact for price";
+      return t("listing.contact_price");
     }
     if (n === 0) {
-      return "Free";
+      return t("listing.free_short");
     }
     return `${esc(listing.currency || "HUF")} ${esc(String(n))}`;
   })();
@@ -4005,16 +4056,16 @@ const renderDetail = async (id) => {
 
   const safetySection = isDonation
     ? `<section class="detail-donation-safety">
-          <strong>Safety reminder</strong>
-          <p>Always meet in a public place. Nuvelo does not verify donors.</p>
+          <strong data-i18n="detail.safety.reminder_title">Safety reminder</strong>
+          <p data-i18n="detail.safety.reminder_body">Always meet in a public place. Nuvelo does not verify donors.</p>
         </section>`
     : `<section class="detail-safety">
-          <strong>Safety tips</strong>
+          <strong data-i18n="detail.safety.tips_title">Safety tips</strong>
           <ul>
-            <li>Avoid sending prepayments</li>
-            <li>Meet in a public place</li>
-            <li>Inspect before paying</li>
-            <li>Check all documents</li>
+            <li data-i18n="detail.safety.tip1">Avoid sending prepayments</li>
+            <li data-i18n="detail.safety.tip2">Meet in a public place</li>
+            <li data-i18n="detail.safety.tip3">Inspect before paying</li>
+            <li data-i18n="detail.safety.tip4">Check all documents</li>
           </ul>
         </section>`;
 
@@ -4024,56 +4075,56 @@ const renderDetail = async (id) => {
   const asideBlock = isDonation
     ? `<aside class="detail-jiji-aside">
         <div class="detail-aside-card detail-aside-card--donation">
-          <p class="price-big price-big--free">FREE</p>
+          <p class="price-big price-big--free" data-i18n="listing.free">FREE</p>
           <p class="muted small" style="margin:0">📍 ${esc(listing.location || "")}</p>
           <p class="muted small" style="margin:0.25rem 0">${esc(posted)}</p>
-          <p class="muted small">${views ? `${esc(String(views))} views` : ""}</p>
+          <p class="muted small">${views ? esc(tf("listing.views_count", { n: views })) : ""}</p>
           <p class="muted small" style="margin:0.5rem 0 0">${coll ? `${coll.icon} ${esc(collLine)}` : ""}</p>
           <hr style="border:0;border-top:1px solid var(--purple-border);margin:1rem 0" />
-          <p style="margin:0;font-weight:700">${esc(listing.sellerName || "Donor")}</p>
-          <p class="muted small">Donor · Member since ${esc(cf.sellerMemberSince || "—")}</p>
-          <p class="muted small">Contact preference: ${esc(cf.contactPreference || "message via app")}</p>
+          <p style="margin:0;font-weight:700">${esc(listing.sellerName || t("detail.donor_fallback"))}</p>
+          <p class="muted small">${esc(tf("detail.donor_line", { when: cf.sellerMemberSince || "—" }))}</p>
+          <p class="muted small">${esc(tf("detail.contact_pref", { pref: cf.contactPreference || "message via app" }))}</p>
           ${
             !isOwner
               ? `<button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-donation-claim" ${
                   claimed ? "disabled" : ""
-                }>${claimed ? "Claimed" : "I want this"}</button>`
+                }>${claimed ? esc(t("listing.claimed")) : esc(t("listing.i_want"))}</button>`
               : ""
           }
           ${
             isOwner
-              ? `<button type="button" class="btn btn--outline" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-owner-claimed">${claimed ? "Mark as available" : "Mark as claimed"}</button>`
+              ? `<button type="button" class="btn btn--outline" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-owner-claimed">${claimed ? esc(t("detail.mark_available")) : esc(t("detail.mark_claimed"))}</button>`
               : ""
           }
           ${
             !isOwner
-              ? `<button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-donation-chat">Message donor</button>`
+              ? `<button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-donation-chat" data-i18n="detail.msg_donor">Message donor</button>`
               : ""
           }
-          <button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-report">Report listing</button>
+          <button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-report" data-i18n="detail.report">Report listing</button>
         </div>
       </aside>`
     : `<aside class="detail-jiji-aside">
         <div class="detail-aside-card">
-          ${listing.sellerVerified || listing.enterprise ? `<p class="pill" style="margin:0 0 0.5rem">ENTERPRISE</p>` : ""}
+          ${listing.sellerVerified || listing.enterprise ? `<p class="pill" style="margin:0 0 0.5rem" data-i18n="listing.enterprise">ENTERPRISE</p>` : ""}
           <p class="price-big">${priceStr}</p>
           <p class="muted small" style="margin:0">📍 ${esc(listing.location || "")}</p>
           <p class="muted small" style="margin:0.25rem 0">${esc(posted)}</p>
-          <p class="muted small">${views ? `${esc(String(views))} views` : ""}</p>
-          <button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-show-contact">Show contact</button>
-          <p class="small muted" id="detail-phone-reveal" hidden style="margin:0.5rem 0 0">Phone: use the Nuvelo app to contact the seller securely.</p>
-          <button type="button" class="btn btn--outline" style="width:100%;margin-top:0.5rem;border-radius:8px" id="detail-callback">Request call back</button>
+          <p class="muted small">${views ? esc(tf("listing.views_count", { n: views })) : ""}</p>
+          <button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-show-contact" data-i18n="detail.show_contact">Show contact</button>
+          <p class="small muted" id="detail-phone-reveal" hidden style="margin:0.5rem 0 0" data-i18n="detail.phone_hint">Phone: use the Nuvelo app to contact the seller securely.</p>
+          <button type="button" class="btn btn--outline" style="width:100%;margin-top:0.5rem;border-radius:8px" id="detail-callback" data-i18n="detail.request_callback">Request call back</button>
           <hr style="border:0;border-top:1px solid var(--purple-border);margin:1rem 0" />
-          <p style="margin:0;font-weight:700"><a href="/browse">${esc(listing.sellerName || "Seller")}</a></p>
-          <p class="muted small">Verified seller · 1+ years on Nuvelo</p>
-          <p class="muted small">Typically replies within an hour</p>
-          <button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-contact">Start chat</button>
-          <p class="small" style="text-align:center;margin:0.75rem 0 0"><button type="button" class="btn btn--link" id="detail-offer">Make an offer</button></p>
+          <p style="margin:0;font-weight:700"><a href="/browse">${esc(listing.sellerName || t("detail.seller_fallback"))}</a></p>
+          <p class="muted small" data-i18n="detail.verified_line">Verified seller · 1+ years on Nuvelo</p>
+          <p class="muted small" data-i18n="detail.replies_line">Typically replies within an hour</p>
+          <button type="button" class="btn btn--ghost" style="width:100%;margin-top:0.5rem" id="detail-contact" data-i18n="detail.start_chat">Start chat</button>
+          <p class="small" style="text-align:center;margin:0.75rem 0 0"><button type="button" class="btn btn--link" id="detail-offer" data-i18n="detail.make_offer">Make an offer</button></p>
           <div class="site-footer__social" style="margin-top:1rem;justify-content:center">
-            <span class="site-footer__social-icon" title="Share">f</span>
-            <span class="site-footer__social-icon" title="Share">𝕏</span>
-            <span class="site-footer__social-icon" title="Share">W</span>
-            <span class="site-footer__social-icon" title="Share">✉</span>
+            <span class="site-footer__social-icon" data-i18n-title="detail.share_title" title="Share">f</span>
+            <span class="site-footer__social-icon" data-i18n-title="detail.share_title" title="Share">𝕏</span>
+            <span class="site-footer__social-icon" data-i18n-title="detail.share_title" title="Share">W</span>
+            <span class="site-footer__social-icon" data-i18n-title="detail.share_title" title="Share">✉</span>
           </div>
         </div>
       </aside>`;
@@ -4081,13 +4132,13 @@ const renderDetail = async (id) => {
   const showBuyerMobileCta = !isOwner && (isDonation ? !claimed : true);
   const mobileCtaHtml = showBuyerMobileCta
     ? isDonation
-      ? `<div class="detail-mobile-cta" id="detail-mobile-cta"><button type="button" class="btn btn--primary detail-mobile-cta__btn" id="detail-mobile-primary"${claimed ? " disabled" : ""}>${claimed ? "Claimed" : "I want this"}</button></div>`
-      : `<div class="detail-mobile-cta" id="detail-mobile-cta"><button type="button" class="btn btn--primary detail-mobile-cta__btn" id="detail-mobile-primary">Show contact</button></div>`
+      ? `<div class="detail-mobile-cta" id="detail-mobile-cta"><button type="button" class="btn btn--primary detail-mobile-cta__btn" id="detail-mobile-primary"${claimed ? " disabled" : ""}>${claimed ? esc(t("listing.claimed")) : esc(t("listing.i_want"))}</button></div>`
+      : `<div class="detail-mobile-cta" id="detail-mobile-cta"><button type="button" class="btn btn--primary detail-mobile-cta__btn" id="detail-mobile-primary" data-i18n="detail.primary_mobile">Show contact</button></div>`
     : "";
 
   appEl.innerHTML = `
-    <nav class="breadcrumb-jiji" aria-label="Breadcrumb">
-      <a href="/browse">All ads</a> ›
+    <nav class="breadcrumb-jiji" data-i18n-aria-label="breadcrumb.label" aria-label="Breadcrumb">
+      <a href="/browse" data-i18n="browse.all_ads">All ads</a> ›
       <a href="${catBrowseHref}">${esc(categoryDisplayName(listing.categoryId))}</a> ›
       <span class="muted">${esc(bcTitle)}</span>
     </nav>
@@ -4104,7 +4155,7 @@ const renderDetail = async (id) => {
               ? `<div class="detail-gallery__thumbs" id="detail-thumbs">${imgs
                   .map(
                     (u, i) =>
-                      `<button type="button" class="${i === 0 ? "is-active" : ""}" data-idx="${i}" aria-label="Photo ${i + 1}"><img src="${esc(u)}" alt="" /></button>`
+                      `<button type="button" class="${i === 0 ? "is-active" : ""}" data-idx="${i}" aria-label="${esc(tf("detail.photo_n", { n: i + 1 }))}"><img src="${esc(u)}" alt="" /></button>`
                   )
                   .join("")}</div>`
               : ""
@@ -4115,19 +4166,19 @@ const renderDetail = async (id) => {
         </div>
         <div class="detail-title-row">
           <h1 style="margin:0;font-size:1.5rem;flex:1;min-width:0">${esc(listing.title)}</h1>
-          <button type="button" class="detail-save-btn${isListingSaved(listing.id) ? " detail-save-btn--active" : ""}" id="detail-save-listing" aria-pressed="${isListingSaved(listing.id) ? "true" : "false"}" aria-label="${isListingSaved(listing.id) ? "Remove from saved" : "Save listing"}" title="${isListingSaved(listing.id) ? "Saved" : "Save"}">
+          <button type="button" class="detail-save-btn${isListingSaved(listing.id) ? " detail-save-btn--active" : ""}" id="detail-save-listing" aria-pressed="${isListingSaved(listing.id) ? "true" : "false"}" aria-label="${isListingSaved(listing.id) ? esc(t("listing.save_aria_on")) : esc(t("listing.save_aria_off"))}" title="${isListingSaved(listing.id) ? esc(t("detail.save_on")) : esc(t("detail.save_off"))}">
             <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path fill="${isListingSaved(listing.id) ? "currentColor" : "none"}" stroke="currentColor" stroke-width="2" d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           </button>
         </div>
         <section>
-          <h2 class="site-footer__heading" style="margin-top:1rem">Description</h2>
+          <h2 class="site-footer__heading" style="margin-top:1rem" data-i18n="detail.desc_title">Description</h2>
           <p class="desc-long ${descLong ? "is-collapsed" : ""}" id="detail-desc">${esc(listing.description)}</p>
-          ${descLong ? `<button type="button" class="btn btn--link" id="detail-desc-more">Show more</button>` : ""}
+          ${descLong ? `<button type="button" class="btn btn--link" id="detail-desc-more" data-i18n="detail.show_more">Show more</button>` : ""}
         </section>
         ${donationDetailsSection}
-        ${fieldRows ? `<section><h2 class="site-footer__heading" style="margin-top:1rem">Details</h2>${fieldRows}</section>` : ""}
+        ${fieldRows ? `<section><h2 class="site-footer__heading" style="margin-top:1rem" data-i18n="detail.details_title">Details</h2>${fieldRows}</section>` : ""}
         ${safetySection}
-        <p class="small" style="margin-top:1rem"><a href="/post" class="btn btn--link">Post ad like this</a></p>
+        <p class="small" style="margin-top:1rem"><a href="/post" class="btn btn--link" data-i18n="detail.post_similar">Post ad like this</a></p>
       </div>
       ${asideBlock}
     </div>
@@ -4542,7 +4593,7 @@ const renderProfile = async (section) => {
   appEl.innerHTML = `
     <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
       <span class="page-loading__spinner" aria-hidden="true"></span>
-      <span class="page-loading__text">Loading…</span>
+      <span class="page-loading__text">${esc(t("general.loading"))}</span>
     </div>
   `;
   try {
@@ -5239,7 +5290,7 @@ const render = async () => {
       appEl.innerHTML = `
         <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
           <span class="page-loading__spinner" aria-hidden="true"></span>
-          <span class="page-loading__text">Loading…</span>
+          <span class="page-loading__text">${esc(t("general.loading"))}</span>
         </div>
       `;
       await renderLanding();
@@ -5252,7 +5303,7 @@ const render = async () => {
     appEl.innerHTML = `
       <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
         <span class="page-loading__spinner" aria-hidden="true"></span>
-        <span class="page-loading__text">Loading…</span>
+        <span class="page-loading__text">${esc(t("general.loading"))}</span>
       </div>
     `;
     /*
@@ -5291,9 +5342,9 @@ const render = async () => {
     console.error(err);
     appEl.innerHTML = `
       <section class="stack">
-        <h2>We could not load this page.</h2>
+        <h2>${esc(t("error.page_title"))}</h2>
         <p class="muted">${esc(friendlyPageLoadError(err))}</p>
-        <p><a href="/">Go to home</a> · <a href="/browse">Browse listings</a></p>
+        <p><a href="/">${esc(t("error.go_home"))}</a> · <a href="/browse">${esc(t("error.browse_listings"))}</a></p>
       </section>
     `;
   } finally {
@@ -5306,6 +5357,7 @@ const render = async () => {
       tr.setAttribute("aria-expanded", "false");
     }
     syncGlobalHeaderDrawerSearch();
+    applyDomTranslations(document);
   }
 };
 
@@ -5501,10 +5553,21 @@ function bindAuthPhoneFocusHint() {
   });
 }
 
+window.addEventListener("nuvelo:locale", () => {
+  if (loginModal && !loginModal.hidden) {
+    openModal(authModalMode);
+  } else {
+    syncAuthModalStaticCopy();
+  }
+  void render().catch((e) => console.error(e));
+});
+
 void (async () => {
   initTheme();
+  initI18n();
   await initAuth();
   syncAuthSignInAvailability();
+  syncAuthModalStaticCopy();
   bindAuthPhoneFocusHint();
   ensureNavUserDropdown();
   await render().catch((e) => console.error(e));

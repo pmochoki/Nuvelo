@@ -41,6 +41,15 @@
           if (meta) meta.setAttribute("content", dark ? "#0d0a1e" : "#f3f0fa");
         } catch (e) {}
       })();
+      (function () {
+        try {
+          var lk = "nuvelo_locale";
+          var loc = localStorage.getItem(lk);
+          if (loc === "hu" || loc === "en") {
+            document.documentElement.lang = loc;
+          }
+        } catch (e) {}
+      })();
     </script>
   </head>
   <body>
@@ -51,6 +60,7 @@
             type="button"
             class="nav-burger jiji-header__burger"
             id="nav-burger"
+            data-i18n-aria-label="header.search_open"
             aria-label="Open menu"
             aria-expanded="false"
             aria-controls="nav-drawer"
@@ -69,7 +79,7 @@
                 alt="Nuvelo"
               />
             </a>
-            <p class="jiji-header__tagline" aria-hidden="true">
+            <p class="jiji-header__tagline" aria-hidden="true" data-i18n="header.tagline">
               Find your next home, job, or deal
             </p>
           </div>
@@ -80,7 +90,9 @@
               class="jiji-header__search-input jiji-header__search-q"
               name="q"
               type="search"
+              data-i18n-placeholder="header.search_q_placeholder"
               placeholder="Search for anything…"
+              data-i18n-aria-label="header.search_keywords"
               aria-label="Search keywords"
             />
             <div
@@ -95,19 +107,26 @@
                 data-loc-btn
                 aria-haspopup="dialog"
                 aria-expanded="false"
+                data-i18n-aria-label="header.location"
                 aria-label="Location"
               >
-                All Hungary
+                <span data-i18n="search.allhungary">All Hungary</span>
               </button>
               <div class="loc-modal" data-loc-modal hidden aria-hidden="true" inert>
                 <div class="loc-modal__backdrop" data-loc-close tabindex="-1"></div>
-                <div class="loc-modal__dialog" role="dialog" aria-modal="true" aria-label="Choose location">
+                <div
+                  class="loc-modal__dialog"
+                  role="dialog"
+                  aria-modal="true"
+                  data-i18n-aria-label="header.choose_location"
+                  aria-label="Choose location"
+                >
                   <div class="loc-modal__head">
                     <div>
-                      <h2 class="loc-modal__title" data-loc-modal-title>All Hungary</h2>
-                      <p class="loc-modal__meta" data-loc-modal-meta>Select a city or town</p>
+                      <h2 class="loc-modal__title" data-loc-modal-title data-i18n="search.allhungary">All Hungary</h2>
+                      <p class="loc-modal__meta" data-loc-modal-meta data-i18n="search.selectcity">Select a city or town</p>
                     </div>
-                    <button type="button" class="loc-modal__x" data-loc-close aria-label="Close">×</button>
+                    <button type="button" class="loc-modal__x" data-loc-close data-i18n-aria-label="header.close" aria-label="Close">×</button>
                   </div>
                   <div class="loc-modal__search-row">
                     <span class="loc-modal__search-icon" aria-hidden="true">⌕</span>
@@ -115,8 +134,10 @@
                       type="search"
                       class="loc-modal__search"
                       data-loc-search
+                      data-i18n-placeholder="loc.find_placeholder"
                       placeholder="Find city or town…"
                       autocomplete="off"
+                      data-i18n-aria-label="search.placeholder"
                       aria-label="Search cities"
                     />
                   </div>
@@ -124,16 +145,24 @@
                 </div>
               </div>
             </div>
-            <button type="submit" class="btn btn--primary jiji-header__search-btn">Search</button>
+            <button type="submit" class="btn btn--primary jiji-header__search-btn"><span data-i18n="header.search_submit">Search</span></button>
           </form>
         </div>
         <nav
           class="nav-user-icons jiji-header__user-nav"
           id="nav-user-icons"
+          data-i18n-aria-label="header.nav_user"
           aria-label="User actions"
           hidden
         >
-          <a href="/profile/saved" class="nav-icon-btn" title="Saved ads" aria-label="Saved ads">
+          <a
+            href="/profile/saved"
+            class="nav-icon-btn"
+            data-i18n-title="nav.saved"
+            title="Saved ads"
+            data-i18n-aria-label="nav.saved"
+            aria-label="Saved ads"
+          >
             <span class="nav-icon-btn__wrap" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
@@ -141,7 +170,14 @@
             </span>
             <span class="nav-badge" id="nav-badge-saved" hidden aria-live="polite"></span>
           </a>
-          <a href="/profile/messages" class="nav-icon-btn" title="Messages" aria-label="Messages">
+          <a
+            href="/profile/messages"
+            class="nav-icon-btn"
+            data-i18n-title="nav.messages"
+            title="Messages"
+            data-i18n-aria-label="nav.messages"
+            aria-label="Messages"
+          >
             <span class="nav-icon-btn__wrap" aria-hidden="true">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" />
@@ -149,13 +185,27 @@
             </span>
             <span class="nav-badge nav-badge--alert" id="nav-badge-messages" hidden aria-live="polite"></span>
           </a>
-          <a href="/profile/notifications" class="nav-icon-btn" title="Notifications" aria-label="Notifications">
+          <a
+            href="/profile/notifications"
+            class="nav-icon-btn"
+            data-i18n-title="nav.notifications"
+            title="Notifications"
+            data-i18n-aria-label="nav.notifications"
+            aria-label="Notifications"
+          >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" />
               <path d="M13.73 21a2 2 0 01-3.46 0" />
             </svg>
           </a>
-          <a href="/profile/adverts" class="nav-icon-btn" title="My adverts" aria-label="My adverts">
+          <a
+            href="/profile/adverts"
+            class="nav-icon-btn"
+            data-i18n-title="nav.adverts"
+            title="My adverts"
+            data-i18n-aria-label="nav.adverts"
+            aria-label="My adverts"
+          >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <rect x="3" y="3" width="18" height="18" rx="2" />
               <line x1="3" y1="9" x2="21" y2="9" />
@@ -168,7 +218,9 @@
               type="button"
               class="nav-avatar-btn"
               id="nav-user-menu-trigger"
+              data-i18n-title="header.account_menu"
               title="Account menu"
+              data-i18n-aria-label="header.account_menu"
               aria-label="Account menu"
               aria-expanded="false"
               aria-haspopup="true"
@@ -186,59 +238,76 @@
             <div class="nav-user-dropdown" id="nav-user-dropdown" hidden role="menu">
               <a href="/profile/adverts" class="nav-user-dropdown__item" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">🏪</span>
-                My shop / My profile
+                <span data-i18n="profile.shop_row">My shop / My profile</span>
               </a>
               <a href="/profile/feedback" class="nav-user-dropdown__item" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">😊</span>
-                Feedback
+                <span data-i18n="profile.feedback">Feedback</span>
               </a>
               <a href="/profile/performance" class="nav-user-dropdown__item" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">📈</span>
-                Performance
+                <span data-i18n="profile.performance_nav">Performance</span>
               </a>
               <a href="/profile/settings" class="nav-user-dropdown__item" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">⚙️</span>
-                Settings
+                <span data-i18n="nav.settings">Settings</span>
               </a>
               <button type="button" class="nav-user-dropdown__item nav-user-dropdown__item--danger" id="nav-dropdown-signout" role="menuitem">
                 <span class="nav-user-dropdown__ico" aria-hidden="true">⎋</span>
-                Log out
+                <span data-i18n="nav.signout">Log out</span>
               </button>
             </div>
           </div>
         </nav>
         <div class="jiji-header__actions" id="nav-actions">
+          <div class="locale-switcher-wrap theme-switcher-wrap theme-switcher-wrap--header">
+            <label class="visually-hidden" for="header-locale-select" data-i18n="locale.label">Language</label>
+            <select
+              id="header-locale-select"
+              class="theme-switcher__select locale-switcher__select"
+              data-locale-select
+              autocomplete="off"
+              data-i18n-aria-label="locale.label"
+              aria-label="Language"
+            >
+              <option value="en" data-i18n="locale.en">English</option>
+              <option value="hu" data-i18n="locale.hu">Magyar</option>
+            </select>
+          </div>
           <div class="theme-switcher-wrap theme-switcher-wrap--header">
-            <label class="visually-hidden" for="header-theme-select">Color theme</label>
+            <label class="visually-hidden" for="header-theme-select" data-i18n="theme.label">Color theme</label>
             <select
               id="header-theme-select"
               class="theme-switcher__select"
               data-theme-select
               autocomplete="off"
+              data-i18n-aria-label="theme.label"
               aria-label="Color theme"
             >
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
+              <option value="system" data-i18n="theme.system">System</option>
+              <option value="light" data-i18n="theme.light">Light</option>
+              <option value="dark" data-i18n="theme.dark">Dark</option>
             </select>
           </div>
-          <button type="button" class="jiji-header__text-link" id="auth-btn">Sign in</button>
-          <button type="button" class="jiji-header__text-link" id="auth-register-btn">
+          <button type="button" class="jiji-header__text-link" id="auth-btn" data-i18n="nav.signin">Sign in</button>
+          <button type="button" class="jiji-header__text-link" id="auth-register-btn" data-i18n="nav.register">
             Registration
           </button>
-          <a class="btn btn--primary btn--pill btn--sell jiji-header__sell" href="/post">SELL</a>
+          <a class="btn btn--primary btn--pill btn--sell jiji-header__sell" href="/post" data-i18n="nav.sell">SELL</a>
           <span class="user-chip jiji-header__chip" id="user-chip" hidden></span>
         </div>
       </div>
       <div class="nav-drawer" id="nav-drawer" hidden aria-hidden="true">
         <div class="nav-drawer__panel">
-          <p class="nav-drawer__section-label">Search</p>
+          <p class="nav-drawer__section-label" data-i18n="drawer.search_section">Search</p>
           <form id="drawer-search-form" class="nav-drawer__search-form" autocomplete="off" action="javascript:void(0)">
             <input
               class="nav-drawer__search-q"
               name="q"
               type="search"
+              data-i18n-placeholder="header.search_q_placeholder"
               placeholder="Search for anything…"
+              data-i18n-aria-label="header.search_keywords"
               aria-label="Search keywords"
             />
             <div class="loc-dd nav-drawer__loc-dd" data-loc-combobox data-loc-mode="filter">
@@ -249,19 +318,26 @@
                 data-loc-btn
                 aria-haspopup="dialog"
                 aria-expanded="false"
+                data-i18n-aria-label="header.location"
                 aria-label="Location"
               >
-                All Hungary
+                <span data-i18n="search.allhungary">All Hungary</span>
               </button>
               <div class="loc-modal" data-loc-modal hidden aria-hidden="true" inert>
                 <div class="loc-modal__backdrop" data-loc-close tabindex="-1"></div>
-                <div class="loc-modal__dialog" role="dialog" aria-modal="true" aria-label="Choose location">
+                <div
+                  class="loc-modal__dialog"
+                  role="dialog"
+                  aria-modal="true"
+                  data-i18n-aria-label="header.choose_location"
+                  aria-label="Choose location"
+                >
                   <div class="loc-modal__head">
                     <div>
-                      <h2 class="loc-modal__title" data-loc-modal-title>All Hungary</h2>
-                      <p class="loc-modal__meta" data-loc-modal-meta>Select a city or town</p>
+                      <h2 class="loc-modal__title" data-loc-modal-title data-i18n="search.allhungary">All Hungary</h2>
+                      <p class="loc-modal__meta" data-loc-modal-meta data-i18n="search.selectcity">Select a city or town</p>
                     </div>
-                    <button type="button" class="loc-modal__x" data-loc-close aria-label="Close">×</button>
+                    <button type="button" class="loc-modal__x" data-loc-close data-i18n-aria-label="header.close" aria-label="Close">×</button>
                   </div>
                   <div class="loc-modal__search-row">
                     <span class="loc-modal__search-icon" aria-hidden="true">⌕</span>
@@ -269,8 +345,10 @@
                       type="search"
                       class="loc-modal__search"
                       data-loc-search
+                      data-i18n-placeholder="loc.find_placeholder"
                       placeholder="Find city or town…"
                       autocomplete="off"
+                      data-i18n-aria-label="search.placeholder"
                       aria-label="Search cities"
                     />
                   </div>
@@ -278,41 +356,55 @@
                 </div>
               </div>
             </div>
-            <button type="submit" class="btn btn--primary nav-drawer__search-submit">Search</button>
+            <button type="submit" class="btn btn--primary nav-drawer__search-submit"><span data-i18n="header.search_submit">Search</span></button>
           </form>
-          <a class="btn btn--primary btn--pill nav-drawer__sell" href="/post">SELL</a>
-          <p class="nav-drawer__section-label">Menu</p>
-          <nav class="nav-drawer__links" aria-label="Mobile menu">
-            <a href="/">Home</a>
-            <a href="/browse">Browse ads</a>
-            <a href="/post">Post an ad</a>
+          <a class="btn btn--primary btn--pill nav-drawer__sell" href="/post" data-i18n="nav.sell">SELL</a>
+          <p class="nav-drawer__section-label" data-i18n="drawer.menu_section">Menu</p>
+          <nav class="nav-drawer__links" data-i18n-aria-label="breadcrumb.label" aria-label="Mobile menu">
+            <a href="/" data-i18n="nav.home">Home</a>
+            <a href="/browse" data-i18n="nav.browse">Browse ads</a>
+            <a href="/post" data-i18n="nav.post">Post an ad</a>
           </nav>
           <div class="nav-drawer__theme-block">
-            <p class="nav-drawer__theme-hint">Theme</p>
-            <label class="visually-hidden" for="drawer-theme-select">Color theme</label>
+            <p class="nav-drawer__theme-hint" data-i18n="locale.label">Language</p>
+            <label class="visually-hidden" for="drawer-locale-select" data-i18n="locale.label">Language</label>
+            <select
+              id="drawer-locale-select"
+              class="theme-switcher__select locale-switcher__select"
+              data-locale-select
+              autocomplete="off"
+              data-i18n-aria-label="locale.label"
+              aria-label="Language"
+            >
+              <option value="en" data-i18n="locale.en">English</option>
+              <option value="hu" data-i18n="locale.hu">Magyar</option>
+            </select>
+            <p class="nav-drawer__theme-hint" data-i18n="drawer.theme_hint">Theme</p>
+            <label class="visually-hidden" for="drawer-theme-select" data-i18n="theme.label">Color theme</label>
             <select
               id="drawer-theme-select"
               class="theme-switcher__select"
               data-theme-select
               autocomplete="off"
+              data-i18n-aria-label="theme.label"
               aria-label="Color theme"
             >
-              <option value="system">System</option>
-              <option value="light">Light</option>
-              <option value="dark">Dark</option>
+              <option value="system" data-i18n="theme.system">System</option>
+              <option value="light" data-i18n="theme.light">Light</option>
+              <option value="dark" data-i18n="theme.dark">Dark</option>
             </select>
           </div>
           <div class="nav-drawer__auth-links" id="nav-drawer-auth" hidden>
-            <p class="nav-drawer__section-label">Account</p>
-            <a href="/profile/saved">Saved ads</a>
-            <a href="/profile/messages">Messages</a>
-            <a href="/profile/notifications">Notifications</a>
-            <a href="/profile/adverts">My adverts</a>
-            <a href="/profile/settings">Settings</a>
+            <p class="nav-drawer__section-label" data-i18n="drawer.account_section">Account</p>
+            <a href="/profile/saved" data-i18n="nav.saved">Saved ads</a>
+            <a href="/profile/messages" data-i18n="nav.messages">Messages</a>
+            <a href="/profile/notifications" data-i18n="nav.notifications">Notifications</a>
+            <a href="/profile/adverts" data-i18n="nav.adverts">My adverts</a>
+            <a href="/profile/settings" data-i18n="nav.settings">Settings</a>
           </div>
           <div class="nav-drawer__guest" id="nav-drawer-guest">
-            <button type="button" class="nav-drawer__signin" id="drawer-signin">Sign in</button>
-            <button type="button" class="nav-drawer__signin" id="drawer-register">Registration</button>
+            <button type="button" class="nav-drawer__signin" id="drawer-signin" data-i18n="nav.signin">Sign in</button>
+            <button type="button" class="nav-drawer__signin" id="drawer-register" data-i18n="nav.register">Registration</button>
           </div>
         </div>
       </div>
@@ -324,6 +416,7 @@
     <nav
       class="mobile-tab-bar"
       id="mobile-tab-bar"
+      data-i18n-aria-label="mobile.nav"
       aria-label="Primary navigation"
       aria-hidden="true"
     >
@@ -333,7 +426,7 @@
             <path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1h-5v-7H9v7H4a1 1 0 01-1-1V9.5z" />
           </svg>
         </span>
-        <span class="mobile-tab-bar__label">Home</span>
+        <span class="mobile-tab-bar__label" data-i18n="nav.home">Home</span>
       </a>
       <a href="/profile/saved" class="mobile-tab-bar__item" data-mobile-tab="saved">
         <span class="mobile-tab-bar__icon mobile-tab-bar__icon--badge" aria-hidden="true">
@@ -342,7 +435,7 @@
           </svg>
           <span class="mobile-tab-bar__badge" id="mobile-tab-bar-badge-saved" hidden aria-live="polite"></span>
         </span>
-        <span class="mobile-tab-bar__label">Saved</span>
+        <span class="mobile-tab-bar__label" data-i18n="mobile.tab.saved">Saved</span>
       </a>
       <a href="/post" class="mobile-tab-bar__item" data-mobile-tab="sell">
         <span class="mobile-tab-bar__icon" aria-hidden="true">
@@ -351,7 +444,7 @@
             <path d="M12 8v8M8 12h8" />
           </svg>
         </span>
-        <span class="mobile-tab-bar__label">Sell</span>
+        <span class="mobile-tab-bar__label" data-i18n="mobile.tab.sell">Sell</span>
       </a>
       <a href="/profile/messages" class="mobile-tab-bar__item" data-mobile-tab="messages">
         <span class="mobile-tab-bar__icon mobile-tab-bar__icon--badge" aria-hidden="true">
@@ -360,7 +453,7 @@
           </svg>
           <span class="mobile-tab-bar__badge mobile-tab-bar__badge--alert" id="mobile-tab-bar-badge-messages" hidden aria-live="polite"></span>
         </span>
-        <span class="mobile-tab-bar__label">Messages</span>
+        <span class="mobile-tab-bar__label" data-i18n="mobile.tab.messages">Messages</span>
       </a>
       <a href="/profile" class="mobile-tab-bar__item" data-mobile-tab="profile">
         <span class="mobile-tab-bar__icon" aria-hidden="true">
@@ -369,7 +462,7 @@
             <path d="M4 20a8 8 0 0116 0" />
           </svg>
         </span>
-        <span class="mobile-tab-bar__label">Profile</span>
+        <span class="mobile-tab-bar__label" data-i18n="mobile.tab.profile">Profile</span>
       </a>
     </nav>
 
@@ -379,13 +472,14 @@
       hidden
       aria-hidden="true"
       role="dialog"
+      data-i18n-aria-label="filter.sheet_title"
       aria-label="Filters"
     >
       <div class="filter-sheet__backdrop" id="filter-sheet-backdrop" tabindex="-1"></div>
       <div class="filter-sheet__panel">
         <div class="filter-sheet__head">
-          <h2 class="filter-sheet__title">Filters</h2>
-          <button type="button" class="filter-sheet__close" id="filter-sheet-close" aria-label="Close">
+          <h2 class="filter-sheet__title" data-i18n="browse.filters">Filters</h2>
+          <button type="button" class="filter-sheet__close" id="filter-sheet-close" data-i18n-aria-label="header.close" aria-label="Close">
             ×
           </button>
         </div>
@@ -403,24 +497,25 @@
             height="88"
             alt="Nuvelo"
           />
-          <p class="site-footer__text">
+          <p class="site-footer__text" data-i18n="footer.tagline">
             Rentals, jobs, services &amp; goods for Hungary’s international community.
           </p>
-          <a href="/about">About Nuvelo</a>
-          <a href="/browse">Browse marketplace</a>
-          <a href="/terms">Terms &amp; Conditions</a>
-          <a href="/privacy">Privacy Policy</a>
-          <a href="/cookies">Cookie Policy</a>
+          <a href="/about" data-i18n="footer.about">About Nuvelo</a>
+          <a href="/browse" data-i18n="footer.browse">Browse marketplace</a>
+          <a href="/terms" data-i18n="footer.terms">Terms &amp; Conditions</a>
+          <a href="/privacy" data-i18n="footer.privacy">Privacy Policy</a>
+          <a href="/cookies" data-i18n="footer.cookies">Cookie Policy</a>
         </div>
         <div class="site-footer__col">
-          <h3 class="site-footer__heading">Support</h3>
+          <h3 class="site-footer__heading" data-i18n="footer.support">Support</h3>
           <a href="mailto:support@nuvelo.one">support@nuvelo.one</a>
-          <a href="/safety">Safety tips</a>
+          <a href="/safety" data-i18n="footer.safety">Safety tips</a>
           <button
             type="button"
             class="site-footer__dialog-trigger"
             id="footer-promo-how-to-buy-btn"
             data-promo-dialog-open="dialog-how-to-buy"
+            data-i18n="footer.promo.buy_safe"
           >
             How to buy safely
           </button>
@@ -429,26 +524,28 @@
             class="site-footer__dialog-trigger"
             id="footer-promo-verified-btn"
             data-promo-dialog-open="dialog-verified-sellers"
+            data-i18n="footer.promo.verified"
           >
             Verified sellers
           </button>
-          <a href="/contact">Contact us</a>
-          <a href="/faq">FAQ</a>
+          <a href="/contact" data-i18n="footer.contact">Contact us</a>
+          <a href="/faq" data-i18n="footer.faq">FAQ</a>
         </div>
         <div class="site-footer__col">
-          <h3 class="site-footer__heading">Our apps</h3>
-          <p class="site-footer__text muted small">
+          <h3 class="site-footer__heading" data-i18n="footer.apps">Our apps</h3>
+          <p class="site-footer__text muted small" data-i18n="footer.apps_text">
             Nuvelo for iOS &amp; Android is coming soon — same account as web when live.
           </p>
         </div>
         <div class="site-footer__col">
-          <h3 class="site-footer__heading">Follow us</h3>
+          <h3 class="site-footer__heading" data-i18n="footer.follow">Follow us</h3>
           <div class="site-footer__social">
             <a
               class="site-footer__social-link"
               href="https://www.facebook.com/share/18VAotJsYN/?mibextid=wwXIfr"
               target="_blank"
               rel="noopener noreferrer"
+              data-i18n-aria-label="footer.social.facebook_aria"
               aria-label="Nuvelo on Facebook"
             >
               <span class="site-footer__social-icon" aria-hidden="true">f</span>
@@ -458,6 +555,7 @@
               href="https://www.instagram.com/nuvelo_official?igsh=ZmMwNXpwNHB1NmR4&amp;utm_source=qr"
               target="_blank"
               rel="noopener noreferrer"
+              data-i18n-aria-label="footer.social.instagram_aria"
               aria-label="Nuvelo on Instagram (@nuvelo_official)"
             >
               <span class="site-footer__social-icon" aria-hidden="true">◎</span>
@@ -467,6 +565,7 @@
               href="https://www.youtube.com/@Nuvelo_Official"
               target="_blank"
               rel="noopener noreferrer"
+              data-i18n-aria-label="footer.social.youtube_aria"
               aria-label="Nuvelo on YouTube (@Nuvelo_Official)"
             >
               <span class="site-footer__social-icon" aria-hidden="true">▶</span>
@@ -476,6 +575,7 @@
               href="https://x.com/nuvelo_official"
               target="_blank"
               rel="noopener noreferrer"
+              data-i18n-aria-label="footer.social.x_aria"
               aria-label="Nuvelo on X (@nuvelo_official)"
             >
               <span class="site-footer__social-icon" aria-hidden="true">𝕏</span>
@@ -484,7 +584,7 @@
         </div>
       </div>
       <div class="site-footer__bar">
-        <p class="site-footer__copy muted">© 2026 Nuvelo · Same account on web &amp; app</p>
+        <p class="site-footer__copy muted" data-i18n="footer.copy">© 2026 Nuvelo · Same account on web &amp; app</p>
       </div>
     </footer>
 
@@ -499,48 +599,48 @@
     >
       <div class="modal__backdrop" data-close-modal></div>
       <div class="modal__panel modal__panel--jiji">
-        <button type="button" class="modal__close-x" data-close-modal aria-label="Close">×</button>
+        <button type="button" class="modal__close-x" data-close-modal data-i18n-aria-label="header.close" aria-label="Close">×</button>
         <h2 id="login-title">Sign in</h2>
         <p class="muted small" id="login-subtitle">
           Use the same name and email as before to reconnect to your listings.
         </p>
         <p id="login-error" class="login-error" role="alert" hidden></p>
         <p id="login-success" class="login-success" role="status" hidden></p>
-        <p id="auth-missing-config" class="auth-missing-config muted small" role="alert" hidden>
+        <p id="auth-missing-config" class="auth-missing-config muted small" role="alert" hidden data-i18n="auth.missing">
           Sign-in is temporarily unavailable. Please try again shortly.
         </p>
 
         <div id="login-social-block" class="auth-social">
-          <button type="button" class="auth-social__btn auth-social__btn--google" id="auth-google-stub">
+          <button type="button" class="auth-social__btn auth-social__btn--google" id="auth-google-stub" data-i18n="auth.google">
             Continue with Google
           </button>
-          <button type="button" class="auth-social__btn auth-social__btn--facebook" id="auth-fb-stub">
+          <button type="button" class="auth-social__btn auth-social__btn--facebook" id="auth-fb-stub" data-i18n="auth.facebook">
             Continue with Facebook
           </button>
-          <p class="auth-or"><span>or</span></p>
+          <p class="auth-or"><span data-i18n="auth.or">or</span></p>
         </div>
 
         <form id="login-form" class="stack auth-email-form">
           <label class="auth-field--signup">
-            Display name
+            <span data-i18n="auth.displayname">Display name</span>
             <input name="name" minlength="2" autocomplete="name" placeholder="Maria Kovacs" />
           </label>
           <label class="auth-field--signup">
-            Role
+            <span data-i18n="auth.role">Role</span>
             <select name="role">
-              <option value="buyer">Buyer</option>
-              <option value="tenant">Tenant</option>
-              <option value="seller">Seller</option>
-              <option value="agent">Agent</option>
-              <option value="landlord">Landlord</option>
+              <option value="buyer" data-i18n="role.buyer">Buyer</option>
+              <option value="tenant" data-i18n="role.tenant">Tenant</option>
+              <option value="seller" data-i18n="role.seller">Seller</option>
+              <option value="agent" data-i18n="role.agent">Agent</option>
+              <option value="landlord" data-i18n="role.landlord">Landlord</option>
             </select>
           </label>
           <label>
-            Email (optional — we’ll send a sign-in link)
+            <span data-i18n="auth.email">Email (optional — we’ll send a sign-in link)</span>
             <input name="email" type="email" autocomplete="email" placeholder="you@example.com" />
           </label>
           <label>
-            Phone (optional — SMS code, E.164 e.g. +36301234567)
+            <span data-i18n="auth.phone">Phone (optional — SMS code)</span>
             <input
               name="phone"
               type="tel"
@@ -548,19 +648,21 @@
               placeholder="+36 …"
               aria-describedby="auth-phone-focus-hint"
             />
-            <span id="auth-phone-focus-hint" class="auth-phone-focus-hint muted small" hidden>
+            <span id="auth-phone-focus-hint" class="auth-phone-focus-hint muted small" hidden data-i18n="auth.phone_hint">
               For SMS sign-in: leave email empty, enter your phone, then tap Continue. We’ll text you a
               code — enter it below and tap Verify code.
             </span>
           </label>
-          <p id="auth-sms-steps" class="auth-sms-hint muted small visually-hidden">
+          <p id="auth-sms-steps" class="auth-sms-hint muted small visually-hidden" data-i18n="auth.sms_visually">
             SMS verification steps (visible when phone field is focused).
           </p>
           <!-- SMS code UI: visibility toggled from main.js via smsSent (shown only after successful OTP send). -->
           <div id="auth-phone-verify" class="auth-phone-verify stack" hidden>
-            <p class="muted small" style="margin: 0 0 0.5rem">Enter the code we sent to your phone.</p>
+            <p class="muted small" style="margin: 0 0 0.5rem" data-i18n="auth.phone_enter_code">
+              Enter the code we sent to your phone.
+            </p>
             <label>
-              SMS code
+              <span data-i18n="auth.smscode">SMS code</span>
               <input
                 id="auth-phone-otp-input"
                 type="text"
@@ -576,6 +678,7 @@
               class="btn btn--primary auth-submit-full"
               id="auth-phone-verify-btn"
               aria-describedby="auth-phone-focus-hint"
+              data-i18n="auth.verify"
             >
               Verify code
             </button>
@@ -583,10 +686,12 @@
           <button type="submit" class="btn btn--primary auth-submit-full" id="login-form-submit">
             <span class="auth-submit-inner">
               <span class="auth-submit-spinner" aria-hidden="true"></span>
-              <span class="auth-submit-label">Continue</span>
+              <span class="auth-submit-label" data-i18n="auth.continue">Continue</span>
             </span>
           </button>
-          <button type="button" class="btn btn--ghost auth-submit-full" data-close-modal>Cancel</button>
+          <button type="button" class="btn btn--ghost auth-submit-full" data-close-modal data-i18n="auth.cancel">
+            Cancel
+          </button>
         </form>
 
         <p class="auth-switch small muted" id="auth-switch-line">
@@ -594,7 +699,7 @@
             Don’t have an account? Register
           </button>
         </p>
-        <p class="auth-legal small muted">
+        <p class="auth-legal small muted" data-i18n="auth.terms">
           By continuing you agree to our Terms &amp; Privacy Policy.
         </p>
       </div>
@@ -608,60 +713,60 @@
     >
       <div class="promo-info-dialog__shell">
         <header class="promo-info-dialog__head">
-          <h2 id="dialog-how-to-buy-title" class="promo-info-dialog__title">How to Buy Safely on Nuvelo</h2>
-          <button type="button" class="promo-info-dialog__close" data-promo-dialog-close aria-label="Close">
+          <h2 id="dialog-how-to-buy-title" class="promo-info-dialog__title" data-i18n="dialog.buy.title">How to Buy Safely on Nuvelo</h2>
+          <button type="button" class="promo-info-dialog__close" data-promo-dialog-close data-i18n-aria-label="header.close" aria-label="Close">
             ×
           </button>
         </header>
         <div class="promo-info-dialog__body">
-          <p>
+          <p data-i18n="dialog.buy.intro">
             Most transactions on Nuvelo are smooth and honest. These steps keep you protected every time.
           </p>
-          <p class="promo-info-dialog__block-title">🔍 Before you contact a seller</p>
-          <p>Read the full listing: description, condition, and photos.</p>
-          <p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.buy.s1t">🔍 Before you contact a seller</p>
+          <p data-i18n="dialog.buy.s1a">Read the full listing: description, condition, and photos.</p>
+          <p data-i18n="dialog.buy.s1b">
             Check the seller&apos;s profile — look for the ✅ Verified badge, feedback score, and how long
             they&apos;ve been active.
           </p>
-          <p>If the price seems too good to be true, treat it as a red flag.</p>
-          <p>Use the location filter to find sellers near you.</p>
-          <p class="promo-info-dialog__block-title">💬 Communicating with the seller</p>
-          <p>Keep all conversations on Nuvelo so there&apos;s a record.</p>
-          <p>
+          <p data-i18n="dialog.buy.s1c">If the price seems too good to be true, treat it as a red flag.</p>
+          <p data-i18n="dialog.buy.s1d">Use the location filter to find sellers near you.</p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.buy.s2t">💬 Communicating with the seller</p>
+          <p data-i18n="dialog.buy.s2a">Keep all conversations on Nuvelo so there&apos;s a record.</p>
+          <p data-i18n="dialog.buy.s2b">
             Ask about the exact condition, defects, receipt availability, and preferred meeting spot.
           </p>
-          <p>
+          <p data-i18n="dialog.buy.s2c">
             Never share your home address, bank details, or personal documents before meeting in person.
           </p>
-          <p>
+          <p data-i18n="dialog.buy.s2d">
             Be cautious if a seller pushes you off-platform to WhatsApp, Telegram, or email before the deal
             is confirmed.
           </p>
-          <p class="promo-info-dialog__block-title">📍 Arranging the meetup</p>
-          <p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.buy.s3t">📍 Arranging the meetup</p>
+          <p data-i18n="dialog.buy.s3a">
             Always meet in a busy public place during daylight — a shopping centre, café, or near a police
             station.
           </p>
-          <p>Bring a friend for high-value purchases.</p>
-          <p>Test electronics thoroughly before paying. Ask for serial numbers.</p>
-          <p>
+          <p data-i18n="dialog.buy.s3b">Bring a friend for high-value purchases.</p>
+          <p data-i18n="dialog.buy.s3c">Test electronics thoroughly before paying. Ask for serial numbers.</p>
+          <p data-i18n="dialog.buy.s3d">
             For rental viewings, never hand over a deposit before signing a written contract.
           </p>
-          <p class="promo-info-dialog__block-title">💳 Making payment</p>
-          <p>Pay in person — cash or traceable bank transfer only.</p>
-          <p>Never pay via gift cards, crypto, or irreversible wire transfers.</p>
-          <p>Never send money before seeing and testing the item.</p>
-          <p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.buy.s4t">💳 Making payment</p>
+          <p data-i18n="dialog.buy.s4a">Pay in person — cash or traceable bank transfer only.</p>
+          <p data-i18n="dialog.buy.s4b">Never pay via gift cards, crypto, or irreversible wire transfers.</p>
+          <p data-i18n="dialog.buy.s4c">Never send money before seeing and testing the item.</p>
+          <p data-i18n="dialog.buy.s4d">
             For high-value deals, use a written receipt with both names, item description, price, date, and
             signatures.
           </p>
-          <p class="promo-info-dialog__block-title">✅ After the transaction</p>
-          <p>Leave feedback on the seller&apos;s profile.</p>
-          <p>If something went wrong, use the &quot;Report&quot; button on their profile.</p>
-          <p>Email support@nuvelo.one with screenshots if you suspect fraud.</p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.buy.s5t">✅ After the transaction</p>
+          <p data-i18n="dialog.buy.s5a">Leave feedback on the seller&apos;s profile.</p>
+          <p data-i18n="dialog.buy.s5b">If something went wrong, use the &quot;Report&quot; button on their profile.</p>
+          <p data-i18n="dialog.buy.s5c">Email support@nuvelo.one with screenshots if you suspect fraud.</p>
           <footer class="promo-info-dialog__cta">
-            <a href="/browse" class="btn btn--primary" data-promo-dialog-nav>Browse ads</a>
-            <a href="/safety" class="btn btn--outline" data-promo-dialog-nav>View safety tips</a>
+            <a href="/browse" class="btn btn--primary" data-promo-dialog-nav data-i18n="dialog.buy.footer1">Browse ads</a>
+            <a href="/safety" class="btn btn--outline" data-promo-dialog-nav data-i18n="dialog.buy.footer2">View safety tips</a>
           </footer>
         </div>
       </div>
@@ -675,55 +780,55 @@
     >
       <div class="promo-info-dialog__shell">
         <header class="promo-info-dialog__head">
-          <h2 id="dialog-verified-sellers-title" class="promo-info-dialog__title">
+          <h2 id="dialog-verified-sellers-title" class="promo-info-dialog__title" data-i18n="dialog.ver.title">
             ✅ Verified Sellers on Nuvelo
           </h2>
-          <button type="button" class="promo-info-dialog__close" data-promo-dialog-close aria-label="Close">
+          <button type="button" class="promo-info-dialog__close" data-promo-dialog-close data-i18n-aria-label="header.close" aria-label="Close">
             ×
           </button>
         </header>
         <div class="promo-info-dialog__body">
-          <p>
+          <p data-i18n="dialog.ver.intro">
             When you see the ✅ Verified badge on a listing or seller profile, it means that seller has
             passed Nuvelo&apos;s identity and trust check.
           </p>
-          <p class="promo-info-dialog__block-title">🔎 What does Verified mean?</p>
-          <p>A seller earns the ✅ badge by completing one or more of these steps:</p>
-          <p>Confirming identity with a government-issued ID</p>
-          <p>Verifying their phone number via SMS</p>
-          <p>Verifying their email address</p>
-          <p>Building a positive feedback history with no unresolved disputes</p>
-          <p>(Businesses) Providing a company registration number</p>
-          <p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.ver.s1t">🔎 What does Verified mean?</p>
+          <p data-i18n="dialog.ver.s1a">A seller earns the ✅ badge by completing one or more of these steps:</p>
+          <p data-i18n="dialog.ver.s1b">Confirming identity with a government-issued ID</p>
+          <p data-i18n="dialog.ver.s1c">Verifying their phone number via SMS</p>
+          <p data-i18n="dialog.ver.s1d">Verifying their email address</p>
+          <p data-i18n="dialog.ver.s1e">Building a positive feedback history with no unresolved disputes</p>
+          <p data-i18n="dialog.ver.s1f">(Businesses) Providing a company registration number</p>
+          <p data-i18n="dialog.ver.s1g">
             The badge is manually reviewed by the Nuvelo team — it is never granted automatically.
           </p>
-          <p class="promo-info-dialog__block-title">🛡️ Why buy from Verified sellers?</p>
-          <p>Lower fraud risk — real identity on file makes anonymous scams much harder.</p>
-          <p>Accountability — if a dispute arises, we have verified contact details to assist resolution.</p>
-          <p>Better listing quality — Verified sellers are held to stricter content standards.</p>
-          <p>Faster support — reports against Verified sellers are reviewed with priority.</p>
-          <p>Filterable — use the &quot;Verified sellers&quot; filter in Browse to see only verified listings.</p>
-          <p class="promo-info-dialog__block-title">⚠️ Does Verified = guaranteed?</p>
-          <p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.ver.s2t">🛡️ Why buy from Verified sellers?</p>
+          <p data-i18n="dialog.ver.s2a">Lower fraud risk — real identity on file makes anonymous scams much harder.</p>
+          <p data-i18n="dialog.ver.s2b">Accountability — if a dispute arises, we have verified contact details to assist resolution.</p>
+          <p data-i18n="dialog.ver.s2c">Better listing quality — Verified sellers are held to stricter content standards.</p>
+          <p data-i18n="dialog.ver.s2d">Faster support — reports against Verified sellers are reviewed with priority.</p>
+          <p data-i18n="dialog.ver.s2e">Filterable — use the &quot;Verified sellers&quot; filter in Browse to see only verified listings.</p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.ver.s3t">⚠️ Does Verified = guaranteed?</p>
+          <p data-i18n="dialog.ver.s3a">
             No. The badge confirms identity and reduces risk — it does not guarantee item quality or
             transaction outcome. Always inspect before paying and follow safe buying practices.
           </p>
-          <p class="promo-info-dialog__block-title">🏷️ How to become Verified</p>
-          <p>Go to your Profile → Settings</p>
-          <p>Find the &quot;Get Verified&quot; section</p>
-          <p>Submit your verification documents</p>
-          <p>Expect a review within 1–2 business days</p>
-          <p>Verification is free during the current MVP period.</p>
-          <p class="promo-info-dialog__block-title">🚩 Spotted a fake Verified badge?</p>
-          <p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.ver.s4t">🏷️ How to become Verified</p>
+          <p data-i18n="dialog.ver.s4a">Go to your Profile → Settings</p>
+          <p data-i18n="dialog.ver.s4b">Find the &quot;Get Verified&quot; section</p>
+          <p data-i18n="dialog.ver.s4c">Submit your verification documents</p>
+          <p data-i18n="dialog.ver.s4d">Expect a review within 1–2 business days</p>
+          <p data-i18n="dialog.ver.s4e">Verification is free during the current MVP period.</p>
+          <p class="promo-info-dialog__block-title" data-i18n="dialog.ver.s5t">🚩 Spotted a fake Verified badge?</p>
+          <p data-i18n="dialog.ver.s5a">
             Report the listing immediately. Misuse of the badge violates our Terms &amp; Conditions and
             results in account suspension.
           </p>
           <footer class="promo-info-dialog__cta">
-            <a href="/browse?verified=true" class="btn btn--primary" data-promo-dialog-nav>
+            <a href="/browse?verified=true" class="btn btn--primary" data-promo-dialog-nav data-i18n="dialog.ver.footer1">
               Browse Verified sellers
             </a>
-            <a href="/profile/settings" class="btn btn--outline" data-promo-dialog-nav>Get verified</a>
+            <a href="/profile/settings" class="btn btn--outline" data-promo-dialog-nav data-i18n="dialog.ver.footer2">Get verified</a>
           </footer>
         </div>
       </div>

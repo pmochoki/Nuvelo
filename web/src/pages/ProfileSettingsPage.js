@@ -25,11 +25,10 @@ function cityOptionsHtml(selectedCity) {
     (l) =>
       `<option value="${esc(l.value)}"${selectedCity === l.value ? " selected" : ""}>${esc(l.label)}</option>`
   );
-  return `<option value="">Select city…</option>${opts.join("")}`;
+  return `<option value="" data-i18n="settings.city">Select city…</option>${opts.join("")}`;
 }
 
 const ROLE_OPTIONS = ["Buyer", "Tenant", "Seller", "Agent", "Landlord"];
-const DEFAULT_SAVE_LABEL = "Save changes";
 
 /**
  * @param {object} user — extended with profile fields
@@ -62,28 +61,41 @@ function renderContactDetailsForm(user) {
   const hasPhoto = Boolean(photoSrc);
   const initials = getDisplayInitials(fullName || "Member");
 
+  const roleKey = (r) =>
+    ({
+      Buyer: "role.buyer",
+      Tenant: "role.tenant",
+      Seller: "role.seller",
+      Agent: "role.agent",
+      Landlord: "role.landlord"
+    })[r] || "role.buyer";
   const roleOpts = ROLE_OPTIONS.map(
-    (r) => `<option value="${esc(r)}"${role === r ? " selected" : ""}>${esc(r)}</option>`
+    (r) =>
+      `<option value="${esc(r)}"${role === r ? " selected" : ""} data-i18n="${roleKey(r)}">${esc(r)}</option>`
   ).join("");
 
   const imgAttrs = hasPhoto ? ` src="${esc(photoSrc)}"` : "";
 
   const sexOpts = [
-    { v: "", l: "Prefer not to say" },
-    { v: "male", l: "Male" },
-    { v: "female", l: "Female" }
+    { v: "", key: "settings.sex_prefer" },
+    { v: "male", key: "settings.sex_male" },
+    { v: "female", key: "settings.sex_female" }
   ]
-    .map((o) => `<option value="${esc(o.v)}"${sex === o.v ? " selected" : ""}>${esc(o.l)}</option>`)
+    .map((o) => {
+      const lab =
+        o.v === "" ? "Prefer not to say" : o.v === "male" ? "Male" : "Female";
+      return `<option value="${esc(o.v)}"${sex === o.v ? " selected" : ""} data-i18n="${o.key}">${esc(lab)}</option>`;
+    })
     .join("");
 
   return `
     <div class="settings-jiji">
-      <h2 class="visually-hidden">Account details</h2>
+      <h2 class="visually-hidden" data-i18n="settings.account_details">Account details</h2>
       <div class="settings-jiji__body">
         <form class="settings-jiji-form" id="profile-settings-form" novalidate action="javascript:void(0)">
           <section class="settings-jiji-section settings-jiji-section--photo" id="settings-section-photo">
-            <h3 class="settings-jiji-section__title">Profile photo</h3>
-            <p class="settings-account-photo__lead muted small">Your photo appears on your profile and in the header after you save or upload.</p>
+            <h3 class="settings-jiji-section__title" data-i18n="settings.photo">Profile photo</h3>
+            <p class="settings-account-photo__lead muted small" data-i18n="settings.photo_lead">Your photo appears on your profile and in the header after you save or upload.</p>
             <div class="settings-account-photo" data-settings-avatar>
               <div class="settings-account-photo__circle">
                 <img
@@ -100,7 +112,7 @@ function renderContactDetailsForm(user) {
                   aria-hidden="true"
                   ${hasPhoto ? " hidden" : ""}
                 >${esc(initials)}</div>
-                <button type="button" class="settings-account-photo__trigger" id="avatar-edit-btn" aria-label="Upload profile photo">
+                <button type="button" class="settings-account-photo__trigger" id="avatar-edit-btn" data-i18n-aria-label="settings.upload_photo" aria-label="Upload profile photo">
                   <span class="settings-account-photo__overlay" aria-hidden="true">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
@@ -115,17 +127,17 @@ function renderContactDetailsForm(user) {
                 accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
                 hidden
               />
-              <p class="settings-account-photo__hint muted small">JPG, PNG or WebP, max 5MB.</p>
+              <p class="settings-account-photo__hint muted small" data-i18n="settings.photo_hint">JPG, PNG or WebP, max 5MB.</p>
             </div>
           </section>
 
           <div class="settings-jiji-group-gap" aria-hidden="true"></div>
 
           <section class="settings-jiji-section" id="settings-section-account">
-            <h3 class="settings-jiji-section__title">Account information</h3>
+            <h3 class="settings-jiji-section__title" data-i18n="settings.account_info">Account information</h3>
             <div class="settings-jiji-name-row">
               <div class="form-field">
-                <label class="form-label" for="settings-first-name">First name</label>
+                <label class="form-label" for="settings-first-name" data-i18n="settings.firstname">First name</label>
                 <input
                   type="text"
                   id="settings-first-name"
@@ -138,7 +150,7 @@ function renderContactDetailsForm(user) {
                 />
               </div>
               <div class="form-field">
-                <label class="form-label" for="settings-last-name">Last name</label>
+                <label class="form-label" for="settings-last-name" data-i18n="settings.lastname">Last name</label>
                 <input
                   type="text"
                   id="settings-last-name"
@@ -152,7 +164,7 @@ function renderContactDetailsForm(user) {
               </div>
             </div>
             <div class="form-field">
-              <label class="form-label" for="settings-email">Email address</label>
+              <label class="form-label" for="settings-email" data-i18n="settings.email_address">Email address</label>
               <input
                 type="email"
                 id="settings-email"
@@ -168,7 +180,7 @@ function renderContactDetailsForm(user) {
               <p class="form-field__error" id="settings-email-error" role="alert" hidden></p>
             </div>
             <div class="form-field">
-              <label class="form-label" for="settings-phone">Phone number</label>
+              <label class="form-label" for="settings-phone" data-i18n="settings.phone_number">Phone number</label>
               <div class="phone-prefix-field">
                 <span class="phone-prefix-field__pre" aria-hidden="true">+36</span>
                 <input
@@ -187,13 +199,13 @@ function renderContactDetailsForm(user) {
               <p class="form-field__error" id="settings-phone-error" role="alert" hidden></p>
             </div>
             <div class="form-field">
-              <label class="form-label" for="settings-location">Location / city</label>
+              <label class="form-label" for="settings-location" data-i18n="settings.location_city">Location / city</label>
               <select id="settings-location" name="location" class="form-input form-select" data-settings-track>
                 ${cityOptionsHtml(city)}
               </select>
             </div>
             <div class="form-field">
-              <label class="form-label" for="settings-birthday">Birthday</label>
+              <label class="form-label" for="settings-birthday" data-i18n="settings.birthday">Birthday</label>
               <input
                 type="date"
                 id="settings-birthday"
@@ -204,13 +216,13 @@ function renderContactDetailsForm(user) {
               />
             </div>
             <div class="form-field">
-              <label class="form-label" for="settings-sex">Sex</label>
+              <label class="form-label" for="settings-sex" data-i18n="settings.sex">Sex</label>
               <select id="settings-sex" name="sex" class="form-input form-select" data-settings-track>
                 ${sexOpts}
               </select>
             </div>
             <div class="form-field">
-              <label class="form-label" for="settings-bio">Bio / About me</label>
+              <label class="form-label" for="settings-bio" data-i18n="settings.bio">Bio / About me</label>
               <span class="char-count" id="bio-count" aria-live="polite">${bioLen} / 300</span>
               <textarea
                 id="settings-bio"
@@ -224,7 +236,7 @@ function renderContactDetailsForm(user) {
               >${esc(bio)}</textarea>
             </div>
             <div class="form-field">
-              <label class="form-label" for="settings-role">Role</label>
+              <label class="form-label" for="settings-role" data-i18n="settings.role">Role</label>
               <select id="settings-role" name="role" class="form-input form-select" data-settings-track>
                 ${roleOpts}
               </select>
@@ -232,10 +244,10 @@ function renderContactDetailsForm(user) {
           </section>
 
           <div class="settings-jiji-actions">
-            <button type="button" class="btn btn--ghost settings-cancel-btn" id="settings-cancel-btn" disabled>
+            <button type="button" class="btn btn--ghost settings-cancel-btn" id="settings-cancel-btn" disabled data-i18n="settings.cancel">
               Cancel
             </button>
-            <button type="button" class="btn btn--primary settings-save-btn" id="save-profile-btn">${esc(DEFAULT_SAVE_LABEL)}</button>
+            <button type="button" class="btn btn--primary settings-save-btn" id="save-profile-btn" data-i18n="settings.save">Save changes</button>
           </div>
         </form>
         <p id="profile-settings-saved-msg" class="settings-saved-msg nuvelo-toast-placeholder" hidden role="status"></p>
@@ -246,8 +258,8 @@ function renderContactDetailsForm(user) {
 function renderSettingsJijiAppBar() {
   return `
   <header class="settings-jiji-appbar">
-    <a href="/profile" class="settings-jiji-appbar__back" aria-label="Back to profile">‹</a>
-    <h1 class="settings-jiji-appbar__title">Settings</h1>
+    <a href="/profile" class="settings-jiji-appbar__back" data-i18n-aria-label="settings.back_profile" aria-label="Back to profile">‹</a>
+    <h1 class="settings-jiji-appbar__title" data-i18n="settings.appbar_title">Settings</h1>
   </header>`;
 }
 
@@ -265,7 +277,7 @@ export function renderSettingsPage(user, _settingsSection) {
       ${renderContactDetailsForm(user)}
     </main>
   </div>
-  <a href="/contact" class="settings-jiji-fab" aria-label="Help and contact">
+  <a href="/contact" class="settings-jiji-fab" data-i18n-aria-label="profile.help_contact" aria-label="Help and contact">
     <span class="settings-jiji-fab__ico" aria-hidden="true">?</span>
   </a>
 </div>`;

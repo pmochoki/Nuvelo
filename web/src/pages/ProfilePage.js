@@ -1,4 +1,5 @@
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
+import { t, tf } from "../i18n/i18n.js";
 
 const esc = (s) => {
   const d = document.createElement("div");
@@ -78,7 +79,7 @@ export function buildMessageThreadRowHtml(t) {
   const unread = t.unread || 0;
   const badge =
     unread > 0
-      ? `<span class="msg-row__unread-badge" aria-label="${unread} unread">${esc(unread > 9 ? "9+" : String(unread))}</span>`
+      ? `<span class="msg-row__unread-badge" aria-label="${esc(String(unread))} ${esc(t("msg.unread_badge"))}">${esc(unread > 9 ? "9+" : String(unread))}</span>`
       : "";
   return `
     <button type="button" class="msg-row${unread ? " msg-row--unread" : ""}" data-thread-id="${esc(t.id)}" data-thread-spam="${t.spam ? "1" : ""}">
@@ -102,15 +103,15 @@ export function buildMessageThreadRowHtml(t) {
 
 function priceLineForListing(listing) {
   if (listing.categoryId === DONATIONS_CATEGORY_ID) {
-    return "FREE";
+    return t("listing.free");
   }
   const p = listing.price;
   if (p == null) {
-    return "Contact for price";
+    return t("listing.contact_price");
   }
   const n = Number(p);
   if (!Number.isFinite(n) || n < 0) {
-    return "Contact for price";
+    return t("listing.contact_price");
   }
   return `HUF ${n.toLocaleString("hu-HU")}`;
 }
@@ -177,7 +178,7 @@ function renderMyAdvertRowsWithStatus(listings) {
  * @param {object} user
  */
 export function renderProfileMobileHeader(user) {
-  const name = user.name || "Member";
+  const name = user.name || t("profile.member");
   const avatar = user.avatarUrl || "/default-avatar.svg";
   return `
   <div class="profile-mobile-header">
@@ -197,15 +198,15 @@ export function renderProfileMobileTabs(activeSection) {
   };
   return `
   <div class="profile-mobile-tabs-wrap">
-    <nav class="profile-mobile-tabs" aria-label="Profile" data-profile-mobile-tabs>
-      ${item("/profile", "hub", "Home")}
-      ${item("/profile/adverts", "adverts", "Ads")}
-      ${item("/profile/messages", "messages", "Messages")}
-      ${item("/profile/saved", "saved", "Saved")}
-      ${item("/profile/performance", "performance", "Stats")}
-      ${item("/profile/notifications", "notifications", "Alerts")}
-      ${item("/profile/feedback", "feedback", "Feedback")}
-      ${item("/profile/settings", "settings", "Settings")}
+    <nav class="profile-mobile-tabs" aria-label="${esc(t("profile.nav_a11y"))}" data-profile-mobile-tabs>
+      ${item("/profile", "hub", t("profile.tab.home"))}
+      ${item("/profile/adverts", "adverts", t("profile.ads"))}
+      ${item("/profile/messages", "messages", t("profile.messages"))}
+      ${item("/profile/saved", "saved", t("profile.saved"))}
+      ${item("/profile/performance", "performance", t("profile.stats"))}
+      ${item("/profile/notifications", "notifications", t("profile.alerts"))}
+      ${item("/profile/feedback", "feedback", t("profile.feedback"))}
+      ${item("/profile/settings", "settings", t("nav.settings"))}
     </nav>
   </div>`;
 }
@@ -216,8 +217,8 @@ export function renderProfileMobileTabs(activeSection) {
  * @param {string} section — active profile section key
  */
 export function renderProfileSidebar(user, section) {
-  const name = user.name || "Member";
-  const phone = user.phone || "Add phone in Settings";
+  const name = user.name || t("profile.member");
+  const phone = user.phone || t("profile.add_phone");
   const avatar = user.avatarUrl || "/default-avatar.svg";
   const navItem = (href, key, label, emoji) => {
     const active = section === key ? " active" : "";
@@ -231,13 +232,13 @@ export function renderProfileSidebar(user, section) {
   <aside class="profile-sidebar profile-sidebar--jiji" data-profile-sidebar>
     <div class="profile-sidebar-card">
       <div class="profile-sidebar-card__head">
-        <a href="/profile/settings" class="profile-settings-pill${section === "settings" ? " profile-settings-pill--active" : ""}" title="Settings">
-          <span>SETTINGS</span>
+        <a href="/profile/settings" class="profile-settings-pill${section === "settings" ? " profile-settings-pill--active" : ""}" title="${esc(t("nav.settings"))}">
+          <span>${esc(t("profile.settings_pill"))}</span>
           <span class="profile-settings-pill__ico" aria-hidden="true">⚙️</span>
         </a>
       </div>
       <div class="profile-identity">
-        <button type="button" class="profile-avatar-ring" id="profile-sidebar-avatar-btn" aria-label="Change profile photo">
+        <button type="button" class="profile-avatar-ring" id="profile-sidebar-avatar-btn" aria-label="${esc(t("profile.change_photo"))}">
           <img src="${esc(avatar)}" alt="" class="profile-avatar-large" id="profile-sidebar-avatar-img" width="96" height="96" decoding="async" />
           <span class="profile-avatar-ring__camera" aria-hidden="true">📷</span>
         </button>
@@ -246,22 +247,22 @@ export function renderProfileSidebar(user, section) {
         <p class="profile-phone profile-phone--accent">${esc(phone)}</p>
       </div>
       <nav class="profile-sidenav profile-sidenav--jiji">
-        ${navItem("/post", "promo", "Boost your reach", "😍")}
-        ${navItem("/profile/followers", "followers", "Followers", "👥")}
-        ${navItem("/profile/adverts", "adverts", "My adverts", "📋")}
-        ${navItem("/profile/feedback", "feedback", "Feedback", "😊")}
-        ${navItem("/faq", "faq", "Frequently Asked Questions", "❓")}
+        ${navItem("/post", "promo", t("profile.boost"), "😍")}
+        ${navItem("/profile/followers", "followers", t("profile.followers"), "👥")}
+        ${navItem("/profile/adverts", "adverts", t("nav.adverts"), "📋")}
+        ${navItem("/profile/feedback", "feedback", t("profile.feedback"), "😊")}
+        ${navItem("/faq", "faq", t("profile.faq_long"), "❓")}
       </nav>
       <div class="profile-sidenav-extra muted small">
-        <p class="profile-sidenav-extra__title">Quick links</p>
-        ${navItem("/profile/messages", "messages", "Messages", "💬")}
-        ${navItem("/profile/saved", "saved", "Saved ads", "🔖")}
-        ${navItem("/profile/notifications", "notifications", "Notifications", "🔔")}
-        ${navItem("/profile/performance", "performance", "Performance", "📊")}
+        <p class="profile-sidenav-extra__title">${esc(t("profile.quick_links"))}</p>
+        ${navItem("/profile/messages", "messages", t("nav.messages"), "💬")}
+        ${navItem("/profile/saved", "saved", t("nav.saved"), "🔖")}
+        ${navItem("/profile/notifications", "notifications", t("nav.notifications"), "🔔")}
+        ${navItem("/profile/performance", "performance", t("profile.performance_nav"), "📊")}
       </div>
       <div class="profile-sidebar__foot">
         <button type="button" class="btn btn--pill btn--signin profile-sign-out-btn" id="profile-sign-out">
-          Sign out
+          ${esc(t("nav.signout"))}
         </button>
       </div>
     </div>
@@ -273,20 +274,20 @@ export function renderProfileSidebar(user, section) {
  * @param {object} user
  */
 export function renderProfileHubToolbar(user) {
-  const name = user.name || "Member";
+  const name = user.name || t("profile.member");
   const avatar = user.avatarUrl || "/default-avatar.svg";
   return `
-  <header class="profile-hub-toolbar" aria-label="Profile">
-    <a href="/" class="profile-hub-toolbar__back" aria-label="Back to home">‹</a>
+  <header class="profile-hub-toolbar" aria-label="${esc(t("profile.nav_a11y"))}">
+    <a href="/" class="profile-hub-toolbar__back" aria-label="${esc(t("profile.back_home"))}">‹</a>
     <div class="profile-hub-toolbar__identity">
-      <button type="button" class="profile-hub-toolbar__avatar-btn" id="profile-hub-avatar-btn" aria-label="Change profile photo">
+      <button type="button" class="profile-hub-toolbar__avatar-btn" id="profile-hub-avatar-btn" aria-label="${esc(t("profile.change_photo"))}">
         <img class="profile-hub-toolbar__avatar" src="${esc(avatar)}" alt="" width="40" height="40" decoding="async" id="profile-hub-avatar-img" />
       </button>
       <input type="file" id="profile-hub-avatar-input" accept="image/*" hidden />
       <span class="profile-hub-toolbar__name">${esc(name)}</span>
     </div>
     <a href="/profile/settings" class="profile-hub-toolbar__settings">
-      <span class="profile-hub-toolbar__settings-label">Settings</span>
+      <span class="profile-hub-toolbar__settings-label">${esc(t("nav.settings"))}</span>
       <span class="profile-hub-toolbar__settings-ico" aria-hidden="true">⚙</span>
     </a>
   </header>`;
@@ -315,29 +316,29 @@ function renderProfileHub(user) {
     <div class="profile-hub__bg">
       <a href="/post" class="profile-hub-hero">
         <span class="profile-hub-hero__emoji" aria-hidden="true">🤑</span>
-        <span class="profile-hub-hero__text">Post an ad &amp; reach buyers</span>
+        <span class="profile-hub-hero__text">${esc(t("profile.hub_post"))}</span>
         <span class="profile-hub-hero__chev" aria-hidden="true">›</span>
       </a>
       <div class="profile-hub__columns">
         <div class="profile-hub-card profile-hub-card--stack">
-          ${row("/browse", "Browse marketplace", "🛵", "")}
-          ${row("/profile/notifications", "Notifications", "🔔", "")}
-          ${row("/profile/followers", "Followers", "👤", "")}
+          ${row("/browse", t("profile.hub_browse"), "🛵", "")}
+          ${row("/profile/notifications", t("profile.hub_notif"), "🔔", "")}
+          ${row("/profile/followers", t("profile.hub_followers"), "👤", "")}
         </div>
         <div class="profile-hub-card profile-hub-card--stack">
-          ${row("/profile/adverts", "My adverts", "📋", "")}
-          ${row("/profile/feedback", "Feedback", "💬", "")}
+          ${row("/profile/adverts", t("profile.hub_adverts"), "📋", "")}
+          ${row("/profile/feedback", t("profile.hub_feedback"), "💬", "")}
         </div>
       </div>
       <div class="profile-hub__faq-wrap">
         <a href="/faq" class="profile-hub-card profile-hub-card--single">
           <span class="profile-hub-card__row-emoji" aria-hidden="true">❓</span>
-          <span class="profile-hub-card__row-label">FAQ</span>
+          <span class="profile-hub-card__row-label">${esc(t("profile.hub_faq"))}</span>
           <span class="profile-hub-card__chev" aria-hidden="true">›</span>
         </a>
       </div>
     </div>
-    <a href="/contact" class="profile-hub-fab" aria-label="Help and contact">
+    <a href="/contact" class="profile-hub-fab" aria-label="${esc(t("profile.help_contact"))}">
       <span class="profile-hub-fab__ico" aria-hidden="true">?</span>
     </a>
   </div>`;
@@ -354,31 +355,31 @@ function renderMessagesLayout() {
   return `
     <div class="messages-jiji" data-messages-root>
       <div class="messages-jiji__left" data-msg-list-column>
-        <header class="messages-jiji__shell" aria-label="Messages toolbar">
+        <header class="messages-jiji__shell" aria-label="${esc(t("messages.toolbar"))}">
           <a href="/" class="messages-jiji__back-link">${backIcon}</a>
           <label class="messages-jiji__search-shell">
             ${searchIcon}
             <input
               type="search"
               class="messages-jiji__search"
-              placeholder="Search in messages"
+              placeholder="${esc(t("messages.search_in"))}"
               data-msg-search
               autocomplete="off"
-              aria-label="Search in messages"
+              aria-label="${esc(t("messages.search_in"))}"
             />
           </label>
         </header>
         <p class="messages-jiji__banner" data-msg-banner hidden role="alert"></p>
-        <h1 class="visually-hidden">Messages</h1>
+        <h1 class="visually-hidden">${esc(t("messages.visually_hidden"))}</h1>
         <div class="messages-jiji__tabs" role="tablist" data-msg-tabs>
-          <button type="button" class="messages-jiji__tab is-active" role="tab" aria-selected="true" data-msg-tab="all">All</button>
-          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">Unread (0)</button>
-          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">Spam (0)</button>
+          <button type="button" class="messages-jiji__tab is-active" role="tab" aria-selected="true" data-msg-tab="all">${esc(t("messages.all"))}</button>
+          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">${esc(tf("messages.unread_count", { n: 0 }))}</button>
+          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">${esc(tf("messages.spam_count", { n: 0 }))}</button>
         </div>
         <div class="messages-jiji__empty-inbox" data-msg-empty-inbox hidden>
           <div class="messages-jiji__empty-inbox-illus" aria-hidden="true">💬</div>
-          <p class="messages-jiji__empty-inbox-text">No messages yet. When someone contacts you about a listing, it will appear here.</p>
-          <a href="/browse" class="btn btn--primary messages-jiji__empty-inbox-cta">Browse ads</a>
+          <p class="messages-jiji__empty-inbox-text">${esc(t("messages.empty_inbox"))}</p>
+          <a href="/browse" class="btn btn--primary messages-jiji__empty-inbox-cta">${esc(t("saved.browse"))}</a>
         </div>
         <div class="messages-jiji__lists" data-msg-lists-wrap>
           <div class="messages-jiji__list" data-msg-list-all role="list"></div>
@@ -389,7 +390,7 @@ function renderMessagesLayout() {
       <div class="messages-jiji__right" data-msg-pane>
         <div class="messages-jiji__empty" data-msg-empty>
           <div class="messages-jiji__empty-illus" aria-hidden="true">💬</div>
-          <p class="messages-jiji__empty-title">Select a chat to start messaging</p>
+          <p class="messages-jiji__empty-title">${esc(t("messages.empty"))}</p>
         </div>
         <div class="messages-jiji__chat" data-msg-chat hidden></div>
       </div>
@@ -421,7 +422,7 @@ export function buildChatPanelHtml(thread, messages, currentUserId) {
     : `<div class="chat-head__ph"></div>`;
   return `
     <header class="chat-head">
-      <button type="button" class="chat-head__back" data-msg-back aria-label="Back to messages">←</button>
+      <button type="button" class="chat-head__back" data-msg-back aria-label="${esc(t("chat.back_messages"))}">←</button>
       <div class="chat-head__thumb">${thumb}</div>
       <div class="chat-head__meta">
         <p class="chat-head__name">${esc(thread.otherDisplayName)}</p>
@@ -430,18 +431,18 @@ export function buildChatPanelHtml(thread, messages, currentUserId) {
     </header>
     <div class="chat-scroll" role="log" data-msg-scroll>${bubbles}</div>
     <footer class="chat-compose">
-      <input type="text" class="chat-compose__input" placeholder="Type a message…" aria-label="Message" data-msg-input autocomplete="off" />
-      <button type="button" class="btn btn--primary chat-compose__send" data-msg-send>Send</button>
+      <input type="text" class="chat-compose__input" placeholder="${esc(t("chat.placeholder"))}" aria-label="${esc(t("chat.message_aria"))}" data-msg-input autocomplete="off" />
+      <button type="button" class="btn btn--primary chat-compose__send" data-msg-send>${esc(t("chat.send"))}</button>
     </footer>`;
 }
 
 function renderPerformanceSection() {
   const metrics = [
-    { icon: "🖤", label: "Traffic", value: "0" },
-    { icon: "🟣", label: "Visitors", value: "0" },
-    { icon: "🟢", label: "Contact views", value: "0" },
-    { icon: "🟠", label: "Chats", value: "0" },
-    { icon: "🔵", label: "Spent on Pro Sales", value: "HUF 0" }
+    { icon: "🖤", label: t("perf.metric.traffic"), value: "0" },
+    { icon: "🟣", label: t("perf.metric.visitors"), value: "0" },
+    { icon: "🟢", label: t("perf.metric.contact"), value: "0" },
+    { icon: "🟠", label: t("perf.metric.chats"), value: "0" },
+    { icon: "🔵", label: t("perf.metric.spent"), value: "HUF 0" }
   ];
   const metricCards = metrics
     .map(
@@ -459,15 +460,15 @@ function renderPerformanceSection() {
   return `
     <div class="perf-page" data-perf-root>
       <div class="perf-page__header">
-        <h2 class="perf-page__title">Performance</h2>
+        <h2 class="perf-page__title">${esc(t("perf.title"))}</h2>
         <div class="perf-page__toggles" role="group" aria-label="Period" data-perf-period>
-          <button type="button" class="perf-toggle is-active" data-perf="daily">Daily ✓</button>
-          <button type="button" class="perf-toggle" data-perf="weekly">Weekly</button>
-          <button type="button" class="perf-toggle" data-perf="monthly">Monthly</button>
+          <button type="button" class="perf-toggle is-active" data-perf="daily">${esc(t("perf.toggle.daily"))} ✓</button>
+          <button type="button" class="perf-toggle" data-perf="weekly">${esc(t("perf.toggle.weekly"))}</button>
+          <button type="button" class="perf-toggle" data-perf="monthly">${esc(t("perf.toggle.monthly"))}</button>
         </div>
       </div>
       <p class="muted small perf-page__stats-note" style="margin:0 0 0.75rem">
-        Stats will populate once you have active listings.
+        ${esc(t("perf.stats_note"))}
       </p>
       <p class="perf-page__range" data-perf-range>—</p>
       <div class="perf-chart-wrap">
@@ -485,11 +486,11 @@ function renderPerformanceSection() {
       <div class="perf-metrics-grid">${metricCards}</div>
       <div class="perf-summary-row">
         <a href="/profile/followers" class="perf-summary-card">
-          <span class="perf-summary-card__label">New visitors</span>
+          <span class="perf-summary-card__label">${esc(t("perf.summary.visitors"))}</span>
           <span class="perf-summary-card__arrow" aria-hidden="true">›</span>
         </a>
         <a href="/profile/messages" class="perf-summary-card">
-          <span class="perf-summary-card__label">New chats</span>
+          <span class="perf-summary-card__label">${esc(t("perf.summary.chats"))}</span>
           <span class="perf-summary-card__arrow" aria-hidden="true">›</span>
         </a>
       </div>
@@ -502,10 +503,10 @@ function renderFeedbackSection(user) {
   return `
     <div class="feedback-jiji" data-feedback-root>
       <div class="feedback-jiji__header">
-        <h2 class="feedback-jiji__title">Feedback</h2>
+        <h2 class="feedback-jiji__title">${esc(t("feedback.title"))}</h2>
         <div class="feedback-jiji__toggles" role="group">
-          <button type="button" class="feedback-toggle is-active" data-fb-tab="received">Received (0)</button>
-          <button type="button" class="feedback-toggle" data-fb-tab="sent">Sent (0)</button>
+          <button type="button" class="feedback-toggle is-active" data-fb-tab="received">${esc(tf("feedback.received", { n: 0 }))}</button>
+          <button type="button" class="feedback-toggle" data-fb-tab="sent">${esc(tf("feedback.sent", { n: 0 }))}</button>
         </div>
       </div>
       <div class="feedback-jiji__panel" data-fb-panel="received">
@@ -519,15 +520,15 @@ function renderFeedbackSection(user) {
               <path d="M48 58c6 6 18 6 24 0" stroke="#64748b" stroke-width="2" stroke-linecap="round"/>
             </svg>
           </div>
-          <p class="feedback-empty__text">There are no feedbacks yet. Ask your customers to leave feedback about you. Copy the link and send them.</p>
+          <p class="feedback-empty__text">${esc(t("feedback.empty_received"))}</p>
           <button type="button" class="btn btn--primary feedback-copy-btn" data-copy-feedback-link data-link="${esc(profileLink)}">
-            Copy my link
+            ${esc(t("feedback.copy_link"))}
           </button>
         </div>
       </div>
       <div class="feedback-jiji__panel" data-fb-panel="sent" hidden>
         <div class="feedback-empty">
-          <p class="feedback-empty__text muted">No sent feedback yet.</p>
+          <p class="feedback-empty__text muted">${esc(t("feedback.empty_sent"))}</p>
         </div>
       </div>
     </div>`;
@@ -588,8 +589,8 @@ function renderMyAdverts(user) {
   const empty =
     real.length === 0
       ? `<div class="profile-empty-state" role="status">
-          <p>You haven't posted any ads yet.</p>
-          <p><a href="/post" class="btn btn--primary">Post your first ad</a></p>
+          <p>${esc(t("adverts.empty"))}</p>
+          <p><a href="/post" class="btn btn--primary">${esc(t("adverts.post"))}</a></p>
         </div>`
       : "";
   const list =
@@ -598,13 +599,13 @@ function renderMyAdverts(user) {
       : empty;
   return `
     <div class="profile-section-header profile-section-header--row">
-      <h2>My adverts</h2>
+      <h2>${esc(t("adverts.title"))}</h2>
     </div>
     ${list}
     ${
       real.length > 0
         ? `<div class="profile-cta-row">
-      <a href="/post" class="btn btn--primary">Post an ad</a>
+      <a href="/post" class="btn btn--primary">${esc(t("browse.post_cta"))}</a>
     </div>`
         : ""
     }`;
@@ -613,11 +614,11 @@ function renderMyAdverts(user) {
 function renderSavedAds(user) {
   const saved = user.savedAds || [];
   return `
-    <div class="profile-section-header"><h2>Saved ads</h2></div>
+    <div class="profile-section-header"><h2>${esc(t("saved.title"))}</h2></div>
     ${
       saved.length === 0
-        ? `<div class="profile-empty-state"><p>No saved ads yet. Tap the heart on any listing to save it here.</p>
-           <p><a href="/browse" class="btn btn--primary">Browse ads</a></p></div>`
+        ? `<div class="profile-empty-state"><p>${esc(t("saved.empty"))}</p>
+           <p><a href="/browse" class="btn btn--primary">${esc(t("saved.browse"))}</a></p></div>`
         : `<div class="profile-saved-grid">${renderAdvertRows(saved)}</div>`
     }`;
 }
@@ -625,8 +626,8 @@ function renderSavedAds(user) {
 function renderNotifications() {
   return `
     <div data-notifications-root>
-      <div class="profile-section-header"><h2>Notifications</h2></div>
-      <p class="muted small" data-notifications-loading style="margin:0 0 0.75rem">Loading…</p>
+      <div class="profile-section-header"><h2>${esc(t("notifications.title"))}</h2></div>
+      <p class="muted small" data-notifications-loading style="margin:0 0 0.75rem">${esc(t("notifications.loading"))}</p>
       <p class="browse-listings-soft-msg muted" data-notifications-error hidden role="alert"></p>
       <div data-notifications-list></div>
     </div>`;
@@ -634,7 +635,7 @@ function renderNotifications() {
 
 function renderFollowers() {
   return `
-    <div class="profile-section-header"><h2>Followers</h2></div>
-    <div class="profile-empty-state"><p>No followers yet.</p></div>`;
+    <div class="profile-section-header"><h2>${esc(t("followers.title"))}</h2></div>
+    <div class="profile-empty-state"><p>${esc(t("followers.empty"))}</p></div>`;
 }
 
