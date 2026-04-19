@@ -3140,20 +3140,24 @@ let mobileTabBarScrollReady = false;
 let mobileTabBarLastScrollY = 0;
 
 const setMobileTabBarVisibility = (bar, visible) => {
-  bar.classList.toggle("mobile-tab-bar--visible", visible);
+  const dock = document.getElementById("mobile-bottom-dock");
+  const target = dock || bar;
+  target.classList.toggle("mobile-tab-bar--visible", visible);
   document.body.classList.toggle("mobile-tab-bar-pad", visible);
-  bar.setAttribute("aria-hidden", visible ? "false" : "true");
+  target.setAttribute("aria-hidden", visible ? "false" : "true");
 };
 
 const syncMobileTabBarScroll = () => {
   const bar = document.getElementById("mobile-tab-bar");
+  const dock = document.getElementById("mobile-bottom-dock");
   if (!bar) {
     return;
   }
   if (window.innerWidth > 767) {
-    bar.classList.remove("mobile-tab-bar--visible");
+    const target = dock || bar;
+    target.classList.remove("mobile-tab-bar--visible");
     document.body.classList.remove("mobile-tab-bar-pad");
-    bar.setAttribute("aria-hidden", "true");
+    target.setAttribute("aria-hidden", "true");
     mobileTabBarScrollReady = false;
     return;
   }

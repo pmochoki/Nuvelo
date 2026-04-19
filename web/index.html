@@ -50,6 +50,29 @@
           }
         } catch (e) {}
       })();
+      (function () {
+        var lk = "nuvelo_locale";
+        window.setLang =
+          window.setLang ||
+          function (lang) {
+            try {
+              var loc = lang === "hu" ? "hu" : "en";
+              localStorage.setItem(lk, loc);
+              document.documentElement.lang = loc;
+              window.dispatchEvent(new CustomEvent("nuvelo:locale", { detail: { locale: loc } }));
+            } catch (e) {}
+          };
+        window.getLang =
+          window.getLang ||
+          function () {
+            try {
+              var loc = localStorage.getItem(lk);
+              return loc === "hu" ? "hu" : "en";
+            } catch (e) {
+              return "en";
+            }
+          };
+      })();
     </script>
   </head>
   <body>
@@ -260,20 +283,6 @@
           </div>
         </nav>
         <div class="jiji-header__actions" id="nav-actions">
-          <div class="locale-switcher-wrap theme-switcher-wrap theme-switcher-wrap--header">
-            <label class="visually-hidden" for="header-locale-select" data-i18n="locale.label">Language</label>
-            <select
-              id="header-locale-select"
-              class="theme-switcher__select locale-switcher__select"
-              data-locale-select
-              autocomplete="off"
-              data-i18n-aria-label="locale.label"
-              aria-label="Language"
-            >
-              <option value="en" data-i18n="locale.en">English</option>
-              <option value="hu" data-i18n="locale.hu">Magyar</option>
-            </select>
-          </div>
           <div class="theme-switcher-wrap theme-switcher-wrap--header">
             <label class="visually-hidden" for="header-theme-select" data-i18n="theme.label">Color theme</label>
             <select
@@ -288,6 +297,35 @@
               <option value="light" data-i18n="theme.light">Light</option>
               <option value="dark" data-i18n="theme.dark">Dark</option>
             </select>
+          </div>
+          <div
+            class="lang-switcher-wrap lang-switcher-wrap--header"
+            data-i18n-aria-label="locale.label"
+            aria-label="Language"
+          >
+            <div class="lang-switcher" role="group" aria-label="Language">
+              <button
+                type="button"
+                id="lang-en"
+                class="lang-btn"
+                data-lang-toggle="en"
+                aria-label="English"
+                onclick="typeof setLang==='function'&&setLang('en')"
+              >
+                EN
+              </button>
+              <span class="lang-switcher__sep" aria-hidden="true">|</span>
+              <button
+                type="button"
+                id="lang-hu"
+                class="lang-btn"
+                data-lang-toggle="hu"
+                aria-label="Magyar"
+                onclick="typeof setLang==='function'&&setLang('hu')"
+              >
+                HU
+              </button>
+            </div>
           </div>
           <button type="button" class="jiji-header__text-link" id="auth-btn" data-i18n="nav.signin">Sign in</button>
           <button type="button" class="jiji-header__text-link" id="auth-register-btn" data-i18n="nav.register">
@@ -367,18 +405,29 @@
           </nav>
           <div class="nav-drawer__theme-block">
             <p class="nav-drawer__theme-hint" data-i18n="locale.label">Language</p>
-            <label class="visually-hidden" for="drawer-locale-select" data-i18n="locale.label">Language</label>
-            <select
-              id="drawer-locale-select"
-              class="theme-switcher__select locale-switcher__select"
-              data-locale-select
-              autocomplete="off"
-              data-i18n-aria-label="locale.label"
-              aria-label="Language"
-            >
-              <option value="en" data-i18n="locale.en">English</option>
-              <option value="hu" data-i18n="locale.hu">Magyar</option>
-            </select>
+            <div class="lang-switcher lang-switcher--drawer" role="group" data-i18n-aria-label="locale.label" aria-label="Language">
+              <button
+                type="button"
+                id="drawer-lang-en"
+                class="lang-btn"
+                data-lang-toggle="en"
+                aria-label="English"
+                onclick="typeof setLang==='function'&&setLang('en')"
+              >
+                EN
+              </button>
+              <span class="lang-switcher__sep" aria-hidden="true">|</span>
+              <button
+                type="button"
+                id="drawer-lang-hu"
+                class="lang-btn"
+                data-lang-toggle="hu"
+                aria-label="Magyar"
+                onclick="typeof setLang==='function'&&setLang('hu')"
+              >
+                HU
+              </button>
+            </div>
             <p class="nav-drawer__theme-hint" data-i18n="drawer.theme_hint">Theme</p>
             <label class="visually-hidden" for="drawer-theme-select" data-i18n="theme.label">Color theme</label>
             <select
@@ -412,14 +461,43 @@
 
     <main id="app" class="main main--jiji" aria-live="polite"></main>
 
-    <!-- Mobile-only bottom tabs (Jiji-style): visible near top of page, hides on scroll down -->
-    <nav
-      class="mobile-tab-bar"
-      id="mobile-tab-bar"
-      data-i18n-aria-label="mobile.nav"
-      aria-label="Primary navigation"
-      aria-hidden="true"
-    >
+    <!-- Mobile-only bottom dock: language + tabs (tabs hide on scroll down) -->
+    <div id="mobile-bottom-dock" class="mobile-bottom-dock" aria-hidden="true">
+      <div
+        class="lang-switcher lang-switcher--mobile-dock"
+        role="group"
+        data-i18n-aria-label="locale.label"
+        aria-label="Language"
+      >
+        <button
+          type="button"
+          id="mobile-dock-lang-en"
+          class="lang-btn"
+          data-lang-toggle="en"
+          aria-label="English"
+          onclick="typeof setLang==='function'&&setLang('en')"
+        >
+          EN
+        </button>
+        <span class="lang-switcher__sep" aria-hidden="true">|</span>
+        <button
+          type="button"
+          id="mobile-dock-lang-hu"
+          class="lang-btn"
+          data-lang-toggle="hu"
+          aria-label="Magyar"
+          onclick="typeof setLang==='function'&&setLang('hu')"
+        >
+          HU
+        </button>
+      </div>
+      <nav
+        class="mobile-tab-bar"
+        id="mobile-tab-bar"
+        data-i18n-aria-label="mobile.nav"
+        aria-label="Primary navigation"
+        aria-hidden="true"
+      >
       <a href="/" class="mobile-tab-bar__item" data-mobile-tab="home">
         <span class="mobile-tab-bar__icon" aria-hidden="true">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -464,7 +542,8 @@
         </span>
         <span class="mobile-tab-bar__label" data-i18n="mobile.tab.profile">Profile</span>
       </a>
-    </nav>
+      </nav>
+    </div>
 
     <div
       id="filter-sheet"

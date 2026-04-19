@@ -37,8 +37,36 @@ export function setLocale(locale) {
         el.value = loc;
       }
     });
+    syncLangToggleButtons();
     window.dispatchEvent(new CustomEvent("nuvelo:locale", { detail: { locale: loc } }));
   }
+}
+
+/** Highlight EN/HU toggle buttons to match stored locale (see [data-lang-toggle]). */
+export function syncLangToggleButtons() {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const loc = getLocale();
+  document.querySelectorAll("[data-lang-toggle]").forEach((btn) => {
+    const v = btn.getAttribute("data-lang-toggle");
+    const active = v === loc;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
+function bindLangToggleButtons() {
+  document.querySelectorAll("[data-lang-toggle]").forEach((btn) => {
+    if (btn.dataset.langToggleBound === "1") {
+      return;
+    }
+    btn.dataset.langToggleBound = "1";
+    btn.addEventListener("click", () => {
+      const v = btn.getAttribute("data-lang-toggle");
+      setLocale(v === "hu" ? "hu" : "en");
+    });
+  });
 }
 
 /**
@@ -121,6 +149,8 @@ export function initI18n() {
   const loc = getLocale();
   document.documentElement.lang = loc;
   applyDomTranslations(document);
+  bindLangToggleButtons();
+  syncLangToggleButtons();
   document.querySelectorAll("[data-locale-select]").forEach((sel) => {
     if (!(sel instanceof HTMLSelectElement)) {
       return;
@@ -135,4 +165,8 @@ export function initI18n() {
       setLocale(v);
     });
   });
+  if (typeof window !== "undefined") {
+    window.getLang = () => getLocale();
+    window.setLang = (/** @type {string} */ lang) => setLocale(lang === "hu" ? "hu" : "en");
+  }
 }
