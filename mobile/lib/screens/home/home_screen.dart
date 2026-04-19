@@ -10,6 +10,7 @@ import '../../widgets/category_chip.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/listing_card.dart';
 import '../../widgets/nuvelo_app_bar.dart';
+import '../../widgets/nuvelo_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,13 +62,14 @@ class _HomeScreenState extends State<HomeScreen> {
     final L = AppLocalizations.of(context)!;
     final lang = _lang(context);
 
-    return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+    return NuveloScreen(
+      safeTop: false,
+      safeBottom: false,
       appBar: NuveloAppBar(
         showLogo: true,
         onSearch: () => context.push('/search'),
       ),
-      body: RefreshIndicator(
+      child: RefreshIndicator(
         onRefresh: _load,
         child: CustomScrollView(
           slivers: [

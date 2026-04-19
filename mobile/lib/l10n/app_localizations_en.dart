@@ -199,6 +199,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sendMessage => 'Send message';
 
   @override
+  String get thisIsYourListing =>
+      'This is your own listing — manage it under My ads.';
+
+  @override
   String get shareListing => 'Share';
 
   @override

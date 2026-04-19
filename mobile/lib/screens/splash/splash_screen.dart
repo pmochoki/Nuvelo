@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../../widgets/nuvelo_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -54,9 +55,9 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     final L = AppLocalizations.of(context)!;
-    return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
-      body: Center(
+    return NuveloScreen(
+      dismissKeyboard: false,
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

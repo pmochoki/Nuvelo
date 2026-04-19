@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nuvelo_marketplace/l10n/app_localizations.dart';
 
-import '../../core/theme.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/nuvelo_screen.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
   const VerifyOtpScreen({
@@ -83,10 +83,10 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     final dest =
         widget.phone ?? widget.email ?? '';
 
-    return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+    return NuveloScreen(
+      safeTop: false,
       appBar: AppBar(title: Text(L.verifyTitle)),
-      body: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

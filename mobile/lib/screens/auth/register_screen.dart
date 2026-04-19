@@ -3,8 +3,8 @@ import 'package:go_router/go_router.dart';
 import 'package:nuvelo_marketplace/l10n/app_localizations.dart';
 
 import '../../core/constants.dart';
-import '../../core/theme.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/nuvelo_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -49,10 +49,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     final L = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+    return NuveloScreen(
+      safeTop: false,
       appBar: AppBar(title: Text(L.registerTitle)),
-      body: ListView(
+      child: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           Text(L.welcomeRegister,

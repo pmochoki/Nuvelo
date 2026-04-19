@@ -199,6 +199,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get sendMessage => 'Üzenet küldése';
 
   @override
+  String get thisIsYourListing =>
+      'Ez a saját hirdetésed — a Saját hirdetések alatt kezelheted.';
+
+  @override
   String get shareListing => 'Megosztás';
 
   @override

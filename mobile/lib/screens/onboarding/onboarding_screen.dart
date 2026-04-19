@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants.dart';
 import '../../core/theme.dart';
+import '../../widgets/nuvelo_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -53,8 +54,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     ];
 
-    return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+    return NuveloScreen(
+      safeTop: false,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         actions: [
@@ -64,11 +65,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
+      child: Column(
+        children: [
+          Expanded(
+            child: PageView.builder(
                 controller: _page,
                 itemCount: slides.length,
                 onPageChanged: (i) => setState(() => _index = i),
@@ -149,7 +149,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ),
           ],
         ),
-      ),
     );
   }
 }

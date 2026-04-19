@@ -1,4 +1,4 @@
-package com.example.nuvelo_marketplace
+package one.nuvelo.app
 
 import io.flutter.embedding.android.FlutterActivity
 

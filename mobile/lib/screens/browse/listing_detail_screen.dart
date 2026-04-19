@@ -10,6 +10,7 @@ import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../../models/listing.dart';
 import '../../services/listings_service.dart';
+import '../../services/messages_service.dart';
 import '../../widgets/avatar_widget.dart';
 import '../../widgets/price_tag.dart';
 import '../../widgets/status_badge.dart';
@@ -55,25 +56,81 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
     }
   }
 
+  Future<void> _openChat(Listing l, AppLocalizations L) async {
+    final uid = supabase.auth.currentUser?.id;
+    if (uid == null) {
+      context.push('/signin?from=/listing/${widget.listingId}');
+      return;
+    }
+    final sellerId = l.userId;
+    if (sellerId == null || sellerId.isEmpty) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(L.couldNotLoad)),
+      );
+      return;
+    }
+    if (sellerId == uid) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(L.thisIsYourListing)),
+      );
+      return;
+    }
+    try {
+      final thread = await MessagesService().getOrCreateThread(
+        listingId: l.id,
+        sellerId: sellerId,
+      );
+      if (!mounted) return;
+      context.push('/messages/${thread.id}/chat');
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(L.couldNotLoad)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final L = AppLocalizations.of(context)!;
     final lang = Localizations.localeOf(context).languageCode;
 
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: NuveloColors.darkNavy,
+        body: SafeArea(
+          child: Center(
+            child: CircularProgressIndicator(
+              color: NuveloColors.primaryOrange,
+            ),
+          ),
+        ),
       );
     }
     if (_listing == null) {
       return Scaffold(
-        appBar: AppBar(leading: const BackButton()),
-        body: Center(child: Text(L.couldNotLoad)),
+        backgroundColor: NuveloColors.darkNavy,
+        appBar: AppBar(
+          leading: const BackButton(),
+          title: Text(L.couldNotLoad),
+        ),
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text(
+                L.couldNotLoad,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
       );
     }
 
     final l = _listing!;
-    final uid = supabase.auth.currentUser?.id;
 
     return Scaffold(
       backgroundColor: NuveloColors.darkNavy,
@@ -87,14 +144,7 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                 children: [
                   Expanded(
                     child: FilledButton(
-                      onPressed: uid == null
-                          ? () => context.push('/signin')
-                          : () {
-                              /* Chat flow: optional thread create */
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text(L.sendMessage)),
-                              );
-                            },
+                      onPressed: () => _openChat(l, L),
                       child: Text(L.sendMessage),
                     ),
                   ),
@@ -131,92 +181,96 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
           ),
         ),
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            expandedHeight: 280,
-            leading: const BackButton(),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.favorite_border),
-                onPressed: () => _svc.toggleSaved(l.id),
-              ),
-              IconButton(
-                icon: const Icon(Icons.share_outlined),
-                onPressed: _share,
-              ),
-            ],
-            flexibleSpace: FlexibleSpaceBar(
-              background: l.photos.isEmpty
-                  ? Container(color: NuveloColors.deepCard)
-                  : PageView.builder(
-                      controller: _page,
-                      itemCount: l.photos.length,
-                      itemBuilder: (context, i) => CachedNetworkImage(
-                        imageUrl: l.photos[i],
-                        fit: BoxFit.cover,
-                        width: double.infinity,
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              expandedHeight: 280,
+              leading: const BackButton(),
+              actions: [
+                IconButton(
+                  icon: const Icon(Icons.favorite_border),
+                  onPressed: () => _svc.toggleSaved(l.id),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.share_outlined),
+                  onPressed: _share,
+                ),
+              ],
+              flexibleSpace: FlexibleSpaceBar(
+                background: l.photos.isEmpty
+                    ? Container(color: NuveloColors.deepCard)
+                    : PageView.builder(
+                        controller: _page,
+                        itemCount: l.photos.length,
+                        itemBuilder: (context, i) => CachedNetworkImage(
+                          imageUrl: l.photos[i],
+                          fit: BoxFit.cover,
+                          width: double.infinity,
+                        ),
                       ),
-                    ),
+              ),
             ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.all(20),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                Text(
-                  l.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+            SliverPadding(
+              padding: const EdgeInsets.all(20),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  Text(
+                    l.title,
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  PriceTag(
+                    price: l.price,
+                    lang: lang,
+                    priceOnRequestLabel: L.priceOnRequest,
+                  ),
+                  const SizedBox(height: 8),
+                  StatusBadge(status: l.status),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${timeAgoFormatted(l.createdAt, lang)} · ${l.viewCount} views',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: NuveloColors.textMuted,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.place_outlined,
+                          size: 18, color: NuveloColors.textMuted),
+                      const SizedBox(width: 6),
+                      Text(l.city),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    l.description,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                  const SizedBox(height: 24),
+                  Card(
+                    child: ListTile(
+                      leading: AvatarWidget(
+                        name: l.sellerName,
+                        url: null,
                       ),
-                ),
-                const SizedBox(height: 8),
-                PriceTag(
-                  price: l.price,
-                  lang: lang,
-                  priceOnRequestLabel: L.priceOnRequest,
-                ),
-                const SizedBox(height: 8),
-                StatusBadge(status: l.status),
-                const SizedBox(height: 8),
-                Text(
-                  '${timeAgoFormatted(l.createdAt, lang)} · ${l.viewCount} views',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: NuveloColors.textMuted,
+                      title: Text(l.sellerName),
+                      subtitle: Text(
+                        l.sellerVerified ? 'Verified' : 'Member',
                       ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    const Icon(Icons.place_outlined,
-                        size: 18, color: NuveloColors.textMuted),
-                    const SizedBox(width: 6),
-                    Text(l.city),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                Text(
-                  l.description,
-                  style: Theme.of(context).textTheme.bodyLarge,
-                ),
-                const SizedBox(height: 24),
-                Card(
-                  child: ListTile(
-                    leading: AvatarWidget(
-                      name: l.sellerName,
-                      url: null,
-                    ),
-                    title: Text(l.sellerName),
-                    subtitle: Text(
-                      l.sellerVerified ? 'Verified' : 'Member',
                     ),
                   ),
-                ),
-              ]),
+                ]),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

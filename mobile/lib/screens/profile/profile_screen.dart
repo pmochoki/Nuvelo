@@ -8,6 +8,7 @@ import '../../core/theme.dart';
 import '../../services/profile_service.dart';
 import '../../widgets/avatar_widget.dart';
 import '../../widgets/nuvelo_app_bar.dart';
+import '../../widgets/nuvelo_screen.dart';
 import 'feedback_screen.dart';
 import 'messages_screen.dart';
 import 'my_adverts_screen.dart';
@@ -43,10 +44,11 @@ class _ProfileScreenState extends State<ProfileScreen>
     final L = AppLocalizations.of(context)!;
     final uid = supabase.auth.currentUser?.id;
 
-    return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+    return NuveloScreen(
+      safeTop: false,
+      safeBottom: false,
       appBar: NuveloAppBar(showBack: false, title: L.profileTitle),
-      body: uid == null
+      child: uid == null
           ? Center(
               child: FilledButton(
                 onPressed: () => context.push('/signin?from=/profile'),
@@ -138,3 +140,4 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 }
+

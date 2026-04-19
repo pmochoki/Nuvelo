@@ -342,3 +342,35 @@ Apply migration **`supabase/migrations/20260412130000_admin_moderation_finance_c
 **App Review notes (suggested)**
 
 > Nuvelo is a classifieds marketplace for Hungary’s expat and local community. To test: create an account with any email; browse listings; post a test listing; send a message. Listings are moderated before going live; reporting is available on listings.
+
+---
+
+## Android Flutter app — full-stack shell (2026-04-19)
+
+**Scope:** `mobile/` only; **`/web` untouched** (Vercel still builds `web/dist` only).
+
+**Delivered**
+
+- **Design system:** `lib/core/theme.dart` — brand palette (orange/navy/purple), DM Sans via `google_fonts`, radii; `nuveloThemeDark()` default at first launch (`AppSettingsController` uses `ThemeMode.dark` until user changes Settings).
+- **Routing:** `go_router` (`lib/core/router.dart`) — splash → onboarding/home, auth routes, shell with **Home | Browse | Sell (+) | Messages | Profile**, full-screen flows for listing detail, post ad, chat, settings, search.
+- **Data:** **`ListingsService`** reads/writes listings via **`https://nuvelo.one/api/listings`** (same approved listings as nuvelo.one when the API uses Supabase). Saved ads use **`SharedPreferences`** (`saved_listing_ids`) until a `saved_listings` table is wired.
+- **Supabase:** `supabase_flutter` init (`lib/core/supabase_client.dart`); **`AuthService`** (magic link email, SMS OTP, Google/Facebook OAuth redirect **`one.nuvelo.app://login-callback`**), **`ProfileService`**, **`MessagesService`** (+ Realtime inserts on `messages`), **`NotificationsService`**, **`StorageService`** (upload placeholders without extra options).
+- **Localization:** `lib/l10n/app_en.arb` / `app_hu.arb`, `nuvelo_lang` + device locale on first run (`AppSettingsController`).
+- **Android:** Package **`one.nuvelo.app`**, **minSdk 21**, **targetSdk 34**, manifest permissions + intent-filter for OAuth callback; **`MainActivity`** moved to **`one.nuvelo.app`** package.
+
+**Release APK**
+
+```bash
+cd mobile && flutter build apk --release \
+  --dart-define=SUPABASE_URL=https://ahiujuljjbozmfwoqtli.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY="<anon key from Vercel VITE_SUPABASE_ANON_KEY / Supabase Dashboard>"
+```
+
+Artifact path: **`mobile/build/app/outputs/flutter-apk/app-release.apk`**.
+
+**Still to deepen (when you iterate)**
+
+- Category-specific **post-ad** extras (rentals/events/vehicles…) — form is extendable via `category_fields`.
+- **Post Step 2** — full image picker + **`listings-images`** uploads per listing id.
+- **Launcher / adaptive icons** — add raster assets + `flutter_launcher_icons` if you want branded mipmap icons beyond default Flutter launcher.
+- Add **`https://`** Supabase redirect / **`one.nuvelo.app://login-callback`** in Supabase Dashboard → Authentication → URL configuration if OAuth fails.

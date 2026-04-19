@@ -6,6 +6,7 @@ import 'package:nuvelo_marketplace/l10n/app_localizations.dart';
 
 import '../../core/theme.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/nuvelo_screen.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key, this.returnTo});
@@ -89,11 +90,10 @@ class _SignInScreenState extends State<SignInScreen> {
   Widget build(BuildContext context) {
     final L = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+    return NuveloScreen(
+      safeTop: false,
       appBar: AppBar(title: Text(L.signInTitle)),
-      body: SafeArea(
-        child: SingleChildScrollView(
+      child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -183,7 +183,6 @@ class _SignInScreenState extends State<SignInScreen> {
             ],
           ),
         ),
-      ),
     );
   }
 }

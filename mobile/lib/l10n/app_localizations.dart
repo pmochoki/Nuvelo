@@ -470,6 +470,12 @@ abstract class AppLocalizations {
   /// **'Send message'**
   String get sendMessage;
 
+  /// No description provided for @thisIsYourListing.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your own listing — manage it under My ads.'**
+  String get thisIsYourListing;
+
   /// No description provided for @shareListing.
   ///
   /// In en, this message translates to:

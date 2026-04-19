@@ -62,6 +62,7 @@
   "couldNotLoad": "Couldn't load listings. Pull to refresh.",
   "safetyMeetPublic": "Meet in public. Never pay in advance.",
   "sendMessage": "Send message",
+  "thisIsYourListing": "This is your own listing — manage it under My ads.",
   "shareListing": "Share",
   "verifySmsPrompt": "Enter the code we sent",
   "resendCode": "Resend code",

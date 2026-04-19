@@ -12,6 +12,7 @@ import '../../widgets/listing_card.dart';
 import '../../widgets/listing_card_horizontal.dart';
 import '../../widgets/loading_skeleton.dart';
 import '../../widgets/nuvelo_app_bar.dart';
+import '../../widgets/nuvelo_screen.dart';
 
 class BrowseScreen extends StatefulWidget {
   const BrowseScreen({super.key, this.initialCategoryId});
@@ -105,14 +106,15 @@ class _BrowseScreenState extends State<BrowseScreen> {
     final L = AppLocalizations.of(context)!;
     final lang = _lang(context);
 
-    return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+    return NuveloScreen(
+      safeTop: false,
+      safeBottom: false,
       appBar: NuveloAppBar(
         title: L.browseTitle,
         showBack: false,
         onSearch: () => context.push('/search'),
       ),
-      body: Column(
+      child: Column(
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
