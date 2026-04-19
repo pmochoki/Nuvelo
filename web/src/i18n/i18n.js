@@ -1,12 +1,16 @@
+import { refreshPriceElements } from "../utils/format.js";
+import { LOCALE_STORAGE_KEY } from "./constants.js";
 import { translations } from "./translations.js";
 
-export const LOCALE_STORAGE_KEY = "nuvelo_locale";
+export { LOCALE_STORAGE_KEY };
 
 const SUPPORTED = new Set(["en", "hu"]);
 
-/**
- * @returns {"en" | "hu"}
- */
+/** @returns {"en" | "hu"} — alias for tooling / templates (`getLocale`). */
+export function getLang() {
+  return getLocale();
+}
+
 export function getLocale() {
   try {
     const s = localStorage.getItem(LOCALE_STORAGE_KEY);
@@ -32,6 +36,7 @@ export function setLocale(locale) {
   if (typeof document !== "undefined") {
     document.documentElement.lang = loc;
     applyDomTranslations(document);
+    refreshPriceElements(document);
     document.querySelectorAll("[data-locale-select]").forEach((el) => {
       if (el instanceof HTMLSelectElement) {
         el.value = loc;
@@ -149,6 +154,7 @@ export function initI18n() {
   const loc = getLocale();
   document.documentElement.lang = loc;
   applyDomTranslations(document);
+  refreshPriceElements(document);
   bindLangToggleButtons();
   syncLangToggleButtons();
   document.querySelectorAll("[data-locale-select]").forEach((sel) => {
@@ -166,7 +172,7 @@ export function initI18n() {
     });
   });
   if (typeof window !== "undefined") {
-    window.getLang = () => getLocale();
+    window.getLang = () => getLang();
     window.setLang = (/** @type {string} */ lang) => setLocale(lang === "hu" ? "hu" : "en");
   }
 }

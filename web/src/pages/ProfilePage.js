@@ -1,6 +1,7 @@
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
-import { formatHufPrice, formatInteger, tfn } from "../i18n/format.js";
-import { t, tf } from "../i18n/i18n.js";
+import { tfn } from "../i18n/format.js";
+import { t } from "../i18n/i18n.js";
+import { formatNumber, formatPrice } from "../utils/format.js";
 
 const esc = (s) => {
   const d = document.createElement("div");
@@ -80,7 +81,7 @@ export function buildMessageThreadRowHtml(t) {
   const unread = t.unread || 0;
   const badge =
     unread > 0
-      ? `<span class="msg-row__unread-badge" aria-label="${esc(formatInteger(unread))} ${esc(t("msg.unread_badge"))}">${esc(unread > 9 ? "9+" : formatInteger(unread))}</span>`
+      ? `<span class="msg-row__unread-badge" aria-label="${esc(formatNumber(unread))} ${esc(t("msg.unread_badge"))}">${esc(unread > 9 ? "9+" : formatNumber(unread))}</span>`
       : "";
   return `
     <button type="button" class="msg-row${unread ? " msg-row--unread" : ""}" data-thread-id="${esc(t.id)}" data-thread-spam="${t.spam ? "1" : ""}">
@@ -102,19 +103,19 @@ export function buildMessageThreadRowHtml(t) {
     </button>`;
 }
 
-function priceLineForListing(listing) {
+function priceMarkupForListing(listing) {
   if (listing.categoryId === DONATIONS_CATEGORY_ID) {
-    return t("listing.free");
+    return esc(t("listing.free"));
   }
   const p = listing.price;
   if (p == null) {
-    return t("listing.contact_price");
+    return esc(t("listing.contact_price"));
   }
   const n = Number(p);
   if (!Number.isFinite(n) || n < 0) {
-    return t("listing.contact_price");
+    return esc(t("listing.contact_price"));
   }
-  return formatHufPrice(n);
+  return `<span data-price="${String(Math.round(n))}">${esc(formatPrice(n))}</span>`;
 }
 
 function renderAdvertRows(listings) {
@@ -132,7 +133,7 @@ function renderAdvertRows(listings) {
       <div class="advert-row__body">
         <h3 class="advert-row__title">${esc(ad.title)}</h3>
         <p class="advert-row__meta">${esc(ad.location || "")}</p>
-        <p class="advert-row__price">${esc(priceLineForListing(ad))}</p>
+        <p class="advert-row__price">${priceMarkupForListing(ad)}</p>
       </div>
     </a>`
     )
@@ -439,11 +440,16 @@ export function buildChatPanelHtml(thread, messages, currentUserId) {
 
 function renderPerformanceSection() {
   const metrics = [
-    { icon: "🖤", label: t("perf.metric.traffic"), value: formatInteger(0) },
-    { icon: "🟣", label: t("perf.metric.visitors"), value: formatInteger(0) },
-    { icon: "🟢", label: t("perf.metric.contact"), value: formatInteger(0) },
-    { icon: "🟠", label: t("perf.metric.chats"), value: formatInteger(0) },
-    { icon: "🔵", label: t("perf.metric.spent"), value: formatHufPrice(0) }
+    { icon: "🖤", label: t("perf.metric.traffic"), value: formatNumber(0) },
+    { icon: "🟣", label: t("perf.metric.visitors"), value: formatNumber(0) },
+    { icon: "🟢", label: t("perf.metric.contact"), value: formatNumber(0) },
+    { icon: "🟠", label: t("perf.metric.chats"), value: formatNumber(0) },
+    {
+      icon: "🔵",
+      label: t("perf.metric.spent"),
+      value: `<span data-price="0">${esc(formatPrice(0))}</span>`,
+      html: true
+    }
   ];
   const metricCards = metrics
     .map(
@@ -452,7 +458,7 @@ function renderPerformanceSection() {
       <span class="perf-metric-card__icon" aria-hidden="true">${m.icon}</span>
       <div class="perf-metric-card__body">
         <span class="perf-metric-card__label">${esc(m.label)}</span>
-        <span class="perf-metric-card__value">${esc(m.value)}</span>
+        <span class="perf-metric-card__value">${m.html ? m.value : esc(m.value)}</span>
       </div>
     </div>`
     )

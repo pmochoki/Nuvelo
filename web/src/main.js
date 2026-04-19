@@ -40,7 +40,8 @@ import { fetchNotificationsForCurrentUser } from "./lib/notificationsApi.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
-import { formatHufPrice, formatInteger, formatMoneyAmount, tfn } from "./i18n/format.js";
+import { tfn } from "./i18n/format.js";
+import { formatMoneyAmount, formatNumber, formatPrice } from "./utils/format.js";
 
 const FALLBACK_HUNGARIAN_LOCATIONS = () => [
   { value: "all", label: t("search.allhungary") },
@@ -2778,9 +2779,9 @@ const filterByTimePref = (listings, t) => {
 const formatListingCountLabel = (n) => {
   const x = Number(n) || 0;
   if (x <= 0) {
-    return `${formatInteger(0)} ${t("browse.listings_inline")}`;
+    return `${formatNumber(0)} ${t("browse.listings_inline")}`;
   }
-  return `${formatInteger(x)} ${t("browse.listings_inline")}`;
+  return `${formatNumber(x)} ${t("browse.listings_inline")}`;
 };
 
 const apiCategoryIdForSlug = (slug) => CATEGORY_SLUGS[slug] || slug;
@@ -3231,25 +3232,6 @@ const syncHeaderChrome = (route) => {
   syncMobileTabBarRoute();
 };
 
-/** Card/detail price line — never show negative HUF. */
-const formatDisplayPrice = (listing) => {
-  if (listing.categoryId === DONATIONS_CATEGORY_ID) {
-    return null;
-  }
-  const p = listing.price;
-  if (p == null) {
-    return t("listing.contact_price");
-  }
-  const n = Number(p);
-  if (!Number.isFinite(n) || n < 0) {
-    return t("listing.contact_price");
-  }
-  if (n === 0) {
-    return t("listing.free_short");
-  }
-  return formatMoneyAmount(n, listing.currency || "HUF");
-};
-
 const buildListingCardEl = (listing, opts = {}) => {
   const {
     viewMode = "grid",
@@ -3260,7 +3242,6 @@ const buildListingCardEl = (listing, opts = {}) => {
   const cf = listing.categoryFields || {};
   const isDonation = listing.categoryId === DONATIONS_CATEGORY_ID;
   const claimed = isDonation && Boolean(cf.claimed);
-  const priceLine = formatDisplayPrice(listing) ?? t("listing.contact_price");
   const tl = [];
   if (listing.featured || listing.isFeatured) {
     tl.push(`<span class="lc__pill lc__pill--feat">${esc(t("listing.pill_featured"))}</span>`);
@@ -3293,9 +3274,26 @@ const buildListingCardEl = (listing, opts = {}) => {
       ? `<span class="lc__coll" title="${esc(collMeta.label)}">${collMeta.icon} ${esc(collMeta.short)}</span>`
       : "";
 
-  const priceHtml = isDonation
-    ? `<p class="lc__price lc__price--donation"><span class="lc__free">${esc(t("listing.free"))}</span></p>`
-    : `<p class="lc__price">${esc(priceLine)}</p>`;
+  let priceInner = "";
+  if (isDonation) {
+    priceInner = `<span class="lc__free">${esc(t("listing.free"))}</span>`;
+  } else {
+    const p = listing.price;
+    if (p == null) {
+      priceInner = esc(t("listing.contact_price"));
+    } else {
+      const n = Number(p);
+      if (!Number.isFinite(n) || n < 0) {
+        priceInner = esc(t("listing.contact_price"));
+      } else if (n === 0) {
+        priceInner = esc(t("listing.free_short"));
+      } else {
+        const cur = listing.currency || "HUF";
+        priceInner = `<span data-price="${String(Math.round(n))}" data-currency="${esc(cur)}">${esc(formatMoneyAmount(p, cur))}</span>`;
+      }
+    }
+  }
+  const priceHtml = `<p class="lc__price${isDonation ? " lc__price--donation" : ""}">${priceInner}</p>`;
 
   const claimOverlay = claimed
     ? `<div class="lc__claimed-overlay" aria-hidden="true"><span>${esc(t("listing.claimed"))}</span></div>`
@@ -4015,7 +4013,7 @@ const renderDetail = async (id) => {
           <li><span data-i18n="detail.field.condition">Condition</span><span>${esc(donationConditionLabel(cf.donationCondition))}</span></li>
           <li><span data-i18n="detail.field.collection">Collection</span><span>${esc(collLine)}</span></li>
           <li><span data-i18n="detail.field.area">Area / city</span><span>${esc(listing.location || "")}</span></li>
-          <li><span data-i18n="detail.field.quantity">Quantity</span><span>${esc(formatInteger(cf.quantity ?? 1))}</span></li>
+          <li><span data-i18n="detail.field.quantity">Quantity</span><span>${esc(formatNumber(cf.quantity ?? 1))}</span></li>
         </ul>
       </section>`
     : "";
@@ -4025,22 +4023,23 @@ const renderDetail = async (id) => {
   );
   const mainSrc = imgs[0] || "";
   const views = Number(listing.viewCount) || Number(listing.views) || 0;
+  const curDetail = listing.currency || "HUF";
   const priceStr = (() => {
     if (isDonation) {
       return "";
     }
     const p = listing.price;
     if (p == null) {
-      return t("listing.contact_price");
+      return esc(t("listing.contact_price"));
     }
     const n = Number(p);
     if (!Number.isFinite(n) || n < 0) {
-      return t("listing.contact_price");
+      return esc(t("listing.contact_price"));
     }
     if (n === 0) {
-      return t("listing.free_short");
+      return esc(t("listing.free_short"));
     }
-    return esc(formatMoneyAmount(n, listing.currency || "HUF"));
+    return `<span data-price="${String(Math.round(n))}" data-currency="${esc(curDetail)}">${esc(formatMoneyAmount(n, curDetail))}</span>`;
   })();
   const posted = formatPostedTime(listing.createdAt);
   const bcTitle = excerptOneLine(listing.title, 40);
@@ -4153,7 +4152,7 @@ const renderDetail = async (id) => {
           <div class="detail-gallery__main ${claimed && isDonation ? "detail-gallery__main--claimed" : ""}">
             ${galleryClaim}
             ${mainSrc ? `<img id="detail-main-img" src="${esc(mainSrc)}" alt="" />` : `<div class="detail-hero__img" style="min-height:200px;background:var(--purple-surface)"></div>`}
-            ${imgs.length ? `<span class="detail-gallery__count" id="detail-img-count">${formatInteger(1)} / ${formatInteger(imgs.length)}</span>` : ""}
+            ${imgs.length ? `<span class="detail-gallery__count" id="detail-img-count">${formatNumber(1)} / ${formatNumber(imgs.length)}</span>` : ""}
           </div>
           ${
             imgs.length > 1
@@ -4202,7 +4201,7 @@ const renderDetail = async (id) => {
       document.querySelectorAll("#detail-thumbs button").forEach((b) => b.classList.toggle("is-active", b === btn));
       const cnt = document.getElementById("detail-img-count");
       if (cnt) {
-        cnt.textContent = `${formatInteger(i + 1)} / ${formatInteger(imgs.length)}`;
+        cnt.textContent = `${formatNumber(i + 1)} / ${formatNumber(imgs.length)}`;
       }
     });
   });
@@ -4402,11 +4401,11 @@ const renderEventsList = async () => {
             ${rows.map((e) => `<article class="lc lc--grid event-card" role="link" tabindex="0" data-event-id="${esc(e.id)}">
               <div class="lc__media"><img src="${esc(e.image)}" alt="" loading="lazy" /></div>
               <div class="lc__body">
-                <p class="lc__price">${e.isFree ? esc(t("listing.free")) : esc(formatHufPrice(e.price || 0))}</p>
+                <p class="lc__price">${e.isFree ? esc(t("listing.free")) : `<span data-price="${String(Math.round(Number(e.price) || 0))}">${esc(formatPrice(e.price || 0))}</span>`}</p>
                 <h3 class="lc__title">${esc(e.title)}</h3>
                 <p class="lc__excerpt">📅 ${esc(eventDateFmt(e.dateTime))}</p>
                 <p class="lc__excerpt">📍 ${esc(e.city)} · ${esc(e.venue || "TBA")}</p>
-                <div class="lc__foot"><span>${esc(e.subCategory)}</span><span>👥 ${e.attendees.length} going</span></div>
+                <div class="lc__foot"><span>${esc(e.subCategory)}</span><span>👥 ${formatNumber(e.attendees.length)} going</span></div>
               </div>
             </article>`).join("")}
           </div>
@@ -4494,14 +4493,14 @@ const renderEventDetail = async (eventId) => {
         <p>📅 <strong>${esc(eventDateFmt(row.dateTime))}</strong> · ${esc(row.duration || "Duration TBA")}</p>
         <p>📍 <strong>${esc(row.city)}</strong> · ${esc(row.venue)} · ${esc(row.address || "")}</p>
         <p>Organiser: <strong>${esc(row.organizerName)}</strong></p>
-        <p><span class="pill">${esc(row.subCategory)}</span> <span class="pill">${row.isFree ? esc(t("listing.free")) : esc(tf("events.paid_chip", { price: formatHufPrice(row.price || 0) }))}</span></p>
+        <p><span class="pill">${esc(row.subCategory)}</span> <span class="pill">${row.isFree ? esc(t("listing.free")) : `${esc(t("events.paid_word"))} · <span data-price="${String(Math.round(Number(row.price) || 0))}">${esc(formatPrice(row.price || 0))}</span>`}</span></p>
         <p class="muted">Contact preference: ${esc(row.contactPreference || "message via app")}</p>
         <div class="site-footer__social">${(row.tags || []).map((t) => `<span class="filter-chip">${esc(t)}</span>`).join("")}</div>
       </div>
       <aside class="detail-jiji-aside">
         <div class="detail-aside-card">
-          <p class="price-big">👥 ${baseAttendees.length} going</p>
-          <p class="muted small">Maybe: ${eventRsvp.maybe.length}</p>
+          <p class="price-big">👥 ${formatNumber(baseAttendees.length)} going</p>
+          <p class="muted small">Maybe: ${formatNumber(eventRsvp.maybe.length)}</p>
           <button class="btn btn--primary" style="width:100%;margin-bottom:0.5rem" id="event-going-btn">I'm Going</button>
           <button class="btn btn--outline" style="width:100%;margin-bottom:0.5rem" id="event-maybe-btn">Maybe</button>
           <button class="btn btn--ghost" style="width:100%;margin-bottom:0.5rem" id="event-share-btn">Share</button>
@@ -4681,7 +4680,7 @@ const renderStaticPage = async (slug) => {
       <p>Nuvelo may moderate listings before or after publication. Moderation actions can include requesting edits, limiting visibility, rejecting listings, or suspending accounts. Moderation decisions are based on safety, legal compliance, quality standards, and platform integrity. We are not obligated to publish every listing and we may prioritize user trust and legal obligations over listing visibility.</p>
       <p>Fees and paid features, if offered, are disclosed in-app. Unless explicitly stated otherwise, standard listing and browsing functionality may be offered without charge during MVP periods. Any future paid products, such as promoted placement or premium tools, will be governed by separate pricing notices. Non-refundable rules may apply after a paid feature is delivered.</p>
       <p>Nuvelo does not guarantee that users are truthful, that listings remain available, or that transactions will succeed. Platform availability may be interrupted due to maintenance, outages, third-party failures, or force majeure events. To the maximum extent permitted by law, Nuvelo disclaims implied warranties, including merchantability and fitness for a particular purpose. Use of the platform is at your own risk.</p>
-      <p>Limitation of liability: Nuvelo is not liable for indirect, incidental, or consequential damages, lost profits, loss of data, missed opportunities, or personal disputes arising from user interactions. Our total liability for direct damages related to your use of the service is limited to the amount paid by you to Nuvelo for paid features in the 12 months preceding the claim, or ${formatHufPrice(20000)} if no payment was made.</p>
+      <p>Limitation of liability: Nuvelo is not liable for indirect, incidental, or consequential damages, lost profits, loss of data, missed opportunities, or personal disputes arising from user interactions. Our total liability for direct damages related to your use of the service is limited to the amount paid by you to Nuvelo for paid features in the 12 months preceding the claim, or ${formatPrice(20000)} if no payment was made.</p>
       <p>You agree to indemnify and hold Nuvelo harmless against claims, losses, and costs arising from your listings, your user content, your legal violations, or disputes with other users. This includes reasonable legal costs where permitted by law. Nuvelo may participate in dispute resolution evidence requests but is not obligated to mediate private contractual disagreements.</p>
       <p>These terms may be updated to reflect legal changes, product updates, or safety requirements. Material changes will be published on this page with an updated effective date. Continued use after updates means acceptance of revised terms. If you disagree with a change, you must stop using the service and request account closure.</p>
       <p>These terms are governed by applicable Hungarian law, without prejudice to mandatory EU consumer protections. Disputes should first be raised through Nuvelo support so we can attempt resolution in good faith. If unresolved, disputes may be submitted to competent courts in Hungary. If any clause is invalid, the remaining terms remain in force.</p>
@@ -4945,6 +4944,30 @@ const buildCategoryFields = (categoryId, fd) => {
   return out;
 };
 
+/** Digits-only string from post price inputs (dataset `rawValue` preferred). */
+const getPostFormPriceDigits = (inputEl) => {
+  if (!inputEl) {
+    return "";
+  }
+  if (Object.prototype.hasOwnProperty.call(inputEl.dataset, "rawValue")) {
+    return String(inputEl.dataset.rawValue ?? "");
+  }
+  return String(inputEl.value ?? "").replace(/\D/g, "");
+};
+
+const bindPostPriceInputPreview = (input, preview) => {
+  if (!input || !preview) {
+    return;
+  }
+  const sync = () => {
+    const raw = String(input.value ?? "").replace(/\D/g, "");
+    input.dataset.rawValue = raw;
+    preview.textContent = raw ? `= ${formatPrice(raw)}` : "";
+  };
+  input.addEventListener("input", sync);
+  sync();
+};
+
 const renderPost = async () => {
   const appEl = mainShell();
   if (!appEl) {
@@ -5026,7 +5049,10 @@ const renderPost = async () => {
             <option value="paid">Paid</option>
           </select>
         </label>
-        <label>Event price (HUF, if paid) <input name="eventPrice" type="number" min="0" step="1" /></label>
+        <label id="post-event-price-label">Event price (HUF, if paid)
+          <input id="post-event-price-input" name="eventPrice" type="text" inputmode="numeric" autocomplete="off" />
+          <span id="post-event-price-preview" class="muted small" style="display:block;margin-top:0.25rem"></span>
+        </label>
         <label>Max attendees (optional) <input name="eventCap" type="number" min="1" step="1" placeholder="Unlimited if empty" /></label>
         <label>Contact preference
           <select name="eventContact">
@@ -5097,7 +5123,8 @@ const renderPost = async () => {
       <label id="post-price-label">
         Price (HUF, optional)
         <span class="filter-chip-row" style="margin:0.25rem 0 0"><span class="filter-chip">HUF</span></span>
-        <input name="price" type="number" min="0" step="1" placeholder="Leave empty if negotiable" />
+        <input id="post-price-input" name="price" type="text" inputmode="numeric" autocomplete="off" placeholder="Leave empty if negotiable" />
+        <span id="post-price-preview" class="muted small" style="display:block;margin-top:0.25rem"></span>
       </label>
       <label>
         Location
@@ -5158,6 +5185,12 @@ const renderPost = async () => {
   });
   document.getElementById("donation-collection-method")?.dispatchEvent(new Event("change"));
 
+  bindPostPriceInputPreview(document.getElementById("post-price-input"), document.getElementById("post-price-preview"));
+  bindPostPriceInputPreview(
+    document.getElementById("post-event-price-input"),
+    document.getElementById("post-event-price-preview")
+  );
+
   document.getElementById("post-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
@@ -5169,16 +5202,17 @@ const renderPost = async () => {
       .filter(Boolean);
     const isEvent = categoryId === EVENTS_CATEGORY;
     const isDonationPost = categoryId === DONATIONS_CATEGORY_ID;
+    const eventPriceDigits = getPostFormPriceDigits(document.getElementById("post-event-price-input"));
     if (isEvent && String(fd.get("eventPriceType") || "free") === "paid") {
-      const ep = Number(fd.get("eventPrice") ?? 0);
+      const ep = Number(eventPriceDigits || 0);
       if (!Number.isFinite(ep) || ep < 0) {
         throw new Error("Event price must be zero or a positive number.");
       }
     }
+    const listingPriceDigits = getPostFormPriceDigits(document.getElementById("post-price-input"));
     if (!isDonationPost && !isEvent) {
-      const rawP = fd.get("price");
-      if (rawP !== null && String(rawP).trim() !== "") {
-        const pn = Number(rawP);
+      if (listingPriceDigits !== "") {
+        const pn = Number(listingPriceDigits);
         if (!Number.isFinite(pn) || pn < 0) {
           throw new Error("Price must be empty, zero, or a positive number.");
         }
@@ -5199,11 +5233,10 @@ const renderPost = async () => {
       price: isDonationPost
         ? 0
         : (() => {
-            const raw = fd.get("price");
-            if (raw === null || String(raw).trim() === "") {
+            if (listingPriceDigits === "") {
               return null;
             }
-            const n = Number(raw);
+            const n = Number(listingPriceDigits);
             return Number.isFinite(n) && n >= 0 ? n : null;
           })(),
       currency: "HUF",
@@ -5234,7 +5267,7 @@ const renderPost = async () => {
           address: String(fd.get("eventVenue") || "").trim() || "TBA address",
           image: String(fd.get("eventCover") || "").trim() || payload.images[0] || "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=900&q=80",
           isFree: String(fd.get("eventPriceType") || "free") !== "paid",
-          price: String(fd.get("eventPriceType") || "free") === "paid" ? Number(fd.get("eventPrice") || 0) : 0,
+          price: String(fd.get("eventPriceType") || "free") === "paid" ? Number(eventPriceDigits || 0) : 0,
           maxAttendees: fd.get("eventCap") ? Number(fd.get("eventCap")) : null,
           contactPreference: String(fd.get("eventContact") || "message via app"),
           tags: String(fd.get("eventTags") || "").split(",").map((s) => s.trim()).filter(Boolean),
