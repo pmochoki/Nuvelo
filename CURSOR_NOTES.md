@@ -178,8 +178,8 @@
 
 **Completed**
 
-- **My adverts**: Sample listings + **Sample** pill + hint only when **`!isSupabaseConfigured`** and the user has no ads. With Supabase + zero ads → empty state **“You haven't posted any ads yet…”** (no sample badge).
-- **Notifications**: **“No notifications yet.”** — removed mock list and disclaimer.
+- **My adverts**: No mock ads in production; **0 ads** → empty state **“You haven't posted any ads yet…”** + **Post your first ad** → `/post`.
+- **Notifications**: Supabase-backed list; empty copy **“No notifications yet….”** — no mock rows or disclaimer.
 
 ---
 
@@ -210,7 +210,10 @@
 
 ### Deploy
 
-- After changes: run **`vercel deploy --prod --force`** from the repo (clears edge cache). *Record the deployment URL / id from the CLI output in your run.*
+- **`vercel deploy --prod --force`** (2026-04-15): **READY** — `dpl_By4XU1UtQTisb8fyFMdaezt41f3W`
+- **URL:** `https://nuvelo-b6b9nfysi-pmochoki-2021s-projects.vercel.app`
+- **Inspector:** `https://vercel.com/pmochoki-2021s-projects/nuvelo/By4XU1UtQTisb8fyFMdaezt41f3W`
+- **Production alias:** `https://nuvelo.one`
 
 ---
 
