@@ -2,7 +2,6 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import '../../core/constants.dart';
 import '../../core/theme.dart';
 
 /// Maps selected category to extra `categoryFields` for create listing API.
@@ -90,6 +89,12 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
   String? _lastCategoryId;
 
   @override
+  void initState() {
+    super.initState();
+    _scheduleEmit();
+  }
+
+  @override
   void dispose() {
     _rentalArea.dispose();
     _vehicleMake.dispose();
@@ -111,7 +116,8 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
   @override
   void didUpdateWidget(PostCategoryFieldsSection oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.categoryId != oldWidget.categoryId) {
+    if (widget.categoryId != oldWidget.categoryId ||
+        widget.availabilityDate != oldWidget.availabilityDate) {
       _scheduleEmit();
     }
   }
@@ -130,7 +136,6 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
           'bedrooms': _rentalBedrooms,
           'bathrooms': _rentalBathrooms,
           'areaSqm': double.tryParse(_rentalArea.text.trim().replaceAll(',', '.')),
-          'availableFrom': widget.availabilityDate.toIso8601String(),
           'furnished': _rentalFurnished,
           'billsIncluded': _rentalBills,
           'petsAllowed': _rentalPets,
@@ -506,11 +511,11 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _jobChip(context, 'full-time', 'Full-time'),
-              _jobChip(context, 'part-time', 'Part-time'),
-              _jobChip(context, 'freelance', 'Freelance'),
-              _jobChip(context, 'internship', 'Internship'),
-              _jobChip(context, 'remote', 'Remote'),
+              _jobChip('full-time', 'Full-time'),
+              _jobChip('part-time', 'Part-time'),
+              _jobChip('freelance', 'Freelance'),
+              _jobChip('internship', 'Internship'),
+              _jobChip('remote', 'Remote'),
             ],
           ),
           TextField(
@@ -554,7 +559,13 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
           ),
           ListTile(
             title: const Text('Event time'),
-            subtitle: Text(_eventTime.format(context)),
+            subtitle: Text(
+              MaterialLocalizations.of(context).formatTimeOfDay(
+                _eventTime,
+                alwaysUse24HourFormat:
+                    MediaQuery.alwaysUse24HourFormatOf(context),
+              ),
+            ),
             trailing: const Icon(Icons.schedule_outlined),
             onTap: () => _pickEventTime(context),
           ),
@@ -601,10 +612,10 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _donChip(context, 'new', 'New'),
-              _donChip(context, 'like_new', 'Like New'),
-              _donChip(context, 'good', 'Good'),
-              _donChip(context, 'worn', 'Worn'),
+              _donChip('new', 'New'),
+              _donChip('like_new', 'Like New'),
+              _donChip('good', 'Good'),
+              _donChip('worn', 'Worn'),
             ],
           ),
           DropdownButtonFormField<String>(
@@ -643,10 +654,10 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _condChip(context, 'brand_new', 'Brand New'),
-                _condChip(context, 'like_new', 'Like New'),
-                _condChip(context, 'good', 'Good'),
-                _condChip(context, 'used', 'Used'),
+                _condChip('brand_new', 'Brand New'),
+                _condChip('like_new', 'Like New'),
+                _condChip('good', 'Good'),
+                _condChip('used', 'Used'),
               ],
             ),
             TextField(
@@ -680,7 +691,7 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
     );
   }
 
-  Widget _jobChip(BuildContext context, String value, String label) {
+  Widget _jobChip(String value, String label) {
     final sel = _jobType == value;
     return FilterChip(
       label: Text(label),
@@ -692,7 +703,7 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
     );
   }
 
-  Widget _donChip(BuildContext context, String value, String label) {
+  Widget _donChip(String value, String label) {
     final sel = _donationCondition == value;
     return FilterChip(
       label: Text(label),
@@ -704,7 +715,7 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
     );
   }
 
-  Widget _condChip(BuildContext context, String value, String label) {
+  Widget _condChip(String value, String label) {
     final sel = _defaultPresentationCondition == value;
     return FilterChip(
       label: Text(label),
@@ -714,14 +725,5 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
         _emit();
       },
     );
-  }
-}
-
-extension on TimeOfDay {
-  String format(BuildContext context) {
-    return MaterialLocalizations.of(context).formatTimeOfDay(
-          this,
-          alwaysUse24HourFormat: MediaQuery.alwaysUse24HourFormatOf(context),
-        );
   }
 }

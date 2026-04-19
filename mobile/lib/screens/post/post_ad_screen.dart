@@ -10,6 +10,7 @@ import '../../services/listings_service.dart';
 import '../../widgets/category_chip.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/nuvelo_screen.dart';
+import 'post_category_fields.dart';
 import 'post_photos_screen.dart';
 
 class PostAdScreen extends StatefulWidget {
@@ -45,6 +46,8 @@ class _PostAdScreenState extends State<PostAdScreen> {
 
   List<String> _photoUrls = [];
   bool _photosUploading = false;
+
+  Map<String, dynamic> _categoryExtras = {};
 
   @override
   void dispose() {
@@ -150,11 +153,16 @@ class _PostAdScreenState extends State<PostAdScreen> {
         'condition': _condition,
         'location': _location,
         'images': _photoUrls,
-        'categoryFields': <String, dynamic>{
-          'availabilityDate': _availabilityDate.toIso8601String(),
-          'preferredContactMinutes':
-              _contactTime.inMinutes.remainder(1440).toString(),
-        },
+        'categoryFields': () {
+          final cf = <String, dynamic>{
+            'availabilityDate': _availabilityDate.toIso8601String(),
+            'preferredContactMinutes':
+                _contactTime.inMinutes.remainder(1440).toString(),
+          };
+          cf.addAll(_categoryExtras);
+          cf.removeWhere((_, v) => v == null);
+          return cf;
+        }(),
       };
       await _svc.createListing(payload, userId: uid);
       if (!mounted) return;
@@ -184,6 +192,7 @@ class _PostAdScreenState extends State<PostAdScreen> {
                   _description.clear();
                   _price.clear();
                   _photoUrls = [];
+                  _categoryExtras = {};
                   _listingPhotoFolderTs =
                       DateTime.now().millisecondsSinceEpoch.toString();
                   _photoSession++;
@@ -304,17 +313,27 @@ class _PostAdScreenState extends State<PostAdScreen> {
                       onChanged: (v) =>
                           setState(() => _condition = v ?? _condition),
                     ),
-                    const SizedBox(height: 8),
-                    ListTile(
-                      title: const Text('Availability date'),
-                      subtitle: Text(
-                        MaterialLocalizations.of(context).formatFullDate(
-                          _availabilityDate,
-                        ),
-                      ),
-                      trailing: const Icon(Icons.calendar_today_outlined),
-                      onTap: () => _pickListingDate(context),
+                    PostCategoryFieldsSection(
+                      categoryId: _category,
+                      availabilityDate: _availabilityDate,
+                      onAvailabilityDateChanged: (d) =>
+                          setState(() => _availabilityDate = d),
+                      onExtrasChanged: (m) =>
+                          setState(() => _categoryExtras = m),
                     ),
+                    if (_category != 'rentals') ...[
+                      const SizedBox(height: 8),
+                      ListTile(
+                        title: const Text('Availability date'),
+                        subtitle: Text(
+                          MaterialLocalizations.of(context).formatFullDate(
+                            _availabilityDate,
+                          ),
+                        ),
+                        trailing: const Icon(Icons.calendar_today_outlined),
+                        onTap: () => _pickListingDate(context),
+                      ),
+                    ],
                     ListTile(
                       title: const Text('Preferred contact time'),
                       subtitle: Text(_formatHm(_contactTime)),
