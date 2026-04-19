@@ -183,6 +183,37 @@
 
 ---
 
+## Production sample data removal — 2026-04-15
+
+**Goal:** No hardcoded fake listings, metrics, or promotional “sample” UI on **nuvelo.one**; keep empty and error states.
+
+### Removed or replaced
+
+| Area | Change |
+|------|--------|
+| **My adverts** (`web/src/pages/ProfilePage.js`) | Deleted **`MOCK_MY_ADVERTS`** (lamp, bike, services). Removed **Sample** pill, demo rows, and “example listings” banner. **0 ads** → *“You haven't posted any ads yet.”* + **Post your first ad** → `/post`. Listings only from **`fetchListings({ forUserId })`** via `renderProfile` in **`main.js`**. |
+| **Notifications** (`main.js` + CSS) | Still loads **`fetchNotificationsForCurrentUser`** (Supabase `notifications`). Empty state copy: *“No notifications yet. We'll let you know when something happens.”* with **🔔** (`.profile-empty-state__icon`). No mock rows or disclaimer. |
+| **Performance / stats** (`ProfilePage.js` + `initPerformancePageUi`) | Replaced fake **142 / 87 / 34 / 12** with **0**. Added note: *“Stats will populate once you have active listings.”* Chart is a **flat placeholder** (no sample traffic curve). Period toggles only change label text to *“no data yet”* ranges — not historical dates. |
+| **Browse / listings API** (`web/src/lib/listingsApi.js`) | **`demosEnabled()`**: in **production** builds, demo listing merge is **off** unless **`VITE_DEMO_LISTINGS=true`**. Development still defaults to demos unless **`VITE_DEMO_LISTINGS=false`**. Ensures production browse/detail do not inject **`demoListings.js`** mix unless explicitly opted in. |
+| **Home** (`buildHomeCategoryGridHtml` / `renderLanding`) | **No category counts** in the category grid (links + labels only). **Trending** uses **`fetchListings({})`** only — no hardcoded featured rows. |
+| **Profile hub** | Removed misleading **“New”** badge on **Browse marketplace** (was not data-backed). |
+
+### Stats: real vs zero
+
+- **Performance tab:** All numeric metrics are **0** until a real stats API exists; copy explains they fill in with active listings.
+- **No server endpoint** was added for traffic/visitors; numbers are **not** fabricated.
+
+### Hardcoded listing objects
+
+- **Removed** from profile: `MOCK_MY_ADVERTS`.
+- **Browse/home** rely on API + optional dev demo merge; **production** defaults to **no** demo merge per `demosEnabled()`.
+
+### Deploy
+
+- After changes: run **`vercel deploy --prod --force`** from the repo (clears edge cache). *Record the deployment URL / id from the CLI output in your run.*
+
+---
+
 ### Anything blocked / errors
 
 - **Supabase SQL** was **not** executed from this environment — apply migrations in the Dashboard.

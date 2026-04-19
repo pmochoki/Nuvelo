@@ -2011,35 +2011,27 @@ function initPerformancePageUi() {
   }
   const chart = root.querySelector("[data-perf-chart]");
   const rangeEl = root.querySelector("[data-perf-range]");
-  const paths = {
-    daily: "0,120 0,45 40,52 80,38 120,55 160,42 200,48 240,35 280,50 320,40",
-    weekly: "0,120 0,60 53,48 107,62 160,40 213,55 267,50 320,45",
-    monthly: "0,120 0,70 64,55 128,65 192,48 256,58 320,52"
-  };
+  /** No real time-series yet — keep a flat chart (no sample traffic curve). */
+  const flatFill = "0,120 0,118 320,118 320,120";
+  const flatLine = "0,118 320,118";
   const labels = { daily: "Daily", weekly: "Weekly", monthly: "Monthly" };
+  const rangeBy = { daily: "Last 24 hours (no data yet)", weekly: "Last 7 days (no data yet)", monthly: "Last 30 days (no data yet)" };
   root.querySelectorAll("[data-perf]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const p = btn.getAttribute("data-perf") || "daily";
       root.querySelectorAll("[data-perf]").forEach((b) => b.classList.toggle("is-active", b === btn));
-      const pts = paths[p] || paths.daily;
       if (chart) {
         const poly = chart.querySelector("polygon");
         const line = chart.querySelector("polyline");
-        const fillPts = `0,120 ${pts} 320,120`;
         if (poly) {
-          poly.setAttribute("points", fillPts);
+          poly.setAttribute("points", flatFill);
         }
         if (line) {
-          line.setAttribute("points", pts);
+          line.setAttribute("points", flatLine);
         }
       }
       if (rangeEl) {
-        rangeEl.textContent =
-          p === "weekly"
-            ? "Week of 31/03 – 06/04/2026"
-            : p === "monthly"
-              ? "01/04/2026 – 30/04/2026"
-              : "01/04/2026 – 09/04/2026";
+        rangeEl.textContent = rangeBy[p] || rangeBy.daily;
       }
       root.querySelectorAll("[data-perf]").forEach((b) => {
         const k = b.getAttribute("data-perf");
@@ -2050,6 +2042,9 @@ function initPerformancePageUi() {
       });
     });
   });
+  if (rangeEl) {
+    rangeEl.textContent = rangeBy.daily;
+  }
 }
 
 function initProfileRouteFeatures(section) {
@@ -2089,7 +2084,10 @@ async function initNotificationsPageUi() {
       loadEl.hidden = true;
     }
     if (!rows.length) {
-      listEl.innerHTML = `<div class="profile-empty-state" role="status"><p>No notifications yet.</p></div>`;
+      listEl.innerHTML = `<div class="profile-empty-state profile-empty-state--notifications" role="status">
+        <p class="profile-empty-state__icon" aria-hidden="true">🔔</p>
+        <p>No notifications yet. We'll let you know when something happens.</p>
+      </div>`;
       return;
     }
     listEl.innerHTML = `<ul class="notifications-list" role="list">

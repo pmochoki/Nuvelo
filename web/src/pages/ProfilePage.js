@@ -1,5 +1,4 @@
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
-import { isSupabaseConfigured } from "../lib/supabaseClient.js";
 
 const esc = (s) => {
   const d = document.createElement("div");
@@ -101,39 +100,6 @@ export function buildMessageThreadRowHtml(t) {
     </button>`;
 }
 
-const MOCK_MY_ADVERTS = [
-  {
-    id: "demo-my-1",
-    title: "Vintage desk lamp",
-    categoryLabel: "Electronics",
-    status: "Active",
-    createdAt: "2026-04-06T14:20:00.000Z",
-    location: "Budapest",
-    price: 12000,
-    images: ["https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?w=200&q=80"]
-  },
-  {
-    id: "demo-my-2",
-    title: "Mountain bike 29″",
-    categoryLabel: "Vehicles",
-    status: "Pending review",
-    createdAt: "2026-04-07T09:00:00.000Z",
-    location: "Debrecen",
-    price: 85000,
-    images: ["https://images.unsplash.com/photo-1576435728678-68d0fbf94e91?w=200&q=80"]
-  },
-  {
-    id: "demo-my-3",
-    title: "Hungarian lesson — 1h",
-    categoryLabel: "Services",
-    status: "Active",
-    createdAt: "2026-03-28T11:30:00.000Z",
-    location: "Szeged",
-    price: 4500,
-    images: []
-  }
-];
-
 function priceLineForListing(listing) {
   if (listing.categoryId === DONATIONS_CATEGORY_ID) {
     return "FREE";
@@ -182,10 +148,10 @@ function statusClassForAdvert(status) {
   return "active";
 }
 
-function renderMyAdvertRowsWithStatus(listings, { demo = false } = {}) {
+function renderMyAdvertRowsWithStatus(listings) {
   return listings
     .map((ad) => {
-      const status = ad.status || (demo ? "Active" : "Approved");
+      const status = ad.status || "Approved";
       const sc = statusClassForAdvert(status);
       const cat = esc(ad.categoryLabel || ad.categoryId || "—");
       const posted = formatShortTime(ad.createdAt);
@@ -201,9 +167,6 @@ function renderMyAdvertRowsWithStatus(listings, { demo = false } = {}) {
         <p class="advert-row__meta">${cat}</p>
         <p class="advert-row__posted">${esc(posted)}</p>
       </div>`;
-      if (demo) {
-        return `<div class="advert-row advert-row--demo" role="article">${body}</div>`;
-      }
       return `<a href="/listing/${encodeURIComponent(String(ad.id))}" class="advert-row my-advert-row">${body}</a>`;
     })
     .join("");
@@ -357,7 +320,7 @@ function renderProfileHub(user) {
       </a>
       <div class="profile-hub__columns">
         <div class="profile-hub-card profile-hub-card--stack">
-          ${row("/browse", "Browse marketplace", "🛵", "New")}
+          ${row("/browse", "Browse marketplace", "🛵", "")}
           ${row("/profile/notifications", "Notifications", "🔔", "")}
           ${row("/profile/followers", "Followers", "👤", "")}
         </div>
@@ -474,10 +437,10 @@ export function buildChatPanelHtml(thread, messages, currentUserId) {
 
 function renderPerformanceSection() {
   const metrics = [
-    { icon: "🖤", label: "Traffic", value: "142" },
-    { icon: "🟣", label: "Visitors", value: "87" },
-    { icon: "🟢", label: "Contact views", value: "34" },
-    { icon: "🟠", label: "Chats", value: "12" },
+    { icon: "🖤", label: "Traffic", value: "0" },
+    { icon: "🟣", label: "Visitors", value: "0" },
+    { icon: "🟢", label: "Contact views", value: "0" },
+    { icon: "🟠", label: "Chats", value: "0" },
     { icon: "🔵", label: "Spent on Pro Sales", value: "HUF 0" }
   ];
   const metricCards = metrics
@@ -503,17 +466,20 @@ function renderPerformanceSection() {
           <button type="button" class="perf-toggle" data-perf="monthly">Monthly</button>
         </div>
       </div>
-      <p class="perf-page__range" data-perf-range>01/04/2026 – 09/04/2026</p>
+      <p class="muted small perf-page__stats-note" style="margin:0 0 0.75rem">
+        Stats will populate once you have active listings.
+      </p>
+      <p class="perf-page__range" data-perf-range>—</p>
       <div class="perf-chart-wrap">
         <svg class="perf-chart" viewBox="0 0 320 120" preserveAspectRatio="none" aria-hidden="true" data-perf-chart>
           <defs>
             <linearGradient id="perfGrad" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stop-color="var(--orange)" stop-opacity="0.35"/>
+              <stop offset="0%" stop-color="var(--orange)" stop-opacity="0.12"/>
               <stop offset="100%" stop-color="var(--orange)" stop-opacity="0"/>
             </linearGradient>
           </defs>
-          <polygon fill="url(#perfGrad)" points="0,120 0,45 40,52 80,38 120,55 160,42 200,48 240,35 280,50 320,40 320,120"/>
-          <polyline fill="none" stroke="var(--orange)" stroke-width="2.5" points="0,45 40,52 80,38 120,55 160,42 200,48 240,35 280,50 320,40"/>
+          <polygon fill="url(#perfGrad)" points="0,120 0,118 320,118 320,120"/>
+          <polyline fill="none" stroke="var(--orange)" stroke-width="1.5" stroke-opacity="0.35" points="0,118 320,118"/>
         </svg>
       </div>
       <div class="perf-metrics-grid">${metricCards}</div>
@@ -619,35 +585,29 @@ function renderProfileSection(section, user) {
 
 function renderMyAdverts(user) {
   const real = user.adverts || [];
-  /** Sample rows only in local dev when Supabase is off — never in production builds. */
-  const useDemo =
-    import.meta.env.DEV && real.length === 0 && !isSupabaseConfigured;
-  const display = useDemo ? MOCK_MY_ADVERTS : real;
-  const emptySignedIn =
-    isSupabaseConfigured && real.length === 0
-      ? `<div class="profile-empty-state">
-          <p>You haven't posted any ads yet. Post your first one!</p>
-          <p><a href="/post" class="btn btn--primary">Post an ad</a></p>
+  const empty =
+    real.length === 0
+      ? `<div class="profile-empty-state" role="status">
+          <p>You haven't posted any ads yet.</p>
+          <p><a href="/post" class="btn btn--primary">Post your first ad</a></p>
         </div>`
       : "";
-  const listOrDemo =
-    useDemo || real.length > 0
-      ? `<div class="advert-row-list my-adverts-list">${renderMyAdvertRowsWithStatus(display, { demo: useDemo })}</div>`
-      : emptySignedIn;
+  const list =
+    real.length > 0
+      ? `<div class="advert-row-list my-adverts-list">${renderMyAdvertRowsWithStatus(real)}</div>`
+      : empty;
   return `
     <div class="profile-section-header profile-section-header--row">
       <h2>My adverts</h2>
-      ${useDemo ? `<span class="profile-pill profile-pill--demo">Sample</span>` : ""}
     </div>
+    ${list}
     ${
-      useDemo
-        ? `<p class="muted small profile-hint">These are example listings. Post your own ad to manage it here.</p>`
-        : ""
-    }
-    ${listOrDemo}
-    <div class="profile-cta-row">
+      real.length > 0
+        ? `<div class="profile-cta-row">
       <a href="/post" class="btn btn--primary">Post an ad</a>
-    </div>`;
+    </div>`
+        : ""
+    }`;
 }
 
 function renderSavedAds(user) {

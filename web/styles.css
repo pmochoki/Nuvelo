@@ -4817,6 +4817,12 @@ button.jiji-promo-card {
   text-decoration: none;
 }
 
+.profile-empty-state__icon {
+  font-size: 2.5rem;
+  line-height: 1;
+  margin: 0 !important;
+}
+
 .advert-row-list {
   display: flex;
   flex-direction: column;

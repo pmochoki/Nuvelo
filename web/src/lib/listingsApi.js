@@ -60,8 +60,14 @@ function getApiBase() {
   return String(raw).trim().replace(/\/+$/, "");
 }
 
-/** When false, demo listings are hidden and post/browse avoid misleading offline fallbacks. */
+/**
+ * Demo listings are opt-in in production builds so nuvelo.one never mixes fake ads with real ones.
+ * Development: defaults on unless VITE_DEMO_LISTINGS=false.
+ */
 function demosEnabled() {
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_DEMO_LISTINGS === "true";
+  }
   return import.meta.env.VITE_DEMO_LISTINGS !== "false";
 }
 
