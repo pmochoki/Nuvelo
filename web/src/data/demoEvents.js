@@ -337,3 +337,14 @@ export const DEMO_EVENTS = [
     attendees: makeAttendees(7, 16)
   }
 ];
+
+/**
+ * Demo rows on `/events` — opt-in in production (`VITE_DEMO_EVENTS=true`), on in dev unless `false`.
+ * Mirrors listings’ `VITE_DEMO_LISTINGS` pattern so nuvelo.one ships without fake events.
+ */
+export function demoEventsEnabled() {
+  if (import.meta.env.PROD) {
+    return import.meta.env.VITE_DEMO_EVENTS === "true";
+  }
+  return import.meta.env.VITE_DEMO_EVENTS !== "false";
+}

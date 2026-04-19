@@ -1,6 +1,6 @@
 import { CATEGORIES } from "./data/categories.js";
 import { HUNGARIAN_LOCATIONS as IMPORTED_HUNGARIAN_LOCATIONS } from "./data/hungarianLocations.js";
-import { DEMO_EVENTS, EVENT_SUBCATEGORIES } from "./data/demoEvents.js";
+import { DEMO_EVENTS, demoEventsEnabled, EVENT_SUBCATEGORIES } from "./data/demoEvents.js";
 import "../styles.css";
 import {
   fetchListings as apiFetchListings,
@@ -2187,7 +2187,8 @@ const ensureAnonEventUser = () => {
 
 const getAllEvents = () => {
   const custom = readJsonStore(EVENTS_STORE_KEY, []);
-  return [...DEMO_EVENTS, ...custom].sort(
+  const demos = demoEventsEnabled() ? DEMO_EVENTS : [];
+  return [...demos, ...custom].sort(
     (a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
   );
 };
@@ -4380,7 +4381,11 @@ const renderEventsList = async () => {
             <a class="btn btn--primary" href="/post">Create event</a>
           </div>
           <div class="ad-grid--lc" id="events-grid" data-view="grid">
-            ${rows.map((e) => `<article class="lc lc--grid event-card" role="link" tabindex="0" data-event-id="${esc(e.id)}">
+            ${
+              rows.length
+                ? rows
+                    .map(
+                      (e) => `<article class="lc lc--grid event-card" role="link" tabindex="0" data-event-id="${esc(e.id)}">
               <div class="lc__media"><img src="${esc(e.image)}" alt="" loading="lazy" /></div>
               <div class="lc__body">
                 <p class="lc__price">${e.isFree ? esc(t("listing.free")) : `<span data-price="${String(Math.round(Number(e.price) || 0))}">${esc(formatPrice(e.price || 0))}</span>`}</p>
@@ -4389,7 +4394,11 @@ const renderEventsList = async () => {
                 <p class="lc__excerpt">📍 ${esc(e.city)} · ${esc(e.venue || "TBA")}</p>
                 <div class="lc__foot"><span>${esc(e.subCategory)}</span><span>👥 ${formatNumber(e.attendees.length)} going</span></div>
               </div>
-            </article>`).join("")}
+            </article>`
+                    )
+                    .join("")
+                : browseEmptyGridHtml()
+            }
           </div>
         </div>
       </div>
