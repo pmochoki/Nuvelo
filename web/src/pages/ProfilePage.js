@@ -1,4 +1,5 @@
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
+import { formatHufPrice, formatInteger, tfn } from "../i18n/format.js";
 import { t, tf } from "../i18n/i18n.js";
 
 const esc = (s) => {
@@ -79,7 +80,7 @@ export function buildMessageThreadRowHtml(t) {
   const unread = t.unread || 0;
   const badge =
     unread > 0
-      ? `<span class="msg-row__unread-badge" aria-label="${esc(String(unread))} ${esc(t("msg.unread_badge"))}">${esc(unread > 9 ? "9+" : String(unread))}</span>`
+      ? `<span class="msg-row__unread-badge" aria-label="${esc(formatInteger(unread))} ${esc(t("msg.unread_badge"))}">${esc(unread > 9 ? "9+" : formatInteger(unread))}</span>`
       : "";
   return `
     <button type="button" class="msg-row${unread ? " msg-row--unread" : ""}" data-thread-id="${esc(t.id)}" data-thread-spam="${t.spam ? "1" : ""}">
@@ -113,7 +114,7 @@ function priceLineForListing(listing) {
   if (!Number.isFinite(n) || n < 0) {
     return t("listing.contact_price");
   }
-  return `HUF ${n.toLocaleString("hu-HU")}`;
+  return formatHufPrice(n);
 }
 
 function renderAdvertRows(listings) {
@@ -373,8 +374,8 @@ function renderMessagesLayout() {
         <h1 class="visually-hidden">${esc(t("messages.visually_hidden"))}</h1>
         <div class="messages-jiji__tabs" role="tablist" data-msg-tabs>
           <button type="button" class="messages-jiji__tab is-active" role="tab" aria-selected="true" data-msg-tab="all">${esc(t("messages.all"))}</button>
-          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">${esc(tf("messages.unread_count", { n: 0 }))}</button>
-          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">${esc(tf("messages.spam_count", { n: 0 }))}</button>
+          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">${esc(tfn("messages.unread_count", 0))}</button>
+          <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">${esc(tfn("messages.spam_count", 0))}</button>
         </div>
         <div class="messages-jiji__empty-inbox" data-msg-empty-inbox hidden>
           <div class="messages-jiji__empty-inbox-illus" aria-hidden="true">💬</div>
@@ -438,11 +439,11 @@ export function buildChatPanelHtml(thread, messages, currentUserId) {
 
 function renderPerformanceSection() {
   const metrics = [
-    { icon: "🖤", label: t("perf.metric.traffic"), value: "0" },
-    { icon: "🟣", label: t("perf.metric.visitors"), value: "0" },
-    { icon: "🟢", label: t("perf.metric.contact"), value: "0" },
-    { icon: "🟠", label: t("perf.metric.chats"), value: "0" },
-    { icon: "🔵", label: t("perf.metric.spent"), value: "HUF 0" }
+    { icon: "🖤", label: t("perf.metric.traffic"), value: formatInteger(0) },
+    { icon: "🟣", label: t("perf.metric.visitors"), value: formatInteger(0) },
+    { icon: "🟢", label: t("perf.metric.contact"), value: formatInteger(0) },
+    { icon: "🟠", label: t("perf.metric.chats"), value: formatInteger(0) },
+    { icon: "🔵", label: t("perf.metric.spent"), value: formatHufPrice(0) }
   ];
   const metricCards = metrics
     .map(
@@ -505,8 +506,8 @@ function renderFeedbackSection(user) {
       <div class="feedback-jiji__header">
         <h2 class="feedback-jiji__title">${esc(t("feedback.title"))}</h2>
         <div class="feedback-jiji__toggles" role="group">
-          <button type="button" class="feedback-toggle is-active" data-fb-tab="received">${esc(tf("feedback.received", { n: 0 }))}</button>
-          <button type="button" class="feedback-toggle" data-fb-tab="sent">${esc(tf("feedback.sent", { n: 0 }))}</button>
+          <button type="button" class="feedback-toggle is-active" data-fb-tab="received">${esc(tfn("feedback.received", 0))}</button>
+          <button type="button" class="feedback-toggle" data-fb-tab="sent">${esc(tfn("feedback.sent", 0))}</button>
         </div>
       </div>
       <div class="feedback-jiji__panel" data-fb-panel="received">

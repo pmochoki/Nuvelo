@@ -40,6 +40,7 @@ import { fetchNotificationsForCurrentUser } from "./lib/notificationsApi.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
+import { formatHufPrice, formatInteger, formatMoneyAmount, tfn } from "./i18n/format.js";
 
 const FALLBACK_HUNGARIAN_LOCATIONS = () => [
   { value: "all", label: t("search.allhungary") },
@@ -1916,10 +1917,10 @@ function initMessagesPageUi() {
     const tabUnread = root.querySelector('[data-msg-tab="unread"]');
     const tabSpam = root.querySelector('[data-msg-tab="spam"]');
     if (tabUnread) {
-      tabUnread.textContent = tf("messages.unread_count", { n: unreadRows.length });
+      tabUnread.textContent = tfn("messages.unread_count", unreadRows.length);
     }
     if (tabSpam) {
-      tabSpam.textContent = tf("messages.spam_count", { n: 0 });
+      tabSpam.textContent = tfn("messages.spam_count", 0);
     }
 
     const showEmptyInbox = loadState === "success" && threads.length === 0;
@@ -2290,8 +2291,8 @@ const renderLocationModalContent = (root, searchQuery) => {
     if (metaEl) {
       metaEl.textContent =
         filtered.length === 1
-          ? tf("loc.modal.match_one", { n: filtered.length })
-          : tf("loc.modal.match_many", { n: filtered.length });
+          ? tfn("loc.modal.match_one", filtered.length)
+          : tfn("loc.modal.match_many", filtered.length);
     }
     body.innerHTML =
       filtered.length === 0
@@ -2777,9 +2778,9 @@ const filterByTimePref = (listings, t) => {
 const formatListingCountLabel = (n) => {
   const x = Number(n) || 0;
   if (x <= 0) {
-    return "Browse";
+    return `${formatInteger(0)} ${t("browse.listings_inline")}`;
   }
-  return `${new Intl.NumberFormat("en-US").format(x)} listings`;
+  return `${formatInteger(x)} ${t("browse.listings_inline")}`;
 };
 
 const apiCategoryIdForSlug = (slug) => CATEGORY_SLUGS[slug] || slug;
@@ -3246,7 +3247,7 @@ const formatDisplayPrice = (listing) => {
   if (n === 0) {
     return t("listing.free_short");
   }
-  return `${listing.currency || "HUF"} ${n}`;
+  return formatMoneyAmount(n, listing.currency || "HUF");
 };
 
 const buildListingCardEl = (listing, opts = {}) => {
@@ -3641,7 +3642,7 @@ const renderList = async () => {
   const timeSel = filters.timeFilter;
   const filterCount = activeFilterCount(filters);
   const filterBtnLabel =
-    filterCount > 0 ? tf("browse.filters_count", { n: filterCount }) : t("browse.filters");
+    filterCount > 0 ? tfn("browse.filters_count", filterCount) : t("browse.filters");
 
   const filterFieldsHtml = `
     <div class="filter-panel filter-panel--jiji">
@@ -3764,7 +3765,7 @@ const renderList = async () => {
               <p class="muted" style="margin:0.15rem 0 0;font-size:0.875rem">${
                 listingsLoadFailed
                   ? esc(t("browse.results_error"))
-                  : esc(tf("browse.results", { n: totalCount }))
+                  : esc(tfn("browse.results", totalCount))
               }</p>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
@@ -4001,7 +4002,7 @@ const renderDetail = async (id) => {
   const collLine = coll
     ? `${coll.label}${
         cf.deliveryKm != null && cf.collectionMethod === "local_delivery"
-          ? ` ${tf("detail.collection_within_km", { n: cf.deliveryKm })}`
+          ? ` ${tfn("detail.collection_within_km", cf.deliveryKm)}`
           : ""
       }`
     : "";
@@ -4014,7 +4015,7 @@ const renderDetail = async (id) => {
           <li><span data-i18n="detail.field.condition">Condition</span><span>${esc(donationConditionLabel(cf.donationCondition))}</span></li>
           <li><span data-i18n="detail.field.collection">Collection</span><span>${esc(collLine)}</span></li>
           <li><span data-i18n="detail.field.area">Area / city</span><span>${esc(listing.location || "")}</span></li>
-          <li><span data-i18n="detail.field.quantity">Quantity</span><span>${esc(String(cf.quantity ?? 1))}</span></li>
+          <li><span data-i18n="detail.field.quantity">Quantity</span><span>${esc(formatInteger(cf.quantity ?? 1))}</span></li>
         </ul>
       </section>`
     : "";
@@ -4039,7 +4040,7 @@ const renderDetail = async (id) => {
     if (n === 0) {
       return t("listing.free_short");
     }
-    return `${esc(listing.currency || "HUF")} ${esc(String(n))}`;
+    return esc(formatMoneyAmount(n, listing.currency || "HUF"));
   })();
   const posted = formatPostedTime(listing.createdAt);
   const bcTitle = excerptOneLine(listing.title, 40);
@@ -4082,7 +4083,7 @@ const renderDetail = async (id) => {
           <p class="price-big price-big--free" data-i18n="listing.free">FREE</p>
           <p class="muted small" style="margin:0">📍 ${esc(listing.location || "")}</p>
           <p class="muted small" style="margin:0.25rem 0">${esc(posted)}</p>
-          <p class="muted small">${views ? esc(tf("listing.views_count", { n: views })) : ""}</p>
+          <p class="muted small">${views ? esc(tfn("listing.views_count", views)) : ""}</p>
           <p class="muted small" style="margin:0.5rem 0 0">${coll ? `${coll.icon} ${esc(collLine)}` : ""}</p>
           <hr style="border:0;border-top:1px solid var(--purple-border);margin:1rem 0" />
           <p style="margin:0;font-weight:700">${esc(listing.sellerName || t("detail.donor_fallback"))}</p>
@@ -4114,7 +4115,7 @@ const renderDetail = async (id) => {
           <p class="price-big">${priceStr}</p>
           <p class="muted small" style="margin:0">📍 ${esc(listing.location || "")}</p>
           <p class="muted small" style="margin:0.25rem 0">${esc(posted)}</p>
-          <p class="muted small">${views ? esc(tf("listing.views_count", { n: views })) : ""}</p>
+          <p class="muted small">${views ? esc(tfn("listing.views_count", views)) : ""}</p>
           <button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-show-contact" data-i18n="detail.show_contact">Show contact</button>
           <p class="small muted" id="detail-phone-reveal" hidden style="margin:0.5rem 0 0" data-i18n="detail.phone_hint">Phone: use the Nuvelo app to contact the seller securely.</p>
           <button type="button" class="btn btn--outline" style="width:100%;margin-top:0.5rem;border-radius:8px" id="detail-callback" data-i18n="detail.request_callback">Request call back</button>
@@ -4152,14 +4153,14 @@ const renderDetail = async (id) => {
           <div class="detail-gallery__main ${claimed && isDonation ? "detail-gallery__main--claimed" : ""}">
             ${galleryClaim}
             ${mainSrc ? `<img id="detail-main-img" src="${esc(mainSrc)}" alt="" />` : `<div class="detail-hero__img" style="min-height:200px;background:var(--purple-surface)"></div>`}
-            ${imgs.length ? `<span class="detail-gallery__count" id="detail-img-count">1 / ${imgs.length}</span>` : ""}
+            ${imgs.length ? `<span class="detail-gallery__count" id="detail-img-count">${formatInteger(1)} / ${formatInteger(imgs.length)}</span>` : ""}
           </div>
           ${
             imgs.length > 1
               ? `<div class="detail-gallery__thumbs" id="detail-thumbs">${imgs
                   .map(
                     (u, i) =>
-                      `<button type="button" class="${i === 0 ? "is-active" : ""}" data-idx="${i}" aria-label="${esc(tf("detail.photo_n", { n: i + 1 }))}"><img src="${esc(u)}" alt="" /></button>`
+                      `<button type="button" class="${i === 0 ? "is-active" : ""}" data-idx="${i}" aria-label="${esc(tfn("detail.photo_n", i + 1))}"><img src="${esc(u)}" alt="" /></button>`
                   )
                   .join("")}</div>`
               : ""
@@ -4201,7 +4202,7 @@ const renderDetail = async (id) => {
       document.querySelectorAll("#detail-thumbs button").forEach((b) => b.classList.toggle("is-active", b === btn));
       const cnt = document.getElementById("detail-img-count");
       if (cnt) {
-        cnt.textContent = `${i + 1} / ${imgs.length}`;
+        cnt.textContent = `${formatInteger(i + 1)} / ${formatInteger(imgs.length)}`;
       }
     });
   });
@@ -4401,7 +4402,7 @@ const renderEventsList = async () => {
             ${rows.map((e) => `<article class="lc lc--grid event-card" role="link" tabindex="0" data-event-id="${esc(e.id)}">
               <div class="lc__media"><img src="${esc(e.image)}" alt="" loading="lazy" /></div>
               <div class="lc__body">
-                <p class="lc__price">${e.isFree ? "FREE" : `HUF ${esc(String(e.price || 0))}`}</p>
+                <p class="lc__price">${e.isFree ? esc(t("listing.free")) : esc(formatHufPrice(e.price || 0))}</p>
                 <h3 class="lc__title">${esc(e.title)}</h3>
                 <p class="lc__excerpt">📅 ${esc(eventDateFmt(e.dateTime))}</p>
                 <p class="lc__excerpt">📍 ${esc(e.city)} · ${esc(e.venue || "TBA")}</p>
@@ -4493,7 +4494,7 @@ const renderEventDetail = async (eventId) => {
         <p>📅 <strong>${esc(eventDateFmt(row.dateTime))}</strong> · ${esc(row.duration || "Duration TBA")}</p>
         <p>📍 <strong>${esc(row.city)}</strong> · ${esc(row.venue)} · ${esc(row.address || "")}</p>
         <p>Organiser: <strong>${esc(row.organizerName)}</strong></p>
-        <p><span class="pill">${esc(row.subCategory)}</span> <span class="pill">${row.isFree ? "FREE" : `PAID · HUF ${esc(String(row.price || 0))}`}</span></p>
+        <p><span class="pill">${esc(row.subCategory)}</span> <span class="pill">${row.isFree ? esc(t("listing.free")) : esc(tf("events.paid_chip", { price: formatHufPrice(row.price || 0) }))}</span></p>
         <p class="muted">Contact preference: ${esc(row.contactPreference || "message via app")}</p>
         <div class="site-footer__social">${(row.tags || []).map((t) => `<span class="filter-chip">${esc(t)}</span>`).join("")}</div>
       </div>
@@ -4680,7 +4681,7 @@ const renderStaticPage = async (slug) => {
       <p>Nuvelo may moderate listings before or after publication. Moderation actions can include requesting edits, limiting visibility, rejecting listings, or suspending accounts. Moderation decisions are based on safety, legal compliance, quality standards, and platform integrity. We are not obligated to publish every listing and we may prioritize user trust and legal obligations over listing visibility.</p>
       <p>Fees and paid features, if offered, are disclosed in-app. Unless explicitly stated otherwise, standard listing and browsing functionality may be offered without charge during MVP periods. Any future paid products, such as promoted placement or premium tools, will be governed by separate pricing notices. Non-refundable rules may apply after a paid feature is delivered.</p>
       <p>Nuvelo does not guarantee that users are truthful, that listings remain available, or that transactions will succeed. Platform availability may be interrupted due to maintenance, outages, third-party failures, or force majeure events. To the maximum extent permitted by law, Nuvelo disclaims implied warranties, including merchantability and fitness for a particular purpose. Use of the platform is at your own risk.</p>
-      <p>Limitation of liability: Nuvelo is not liable for indirect, incidental, or consequential damages, lost profits, loss of data, missed opportunities, or personal disputes arising from user interactions. Our total liability for direct damages related to your use of the service is limited to the amount paid by you to Nuvelo for paid features in the 12 months preceding the claim, or 20,000 HUF if no payment was made.</p>
+      <p>Limitation of liability: Nuvelo is not liable for indirect, incidental, or consequential damages, lost profits, loss of data, missed opportunities, or personal disputes arising from user interactions. Our total liability for direct damages related to your use of the service is limited to the amount paid by you to Nuvelo for paid features in the 12 months preceding the claim, or ${formatHufPrice(20000)} if no payment was made.</p>
       <p>You agree to indemnify and hold Nuvelo harmless against claims, losses, and costs arising from your listings, your user content, your legal violations, or disputes with other users. This includes reasonable legal costs where permitted by law. Nuvelo may participate in dispute resolution evidence requests but is not obligated to mediate private contractual disagreements.</p>
       <p>These terms may be updated to reflect legal changes, product updates, or safety requirements. Material changes will be published on this page with an updated effective date. Continued use after updates means acceptance of revised terms. If you disagree with a change, you must stop using the service and request account closure.</p>
       <p>These terms are governed by applicable Hungarian law, without prejudice to mandatory EU consumer protections. Disputes should first be raised through Nuvelo support so we can attempt resolution in good faith. If unresolved, disputes may be submitted to competent courts in Hungary. If any clause is invalid, the remaining terms remain in force.</p>
