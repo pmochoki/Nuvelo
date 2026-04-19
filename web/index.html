@@ -44,10 +44,23 @@
       (function () {
         try {
           var lk = "nuvelo_locale";
-          var loc = localStorage.getItem(lk);
-          if (loc === "hu" || loc === "en") {
-            document.documentElement.lang = loc;
+          /* One-time migration from nuvelo_lang → nuvelo_locale */
+          var legacy = localStorage.getItem("nuvelo_lang");
+          if (legacy === "hu" || legacy === "en") {
+            localStorage.setItem(lk, legacy);
+            localStorage.removeItem("nuvelo_lang");
           }
+          var stored = localStorage.getItem(lk);
+          var loc =
+            stored === "hu" || stored === "en"
+              ? stored
+              : (navigator.language || "").toLowerCase().startsWith("hu")
+                ? "hu"
+                : "en";
+          if (stored !== "hu" && stored !== "en") {
+            localStorage.setItem(lk, loc);
+          }
+          document.documentElement.lang = loc;
         } catch (e) {}
       })();
       (function () {
