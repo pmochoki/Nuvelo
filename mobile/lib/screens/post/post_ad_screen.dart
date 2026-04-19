@@ -1,19 +1,16 @@
-import 'dart:typed_data';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:nuvelo_marketplace/l10n/app_localizations.dart';
 
 import '../../core/constants.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../../services/listings_service.dart';
-import '../../services/storage_service.dart';
 import '../../widgets/category_chip.dart';
 import '../../widgets/empty_state.dart';
 import '../../widgets/nuvelo_screen.dart';
+import 'post_photos_screen.dart';
 
 class PostAdScreen extends StatefulWidget {
   const PostAdScreen({super.key});
@@ -34,13 +31,20 @@ class _PostAdScreenState extends State<PostAdScreen> {
   String _location = 'Budapest';
   String _condition = 'used';
   final _svc = ListingsService();
-  final _picker = ImagePicker();
   bool _submitting = false;
 
   DateTime _availabilityDate = DateTime.now();
   Duration _contactTime = const Duration(hours: 9, minutes: 0);
 
-  final List<Uint8List> _imageBytes = [];
+  /// Folder segment for Supabase path `listings/{ts}-{userId}/…`.
+  String _listingPhotoFolderTs =
+      DateTime.now().millisecondsSinceEpoch.toString();
+
+  /// Bumps to reset [PostPhotosScreen] state after “Post another”.
+  int _photoSession = 0;
+
+  List<String> _photoUrls = [];
+  bool _photosUploading = false;
 
   @override
   void dispose() {
@@ -130,19 +134,6 @@ class _PostAdScreenState extends State<PostAdScreen> {
     );
   }
 
-  Future<void> _pickPhotos() async {
-    final files = await _picker.pickMultiImage(imageQuality: 85);
-    for (final x in files) {
-      final b = await x.readAsBytes();
-      if (b.length > 5 * 1024 * 1024) continue;
-      setState(() => _imageBytes.add(b));
-    }
-  }
-
-  void _removePhoto(int i) {
-    setState(() => _imageBytes.removeAt(i));
-  }
-
   Future<void> _submit(AppLocalizations L) async {
     final uid = supabase.auth.currentUser?.id;
     if (uid == null) return;
@@ -158,26 +149,14 @@ class _PostAdScreenState extends State<PostAdScreen> {
         'currency': 'HUF',
         'condition': _condition,
         'location': _location,
-        'images': <String>[],
+        'images': _photoUrls,
         'categoryFields': <String, dynamic>{
           'availabilityDate': _availabilityDate.toIso8601String(),
           'preferredContactMinutes':
               _contactTime.inMinutes.remainder(1440).toString(),
         },
       };
-      final id = await _svc.createListing(payload, userId: uid);
-      final urls = <String>[];
-      for (var i = 0; i < _imageBytes.length; i++) {
-        final url = await StorageService().uploadListingPhoto(
-          listingId: id,
-          filename: 'photo_$i.jpg',
-          bytes: _imageBytes[i],
-        );
-        urls.add(url);
-      }
-      if (urls.isNotEmpty && id.isNotEmpty) {
-        await _svc.updateListing(id, {'images': urls});
-      }
+      await _svc.createListing(payload, userId: uid);
       if (!mounted) return;
       showDialog<void>(
         context: context,
@@ -204,7 +183,10 @@ class _PostAdScreenState extends State<PostAdScreen> {
                   _title.clear();
                   _description.clear();
                   _price.clear();
-                  _imageBytes.clear();
+                  _photoUrls = [];
+                  _listingPhotoFolderTs =
+                      DateTime.now().millisecondsSinceEpoch.toString();
+                  _photoSession++;
                 });
                 _page.jumpToPage(0);
               },
@@ -286,7 +268,8 @@ class _PostAdScreenState extends State<PostAdScreen> {
                     ),
                     TextField(
                       controller: _description,
-                      decoration: const InputDecoration(labelText: 'Description'),
+                      decoration:
+                          const InputDecoration(labelText: 'Description'),
                       maxLines: 6,
                     ),
                     SwitchListTile(
@@ -308,7 +291,8 @@ class _PostAdScreenState extends State<PostAdScreen> {
                           .map((e) =>
                               DropdownMenuItem(value: e, child: Text(e)))
                           .toList(),
-                      onChanged: (v) => setState(() => _location = v ?? _location),
+                      onChanged: (v) =>
+                          setState(() => _location = v ?? _location),
                     ),
                     DropdownButtonFormField<String>(
                       initialValue: _condition,
@@ -342,70 +326,15 @@ class _PostAdScreenState extends State<PostAdScreen> {
                 ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
-                    Text(
-                      'Photos',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    PostPhotosScreen(
+                      key: ValueKey(_photoSession),
+                      userId: uid,
+                      folderTimestamp: _listingPhotoFolderTs,
+                      onUrlsChanged: (urls) =>
+                          setState(() => _photoUrls = urls),
+                      onUploadingChanged: (busy) =>
+                          setState(() => _photosUploading = busy),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Up to 8 images, 5MB each.',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: NuveloColors.textMuted,
-                          ),
-                    ),
-                    const SizedBox(height: 16),
-                    FilledButton.icon(
-                      onPressed: _pickPhotos,
-                      icon: const Icon(Icons.add_photo_alternate_outlined),
-                      label: const Text('Add photos'),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_imageBytes.isEmpty)
-                      Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'No photos yet — optional, but listings with photos get more replies.',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: NuveloColors.textMuted,
-                              ),
-                        ),
-                      )
-                    else
-                      GridView.builder(
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        gridDelegate:
-                            const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 8,
-                          mainAxisSpacing: 8,
-                        ),
-                        itemCount: _imageBytes.length,
-                        itemBuilder: (context, i) {
-                          return Stack(
-                            fit: StackFit.expand,
-                            children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.memory(
-                                  _imageBytes[i],
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              Positioned(
-                                top: 4,
-                                right: 4,
-                                child: IconButton.filledTonal(
-                                  iconSize: 20,
-                                  onPressed: () => _removePhoto(i),
-                                  icon: const Icon(Icons.close),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
                   ],
                 ),
                 ListView(
@@ -418,8 +347,33 @@ class _PostAdScreenState extends State<PostAdScreen> {
                     const SizedBox(height: 8),
                     Text(_description.text),
                     const SizedBox(height: 16),
+                    if (_photoUrls.isNotEmpty)
+                      SizedBox(
+                        height: 96,
+                        child: ListView.separated(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _photoUrls.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(width: 8),
+                          itemBuilder: (context, i) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(10),
+                              child: AspectRatio(
+                                aspectRatio: 1,
+                                child: Image.network(
+                                  _photoUrls[i],
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) =>
+                                      ColoredBox(color: NuveloColors.deepCard),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    if (_photoUrls.isNotEmpty) const SizedBox(height: 12),
                     Text(
-                      '${_imageBytes.length} photo(s) · ${_availabilityDate.toIso8601String().split('T').first}',
+                      '${_photoUrls.length} photo(s) · ${_availabilityDate.toIso8601String().split('T').first}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: NuveloColors.textMuted,
                           ),
@@ -453,7 +407,7 @@ class _PostAdScreenState extends State<PostAdScreen> {
                 const Spacer(),
                 if (_step < 2)
                   FilledButton(
-                    onPressed: !_validStep0 && _step == 0
+                    onPressed: !_canGoNext()
                         ? null
                         : () {
                             _page.nextPage(
@@ -470,5 +424,11 @@ class _PostAdScreenState extends State<PostAdScreen> {
         ],
       ),
     );
+  }
+
+  bool _canGoNext() {
+    if (_step == 0) return _validStep0;
+    if (_step == 1) return !_photosUploading;
+    return true;
   }
 }
