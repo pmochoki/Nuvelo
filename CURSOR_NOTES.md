@@ -390,13 +390,38 @@ cd mobile && flutter build apk --release \
 
 Artifact path: **`mobile/build/app/outputs/flutter-apk/app-release.apk`**.
 
+### Post Ad + branding triage (2026-04-19)
+
+**Fix 1 — Step 2 photos**
+
+- **`post_photos_screen.dart`**: eight tappable slots; gallery or camera via `image_picker`; **`permission_handler`** before pick; max 8 files, 5 MB each; slot 0 = **Cover**; upload to Supabase bucket **`listings-images`** at **`listings/{folderTimestamp}-{userId}/{filename}`** through **`StorageService.uploadListingPhoto`** (`XFile`, `userId`, `folderTimestamp`); circular progress overlay while uploading; snackbar + clear slot + retry on failure; **Next** disabled while any upload is in flight.
+- **`post_ad_screen.dart`** sends **`images`** as the list of public URLs on **`createListing`** (no second-round upload).
+
+**Fix 2 — Category-specific `categoryFields`**
+
+- **`post_category_fields.dart`** drives extras by **`categoryId`**: **Rentals** (property type, bedrooms/bathrooms steppers, area m², furnished/bills/pets/parking, available-from tied to shared listing date); **Vehicles**; **Jobs**; **Events** (date/time pickers, paid toggle + price, etc.); **Donations**; **default** chips + brand + quantity for electronics, furniture, fashion, goods, babies-kids, services, other.
+- Submit merges **`availabilityDate`**, **`preferredContactMinutes`**, and extras into **`categoryFields`** (nulls stripped). Rentals hide the duplicate **Availability date** row (that date lives in the rentals block).
+
+**Fix 3 — Launcher icon + splash**
+
+- **`flutter_launcher_icons`** + **`flutter_native_splash`** in **`mobile/pubspec.yaml`** (Android only per config).
+- Raster sources: **`mobile/tool/gen_brand_pngs.dart`** generates **`assets/images/nuvelo_icon.png`** and **`nuvelo_logo.png`** (placeholder orange circle on transparent until a final brand export replaces them).
+- Commands used: **`dart run tool/gen_brand_pngs.dart`**, **`dart run flutter_launcher_icons`**, **`dart run flutter_native_splash:create`** — mipmaps under **`mobile/android/app/src/main/res/mipmap-*`**, adaptive foreground/background, splash + Android 12 splash assets.
+
+**Release APK (agent build)**
+
+- Built with **`assets/env`** sourced so **`SUPABASE_ANON_KEY`** is injected via **`--dart-define`** (do not commit keys).
+- **Result:** success — **`mobile/build/app/outputs/flutter-apk/app-release.apk`** (~60.6 MB). Gradle printed **javac** “source/target value 8 is obsolete” warnings from the toolchain; **`flutter analyze`** reported **no issues** before the build.
+
+**MANUAL STEP NEEDED:** Supabase Dashboard → **Authentication** → **URL Configuration** → **Redirect URLs** → add **`one.nuvelo.app://login-callback`** so OAuth matches the app intent-filter.
+
 ### iOS UX polish (NuveloScreen + flows, 2026-04-19)
 
 - **`NuveloScreen`** (`mobile/lib/widgets/nuvelo_screen.dart`): **`Color(0xFF0D0A1E)`** scaffold background, configurable **SafeArea** edges (shell tabs use `safeTop`/`safeBottom` false to avoid double insets under `MainShell`), **tap outside** unfocuses inputs.
 - **Splash / onboarding / auth** (sign-in, verify OTP, register): wrapped with **NuveloScreen**; OTP uses **SingleChildScrollView** for keyboard.
 - **Home & browse**: **NuveloScreen** around body (same shell as Android).
 - **Listing detail**: navy loading/error; **Send message** → **`MessagesService.getOrCreateThread`** → **`/messages/:tid/chat`**; localized **`thisIsYourListing`** (`app_en.arb` / `app_hu.arb`).
-- **Post ad (3 steps)**: step 1 includes **CupertinoDatePicker** (availability date) and **CupertinoTimerPicker** (preferred contact time); step 2 **multi-image** picker + upload to **`listings-images`** after **`createListing`** + **`updateListing`** with image URLs; step 3 review.
+- **Post ad (3 steps)**: step 1 includes core fields plus **category-specific extras** (**`PostCategoryFieldsSection`**), **CupertinoTimerPicker** (preferred contact time), and (non-rentals) **CupertinoDatePicker** / Material date for availability; step 2 **`PostPhotosScreen`** (eight slots, Supabase uploads before submit); step 3 review + publish with **`images`** + merged **`categoryFields`**.
 - **Profile** (6 tabs): **NuveloScreen** wrapper on the tab root.
 - **Chat**: **NuveloScreen** + input row padded with **`MediaQuery.paddingOf(context).bottom`** (home indicator).
 - **Settings**: **profile photo** (gallery → **`StorageService.uploadAvatar`** + **`ProfileService.updateProfile`**), language + theme toggles.
@@ -417,6 +442,5 @@ Output (when signing succeeds): **`mobile/build/ios/ipa/`** — e.g. **`Nuvelo.i
 
 **Still to deepen (when you iterate)**
 
-- Category-specific **post-ad** extras (rentals/events/vehicles…) — form is extendable via `category_fields`.
-- **Launcher / adaptive icons** — add raster assets + `flutter_launcher_icons` if you want branded mipmap icons beyond default Flutter launcher.
-- Add **`https://`** Supabase redirect / **`one.nuvelo.app://login-callback`** in Supabase Dashboard → Authentication → URL configuration if OAuth fails.
+- Replace placeholder **`nuvelo_icon.png` / `nuvelo_logo.png`** with final brand exports (re-run **`dart run flutter_launcher_icons`** and **`dart run flutter_native_splash:create`**).
+- Tune **Gradle/Java** toolchain warnings (obsolete `-source 8` / `-target 8`) when upgrading Android Gradle Plugin.
