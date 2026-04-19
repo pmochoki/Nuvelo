@@ -79,7 +79,8 @@ const List<String> kUserRoles = [
 
 const String kPrefsLang = 'nuvelo_lang';
 const String kPrefsThemeMode = 'nuvelo_theme';
-const String kPrefsOnboardingDone = 'nuvelo_onboarding_done';
+/// Matches product spec key `onboarding_done` (first-launch flag).
+const String kPrefsOnboardingDone = 'onboarding_done';
 
 /// Default listings API — same source as nuvelo.one web (`/api/listings`).
 const String kDefaultListingsApiBase = 'https://nuvelo.one/api';

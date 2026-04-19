@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nuvelo_marketplace/l10n/app_localizations.dart';
 
+import '../../core/supabase_client.dart';
 import '../../services/auth_service.dart';
+import '../../services/profile_service.dart';
 import '../../widgets/nuvelo_screen.dart';
 
 class VerifyOtpScreen extends StatefulWidget {
@@ -54,6 +56,16 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
         );
       }
       if (!mounted) return;
+      final uid = supabase.auth.currentUser?.id;
+      if (uid != null) {
+        final profile = await ProfileService().fetchProfile(uid);
+        if (!mounted) return;
+        if (profile == null) {
+          context.go('/register');
+          return;
+        }
+      }
+      if (!mounted) return;
       context.go(widget.nextRoute.startsWith('/') ? widget.nextRoute : '/home');
     } catch (_) {
       if (!mounted) return;
@@ -69,8 +81,9 @@ class _VerifyOtpScreenState extends State<VerifyOtpScreen> {
     _cooldown = 30;
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
-      if (_cooldown <= 0) {
+      if (_cooldown <= 1) {
         t.cancel();
+        setState(() => _cooldown = 0);
       } else {
         setState(() => _cooldown -= 1);
       }

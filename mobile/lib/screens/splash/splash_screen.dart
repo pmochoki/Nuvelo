@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
+import '../../services/profile_service.dart';
 import '../../widgets/nuvelo_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -30,12 +31,24 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _goNext() async {
     if (!mounted) return;
     final prefs = await SharedPreferences.getInstance();
-    final done = prefs.getBool(kPrefsOnboardingDone) ?? false;
+    final done = prefs.getBool(kPrefsOnboardingDone) ??
+        prefs.getBool('nuvelo_onboarding_done') ??
+        false;
     final loggedIn = supabase.auth.currentSession != null;
 
     if (!mounted) return;
 
     if (loggedIn) {
+      final uid = supabase.auth.currentUser?.id;
+      if (uid != null) {
+        final profile = await ProfileService().fetchProfile(uid);
+        if (!mounted) return;
+        if (profile == null) {
+          context.go('/register');
+          return;
+        }
+      }
+      if (!mounted) return;
       context.go('/home');
       return;
     }

@@ -205,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   onPressed: () async {
                     await supabase.auth.signOut();
                     if (!context.mounted) return;
-                    context.go('/home');
+                    context.go('/splash');
                   },
                   child: Text(L.signOut),
                 ),
