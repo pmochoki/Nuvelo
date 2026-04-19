@@ -152,10 +152,11 @@ const showOAuthUnavailable = (providerLabel) => {
   showLoginError(t("auth.err.signin_down"));
 };
 
-/** When the listings API fails — text from i18n at render time. */
-const LISTINGS_UNAVAILABLE_MSG = () => t("listings.unavailable");
-/** Browse page fetch failure (user-facing). */
-const BROWSE_LISTINGS_ERROR_MSG = () => t("browse.error");
+/** Empty listings grid — same message when API returns nothing or fetch fails (no fake “could not load”). */
+const browseEmptyGridHtml = () => `<div class="empty-state" role="status">
+              <p>${esc(t("browse.empty"))}</p>
+              <p style="margin-top:0.75rem"><a class="btn btn--primary" href="/post">${esc(t("browse.post_cta"))}</a></p>
+            </div>`;
 const LISTING_DETAIL_UNAVAILABLE_MSG = () => t("listing.unavailable");
 const USER_STORE_KEY = "nuvelo_user";
 const PROFILE_FIELDS_KEY = "nuvelo_profile_fields";
@@ -3468,10 +3469,8 @@ const renderLanding = async () => {
   `;
 
   const grid = document.getElementById("home-listing-grid");
-  if (listingsLoadFailed) {
-    grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="status">${esc(LISTINGS_UNAVAILABLE_MSG())}</p>`;
-  } else if (!listings.length) {
-    grid.innerHTML = `<div class="listings-empty muted" role="status">${esc(t("browse.empty"))}</div>`;
+  if (listingsLoadFailed || !listings.length) {
+    grid.innerHTML = browseEmptyGridHtml();
   } else {
     trending.forEach((listing, i) => {
       grid.appendChild(
@@ -3747,11 +3746,6 @@ const renderList = async () => {
         <div class="category-strip" id="category-rail" role="tablist">${catChips}</div>
       </div>
       <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="browse-filter-open">${filterBtnLabel}</button>
-      ${
-        listingsLoadFailed
-          ? `<p class="browse-listings-soft-msg muted" role="alert">${esc(BROWSE_LISTINGS_ERROR_MSG())}</p>`
-          : ""
-      }
       <div class="browse-layout browse-layout--jiji">
         <aside class="browse-sidebar browse-sidebar--desktop" aria-label="${esc(t("browse.filters"))}">
           <form id="sidebar-filter-form" class="browse-filter-form">${filterFieldsHtml}</form>
@@ -3760,11 +3754,9 @@ const renderList = async () => {
           <div class="sort-bar sort-bar--jiji">
             <div>
               <h1 class="feed-head__title" style="margin:0;font-size:1.125rem">${feedTitle}</h1>
-              <p class="muted" style="margin:0.15rem 0 0;font-size:0.875rem">${
-                listingsLoadFailed
-                  ? esc(t("browse.results_error"))
-                  : esc(tfn("browse.results", totalCount))
-              }</p>
+              <p class="muted" style="margin:0.15rem 0 0;font-size:0.875rem">${esc(
+                tfn("browse.results", listingsLoadFailed ? 0 : totalCount)
+              )}</p>
             </div>
             <div style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
               <label class="sort-bar__sort">
@@ -3853,23 +3845,19 @@ const renderList = async () => {
     render();
   });
 
-  if (!pageSlice.length && !listingsLoadFailed) {
+  if (!pageSlice.length) {
+    if (listingsLoadFailed) {
+      grid.innerHTML = browseEmptyGridHtml();
+      return;
+    }
     if (rawListingCountPreEvents === 0) {
       grid.innerHTML =
         browseFetchIsBroad && filters.page <= 1
-          ? `<div class="empty-state" role="status">
-              <p>${esc(t("browse.empty"))}</p>
-              <p style="margin-top:0.75rem"><a class="btn btn--primary" href="/post">${esc(t("browse.post_cta"))}</a></p>
-            </div>`
+          ? browseEmptyGridHtml()
           : `<div class="empty-state" role="status">${tf("browse.no_match_search", { link: `<a href="/browse">${esc(t("browse.view_all"))}</a>` })}</div>`;
     } else {
       grid.innerHTML = `<div class="empty-state" role="status">${esc(t("browse.no_match_filters"))}</div>`;
     }
-    return;
-  }
-
-  if (listingsLoadFailed) {
-    grid.innerHTML = `<p class="browse-listings-soft-msg muted" role="alert">${esc(BROWSE_LISTINGS_ERROR_MSG())}</p>`;
     return;
   }
 
