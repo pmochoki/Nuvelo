@@ -1,0 +1,4 @@
+# Committed template — add your anon key locally or use --dart-define at build time.
+# Never commit real keys. Same values as web: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY.
+SUPABASE_URL=https://ahiujuljjbozmfwoqtli.supabase.co
+SUPABASE_ANON_KEY=

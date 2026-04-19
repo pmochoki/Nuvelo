@@ -3,6 +3,7 @@ import "package:google_fonts/google_fonts.dart";
 import "package:flutter/services.dart";
 
 import "api.dart";
+import "core/supabase_client.dart";
 import "models.dart";
 
 const Color _green = Color(0xFF7C3AED);
@@ -16,13 +17,15 @@ const Color _textPrimary = Color(0xFFF9FAFB);
 const Color _textSecondary = Color(0xFF9CA3AF);
 const Color _textMuted = Color(0xFF4B5563);
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.light,
     systemNavigationBarColor: Color(0xFF13102A),
     systemNavigationBarIconBrightness: Brightness.light,
   ));
+  await initSupabase();
   runApp(const NuveloApp());
 }
 
