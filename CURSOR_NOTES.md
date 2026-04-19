@@ -267,6 +267,27 @@ Apply migration **`supabase/migrations/20260412130000_admin_moderation_finance_c
 - Real payment provider writes to `boost_purchases` / `payout_requests`.
 - Production admin should use **service role** or Edge Functions instead of wide-open RLS.
 
+### Admin rebuild prompt — schema additions (web agent)
+
+Add these columns **if they do not exist** (admin writes; mobile reads for seller/account messaging):
+
+**`public.listings`**
+
+| Column       | Type    | Default | Purpose |
+|--------------|---------|---------|---------|
+| `admin_note` | TEXT    | —       | Reason shown to seller on rejection / removal |
+| `is_featured`| BOOLEAN | `false` | Homepage / feature placement flag |
+
+**`public.profiles`**
+
+| Column             | Type        | Default | Purpose |
+|--------------------|-------------|---------|---------|
+| `is_suspended`     | BOOLEAN     | `false` | Suspended users: block post/message only (see **NUVELO_MASTER_RULES.md** ADMIN section) |
+| `suspension_reason`| TEXT        | —       | Admin detail (optional surfaced to user or support) |
+| `suspended_until`  | TIMESTAMPTZ | —       | Optional auto-lift time |
+
+**Migration in repo:** `supabase/migrations/20260419223000_listings_profiles_admin_mobile_columns.sql` — apply in Supabase (SQL Editor or CLI).
+
 ### Tables needed for full functionality
 
 - **Required for connected features**:
@@ -283,6 +304,7 @@ Apply migration **`supabase/migrations/20260412130000_admin_moderation_finance_c
 - **Added** repo root **`NUVELO_MASTER_RULES.md`** (full Nuvelo master rules for web + Flutter).
 - **Deployment:** replaced the old “never push to main / use feature branches” rule with **commit and push directly to `main`**, confirm Vercel deployment before marking tasks done (live checks on **nuvelo.one**).
 - **Removed** that bullet from “WHAT CURSOR MUST NEVER DO”; added step 6 under “BEFORE STARTING ANY TASK” pointing at the deployment section.
+- **Admin rebuild / Supabase:** documented **`listings.admin_note`**, **`listings.is_featured`**, **`profiles.is_suspended`**, **`suspension_reason`**, **`suspended_until`** in master rules; added **Admin rebuild prompt — schema additions** under **Admin dashboard rebuild** here; migration **`supabase/migrations/20260419223000_listings_profiles_admin_mobile_columns.sql`**.
 
 ---
 

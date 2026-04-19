@@ -98,9 +98,16 @@ Key listing fields (always use these exact names):
   seller_name, seller_phone, seller_email,
   seller_whatsapp (boolean), contact_preference,
   status (active/pending_review/rejected/expired/banned),
+  admin_note (text — reason shown to seller when rejected/banned),
+  is_featured (boolean — homepage/feature flag, default false),
   user_id, posted_by_admin (boolean),
   created_at, updated_at, expires_at,
   view_count, language (en/hu)
+
+Key profile fields (admin + mobile awareness):
+  is_suspended (boolean, default false),
+  suspension_reason (text, optional),
+  suspended_until (timestamptz, optional)
 
 ---
 
@@ -274,6 +281,6 @@ Pass Flutter env vars at build time:
   OR use flutter_dotenv package with a .env file added to .gitignore
 
 ---
-Last updated: April 19, 2026
+Last updated: 2026-04-19 (admin schema: listings + profiles)
 Maintained by: Paul Ochoki
 Project: Nuvelo (nuvelo.one)
