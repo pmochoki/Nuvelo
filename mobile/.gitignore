@@ -2,6 +2,8 @@
 .env
 .env.*
 !.env.example
+# flutter_dotenv — real keys must not be committed (template may live in repo without secrets)
+assets/env
 
 # Miscellaneous
 *.class

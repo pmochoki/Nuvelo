@@ -1,0 +1,64 @@
+workflows:
+  ios-testflight:
+    name: Nuvelo iOS — TestFlight
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      vars:
+        BUNDLE_ID: one.nuvelo.app
+        APP_STORE_APP_ID: "6762571203"
+      groups:
+        - supabase_credentials
+        - apple_credentials
+
+    scripts:
+      - name: Get Flutter packages
+        script: |
+          cd mobile
+          flutter pub get
+
+      - name: Install CocoaPods
+        script: |
+          cd mobile/ios
+          pod install
+
+      - name: Set build number
+        script: |
+          cd mobile
+          BUILD_NUMBER=$(($PROJECT_BUILD_NUMBER))
+          sed -i '' "s/^version: .*/version: 1.0.0+$BUILD_NUMBER/" pubspec.yaml
+
+      - name: Flutter build IPA
+        script: |
+          cd mobile
+          flutter build ipa --release \
+            --dart-define=SUPABASE_URL=$SUPABASE_URL \
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
+            --export-options-plist=ios/ExportOptions.plist
+
+      - name: Verify build
+        script: |
+          ls -la mobile/build/ios/ipa/
+
+    artifacts:
+      - mobile/build/ios/ipa/*.ipa
+      - mobile/build/ios/archive/Runner.xcarchive
+      - /tmp/xcodebuild_logs/*.log
+      - flutter_drive.log
+
+    publishing:
+      email:
+        recipients:
+          - pmochoki@gmail.com
+        notify:
+          success: true
+          failure: true
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
+        beta_groups:
+          - Nuvelians
