@@ -275,3 +275,11 @@ Apply migration **`supabase/migrations/20260412130000_admin_moderation_finance_c
   - `public.site_config` (migration exists)
 - **Admin support (migration `20260412130000`)**:
   - `public.moderation_reports`, `user_flags`, `verification_requests`, `moderation_appeals`, `boost_purchases`, `payout_requests`, `admin_marketplace_categories`, `admin_marketplace_locations`
+
+---
+
+## 2026-04-19 — `NUVELO_MASTER_RULES.md`
+
+- **Added** repo root **`NUVELO_MASTER_RULES.md`** (full Nuvelo master rules for web + Flutter).
+- **Deployment:** replaced the old “never push to main / use feature branches” rule with **commit and push directly to `main`**, confirm Vercel deployment before marking tasks done (live checks on **nuvelo.one**).
+- **Removed** that bullet from “WHAT CURSOR MUST NEVER DO”; added step 6 under “BEFORE STARTING ANY TASK” pointing at the deployment section.
