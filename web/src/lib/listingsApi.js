@@ -222,8 +222,13 @@ export async function fetchListings(params = {}) {
     }
   } catch (e) {
     console.error("[Nuvelo] fetchListings failed", { url: listingsUrl, message: e?.message }, e);
-    if (!demosEnabled()) {
-      throw e;
+    if (forUserId) {
+      if (!demosEnabled()) {
+        throw e;
+      }
+    } else {
+      /* Public browse / home: API down or error still shows “no listings” empty state, not outage copy. */
+      real = [];
     }
   }
 
