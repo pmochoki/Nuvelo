@@ -283,3 +283,62 @@ Apply migration **`supabase/migrations/20260412130000_admin_moderation_finance_c
 - **Added** repo root **`NUVELO_MASTER_RULES.md`** (full Nuvelo master rules for web + Flutter).
 - **Deployment:** replaced the old “never push to main / use feature branches” rule with **commit and push directly to `main`**, confirm Vercel deployment before marking tasks done (live checks on **nuvelo.one**).
 - **Removed** that bullet from “WHAT CURSOR MUST NEVER DO”; added step 6 under “BEFORE STARTING ANY TASK” pointing at the deployment section.
+
+---
+
+## 2026-04-19 — iOS (Flutter) — App Store prep (agent)
+
+**Done in `mobile/` (iOS + shared `pubspec` for iOS-only tooling)**
+
+- **Bundle ID** `one.nuvelo.app` (Debug / Release / Profile) and **RunnerTests** `one.nuvelo.app.RunnerTests` in `ios/Runner.xcodeproj/project.pbxproj`.
+- **Deployment** iOS **13.0** in `Podfile` + `post_install` IPHONEOS for all pods; project file already at 13.0.
+- **Info.plist:** display name **Nuvelo**; camera, photo library, photo add, location (when in use) usage strings; **Supabase / OAuth** `CFBundleURLTypes` + `LSApplicationQueriesSchemes` (`https`, `googlechrome`, `fb`); **light status bar** via `UIStatusBarStyle` + `UIViewControllerBasedStatusBarAppearance` = false; `UILaunchStoryboardName` = `LaunchScreen`; `UIBackgroundModes` = `remote-notification` (for APNs / push when enabled).
+- **Not used:** `NSUserNotificationUsageDescription` is not a standard iOS notification permission string; iOS uses `UNUserNotificationCenter` (no separate Info.plist string for the system dialog). The old key in the task spec was skipped.
+- **AppDelegate:** `UNUserNotificationCenter` auth + `registerForRemoteNotifications` on the main queue; `application(_:open:options:)` forwards to `super` for deep links.
+- **Entitlements:** `ios/Runner/Runner.entitlements` with `aps-environment` = `development` (set to **production** in Xcode / for App Store archive as per your team’s push setup).
+- **Privacy:** `ios/Runner/PrivacyInfo.xcprivacy` + **Copy Bundle Resources** in Xcode project.
+- **Icons & splash:** `assets/images/nuvelo_logo.png` + `nuvelo_icon.png` generated from **`web/public/nuvelo-logo.svg`** via macOS Quick Look thumbnail (1024 PNG); **flutter_launcher_icons** → `remove_alpha_ios`, background `#0D0A1E`; **flutter_native_splash** with `web: false` so repo web isn’t regenerated; **`LaunchScreen.storyboard`** manually extended with centred **“Nice Vibes Only”** label above the home-indicator safe area.
+- **Deps:** `flutter_local_notifications` added for future MVP local alerts (Dart init still TODO when product wants it). **`pubspec.yaml` caveat:** after `dart run flutter_native_splash:create`, verify **full `pubspec.yaml`** was not truncated — restore `flutter_launcher_icons` / `flutter_native_splash` blocks and dependencies if the tool strips them.
+- **Fastlane templates:** `ios/fastlane/Appfile`, `ios/fastlane/Deliverfile` (placeholders for Apple ID / team).
+- **Screenshots:** `ios/screenshots/en-US/` and `hu/` README placeholders with required dimensions (final PNGs from Simulator + seeded listings — manual).
+- **Verify:** `flutter build ios --no-codesign` succeeds.
+
+**Manual / Apple Developer (you)**
+
+- [ ] Apple Developer Program + App Store Connect app record for **one.nuvelo.app**.
+- [ ] **Signing:** Xcode → Signing & Capabilities → Team; enable **Push Notifications** if using APNs (entitlements already present).
+- [ ] **Archive / IPA:** `flutter build ipa --release --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_ANON_KEY=...` (never commit the anon key).
+- [ ] **Upload:** Transporter or `xcrun altool` / `notarytool` per current Apple CLI.
+- [ ] **Screenshots** for all required device sizes; **privacy nutrition labels** in ASC; **age rating** questionnaire (4+).
+- [ ] **Runner.entitlements:** switch `aps-environment` to **production** for distribution if using push.
+
+### App Store submission checklist (copy)
+
+**App Store Connect (manual)**
+
+- [ ] Apple Developer account active ($99/year)
+- [ ] App created in App Store Connect
+- [ ] Bundle ID registered: **one.nuvelo.app**
+- [ ] Banking / tax if selling digital goods later
+- [ ] Privacy policy URL live: **https://nuvelo.one/privacy**
+
+**App content (repo + you)**
+
+- [ ] App icon 1024×1024 no unintended transparency (icons regenerated with solid background)
+- [ ] Screenshots for 6.9", 6.5", 5.5", 12.9" iPad
+- [ ] Descriptions EN + HU (draft in `ios/fastlane/Deliverfile`)
+- [ ] Keywords EN + HU
+- [ ] Age rating (4+)
+- [ ] Privacy nutrition labels
+
+**Technical**
+
+- [ ] `flutter build ipa` succeeds
+- [ ] No crashes on small / large iPhone + iPad (manual QA)
+- [ ] Permission strings present (see Info.plist)
+- [ ] `PrivacyInfo.xcprivacy` in app bundle
+- [ ] HTTPS only; Supabase anon key via `--dart-define` only
+
+**App Review notes (suggested)**
+
+> Nuvelo is a classifieds marketplace for Hungary’s expat and local community. To test: create an account with any email; browse listings; post a test listing; send a message. Listings are moderated before going live; reporting is available on listings.

@@ -1,0 +1,5 @@
+# Fill in before running fastlane deliver / gym for App Store uploads.
+app_identifier("one.nuvelo.app")
+apple_id("[YOUR APPLE ID EMAIL]")
+team_id("[YOUR TEAM ID]")
+itc_team_id("[YOUR APP STORE CONNECT TEAM ID — optional]")

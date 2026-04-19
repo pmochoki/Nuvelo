@@ -1,0 +1,86 @@
+# App Store metadata template for fastlane deliver.
+# Replace placeholders and ensure screenshots exist under ios/screenshots/ before uploading.
+
+app_identifier "one.nuvelo.app"
+
+name({
+  "en-US" => "Nuvelo",
+  "hu" => "Nuvelo"
+})
+
+subtitle({
+  "en-US" => "Buy, Sell & Rent in Hungary",
+  "hu" => "Vétel, Eladás és Bérlés Magyarországon"
+})
+
+description({
+  "en-US" =>
+    "Nuvelo is Hungary's free classifieds marketplace " \
+    "for the expat and local community.\n\n" \
+    "Find rentals, jobs, services, vehicles, electronics, " \
+    "furniture, fashion, and more — all in one place.\n\n" \
+    "FEATURES\n" \
+    "• Browse thousands of listings across Hungary\n" \
+    "• Post a free ad in under 60 seconds\n" \
+    "• Message sellers directly and securely\n" \
+    "• Save your favourite listings\n" \
+    "• Get notified when your ad is approved\n" \
+    "• Verified seller badges for safer transactions\n" \
+    "• Available in English and Hungarian\n" \
+    "• Dark mode support\n\n" \
+    "CATEGORIES\n" \
+    "Rentals · Jobs · Services · Vehicles · Electronics · " \
+    "Furniture · Fashion · Babies & Kids · Events · Donations\n\n" \
+    "POST AN AD\n" \
+    "List anything for free. Upload photos, set your price, " \
+    "choose how buyers contact you. Your ad goes live after " \
+    "a quick review — usually within hours.\n\n" \
+    "SAFE & LOCAL\n" \
+    "All listings are reviewed before going live. " \
+    "Verified seller badges mean real, trusted people. " \
+    "Built-in safety tips guide every transaction.\n\n" \
+    "Same account works on web at nuvelo.one and in the app.",
+
+  "hu" =>
+    "A Nuvelo Magyarország ingyenes apróhirdetési piactere " \
+    "a helyi és expat közösség számára.\n\n" \
+    "Találj bérlakást, állást, szolgáltatást, járművet, " \
+    "elektronikát, bútort, divatot és még sok mást — " \
+    "egy helyen.\n\n" \
+    "FUNKCIÓK\n" \
+    "• Böngéssz ezer hirdetés között Magyarországon\n" \
+    "• Adj fel ingyenes hirdetést 60 másodperc alatt\n" \
+    "• Üzenj az eladóknak közvetlenül és biztonságosan\n" \
+    "• Mentsd el kedvenc hirdetéseidet\n" \
+    "• Értesítést kapsz, ha a hirdetésed jóváhagyták\n" \
+    "• Elérhető magyarul és angolul\n" \
+    "• Sötét mód támogatással"
+})
+
+keywords({
+  "en-US" =>
+    "classifieds,hungary,budapest,expat,rent,jobs,buy,sell",
+  "hu" =>
+    "apróhirdetés,magyarország,budapest,bérlés,állás"
+})
+
+support_url({
+  "en-US" => "https://nuvelo.one/support",
+  "hu" => "https://nuvelo.one/support"
+})
+
+marketing_url({
+  "en-US" => "https://nuvelo.one",
+  "hu" => "https://nuvelo.one"
+})
+
+privacy_url({
+  "en-US" => "https://nuvelo.one/privacy",
+  "hu" => "https://nuvelo.one/privacy"
+})
+
+primary_category "MZGenre.Shopping"
+secondary_category "MZGenre.Lifestyle"
+
+# age_rating_override may require using App Store Connect API instead; confirm in fastlane docs.
+# age_rating_override 'MZBonusContentRating_4+'
