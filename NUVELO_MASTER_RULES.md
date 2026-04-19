@@ -121,6 +121,36 @@ Key listing fields (always use these exact names):
 
 ---
 
+## ADMIN
+
+### ADMIN STRATEGY — THREE PLATFORM RULE
+
+Admin dashboard lives ONLY at nuvelo.one/admin.html  
+Never build admin screens into Android or iOS apps.  
+All admin actions write to Supabase and instantly affect all three platforms.
+
+Mobile apps need these two admin-aware features only:
+
+#### 1. LISTING STATUS AWARENESS
+
+If a listing `status` is `'rejected'` or `'banned'`, show the owner a clear message in their My Ads tab:
+
+"This listing was removed. Reason: [admin_note]"
+
+Never just silently hide it.
+
+#### 2. ACCOUNT SUSPENSION AWARENESS
+
+If a user account is suspended (add `is_suspended` boolean to `profiles` table), on app launch show:
+
+"Your account has been suspended. Contact support@nuvelo.one"
+
+Block access to post/message features only. They can still browse listings.
+
+Everything else — approvals, bans, reports, revenue, settings — is handled exclusively from the web admin.
+
+---
+
 ## STORAGE RULES
 
 Bucket: avatars
@@ -244,6 +274,6 @@ Pass Flutter env vars at build time:
   OR use flutter_dotenv package with a .env file added to .gitignore
 
 ---
-Last updated: April 2026
+Last updated: April 19, 2026
 Maintained by: Paul Ochoki
 Project: Nuvelo (nuvelo.one)
