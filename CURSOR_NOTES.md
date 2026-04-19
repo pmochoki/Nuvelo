@@ -368,9 +368,33 @@ cd mobile && flutter build apk --release \
 
 Artifact path: **`mobile/build/app/outputs/flutter-apk/app-release.apk`**.
 
+### iOS UX polish (NuveloScreen + flows, 2026-04-19)
+
+- **`NuveloScreen`** (`mobile/lib/widgets/nuvelo_screen.dart`): **`Color(0xFF0D0A1E)`** scaffold background, configurable **SafeArea** edges (shell tabs use `safeTop`/`safeBottom` false to avoid double insets under `MainShell`), **tap outside** unfocuses inputs.
+- **Splash / onboarding / auth** (sign-in, verify OTP, register): wrapped with **NuveloScreen**; OTP uses **SingleChildScrollView** for keyboard.
+- **Home & browse**: **NuveloScreen** around body (same shell as Android).
+- **Listing detail**: navy loading/error; **Send message** → **`MessagesService.getOrCreateThread`** → **`/messages/:tid/chat`**; localized **`thisIsYourListing`** (`app_en.arb` / `app_hu.arb`).
+- **Post ad (3 steps)**: step 1 includes **CupertinoDatePicker** (availability date) and **CupertinoTimerPicker** (preferred contact time); step 2 **multi-image** picker + upload to **`listings-images`** after **`createListing`** + **`updateListing`** with image URLs; step 3 review.
+- **Profile** (6 tabs): **NuveloScreen** wrapper on the tab root.
+- **Chat**: **NuveloScreen** + input row padded with **`MediaQuery.paddingOf(context).bottom`** (home indicator).
+- **Settings**: **profile photo** (gallery → **`StorageService.uploadAvatar`** + **`ProfileService.updateProfile`**), language + theme toggles.
+
+**Build:** `cd mobile && flutter build ios --no-codesign` succeeds after changes.
+
+**IPA (manual secrets + signing):**
+
+```bash
+cd mobile && flutter build ipa --release \
+  --dart-define=SUPABASE_URL=https://ahiujuljjbozmfwoqtli.supabase.co \
+  --dart-define=SUPABASE_ANON_KEY="<your anon JWT from Vercel / Supabase — never commit>"
+```
+
+Output (when signing succeeds): **`mobile/build/ios/ipa/`** — e.g. **`Nuvelo.ipa`** or **`Runner.ipa`** depending on Xcode product name.
+
+**Simulator QA checklist** (requires local env with anon key in `assets/env` or `--dart-define`): email OTP → browse (`nuvelo.one` API listings) → post listing → message thread realtime → profile photo → HU locale — **not executed in agent** (no Simulator run here).
+
 **Still to deepen (when you iterate)**
 
 - Category-specific **post-ad** extras (rentals/events/vehicles…) — form is extendable via `category_fields`.
-- **Post Step 2** — full image picker + **`listings-images`** uploads per listing id.
 - **Launcher / adaptive icons** — add raster assets + `flutter_launcher_icons` if you want branded mipmap icons beyond default Flutter launcher.
 - Add **`https://`** Supabase redirect / **`one.nuvelo.app://login-callback`** in Supabase Dashboard → Authentication → URL configuration if OAuth fails.
