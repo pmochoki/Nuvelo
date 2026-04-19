@@ -438,6 +438,26 @@ cd mobile && flutter build ipa --release \
 
 Output (when signing succeeds): **`mobile/build/ios/ipa/`** — e.g. **`Nuvelo.ipa`** or **`Runner.ipa`** depending on Xcode product name.
 
+### Codemagic CI/CD — TestFlight setup (cloud Xcode 16)
+
+**Why:** App Store uploads require **Xcode 16**. A Mac stuck on older macOS (e.g. Ventura and no Xcode 16) cannot upload from Xcode locally. **Codemagic** (`instance_type: mac_mini_m1`, **`xcode: latest`**) builds and can **submit to TestFlight** automatically.
+
+**Repo paths**
+
+- **`mobile/codemagic.yaml`** — workflow **`ios-testflight`** (`Nuvelo iOS — TestFlight`): **`flutter pub get`** → **`cd mobile/ios && pod install`** → **set build number** (`sed` sets **`mobile/pubspec.yaml`** line to **`version: 1.0.0+$PROJECT_BUILD_NUMBER`**) → **`flutter build ipa --release`** with **`--dart-define=SUPABASE_URL`** / **`SUPABASE_ANON_KEY`** and **`--export-options-plist=ios/ExportOptions.plist`** (relative to **`cd mobile`**).
+- **`mobile/ios/ExportOptions.plist`** — **`method`**: `app-store`, **`teamID`**: **`H9JAV8HGW9`**, **`signingStyle`**: automatic; symbols upload on, bitcode off.
+
+**Codemagic dashboard — required**
+
+1. Link the GitHub repo; if prompted for the workflow file, point at **`mobile/codemagic.yaml`**.
+2. **Variable groups** (names must match YAML):
+   - **`supabase_credentials`** — **`SUPABASE_URL`**, **`SUPABASE_ANON_KEY`** (same Supabase project as web; **never commit** keys — see **`NUVELO_MASTER_RULES.md`**).
+   - **`apple_credentials`** — Apple signing + App Store Connect integration so **`publishing.app_store_connect`** works (**`auth: integration`**, **`submit_to_testflight: true`**).
+3. App Store Connect: app ID **`6762571203`**, bundle **`one.nuvelo.app`**; internal/testing group **`Nuvelians`** must exist for **`beta_groups`**.
+4. Email notifications: **`pmochoki@gmail.com`** on success and failure.
+
+**Artifacts:** **`mobile/build/ios/ipa/*.ipa`**, **`mobile/build/ios/archive/Runner.xcarchive`**, Xcode logs under **`/tmp/xcodebuild_logs/`**.
+
 **Simulator QA checklist** (requires local env with anon key in `assets/env` or `--dart-define`): email OTP → browse (`nuvelo.one` API listings) → post listing → message thread realtime → profile photo → HU locale — **not executed in agent** (no Simulator run here).
 
 **Still to deepen (when you iterate)**
