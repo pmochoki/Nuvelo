@@ -97,6 +97,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get locationAllHungary => 'Egész Magyarország';
 
   @override
+  String get chooseCity => 'Válassz várost';
+
+  @override
   String get trendingAds => 'Felkapott hirdetések';
 
   @override

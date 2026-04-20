@@ -57,6 +57,70 @@ class _HomeScreenState extends State<HomeScreen> {
   String _lang(BuildContext context) =>
       Localizations.localeOf(context).languageCode;
 
+  Future<void> _showCityPicker(
+      BuildContext context, AppLocalizations L) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      builder: (ctx) {
+        final bottom = MediaQuery.paddingOf(ctx).bottom;
+        return DraggableScrollableSheet(
+          expand: false,
+          initialChildSize: 0.55,
+          minChildSize: 0.35,
+          maxChildSize: 0.92,
+          builder: (context, scrollController) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          L.chooseCity,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w800),
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    controller: scrollController,
+                    padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + bottom),
+                    itemCount: kHungarianCities.length,
+                    itemBuilder: (context, i) {
+                      final c = kHungarianCities[i];
+                      return ListTile(
+                        title: Text(c),
+                        onTap: () {
+                          Navigator.pop(ctx);
+                          context.go(
+                            '/browse?city=${Uri.encodeComponent(c)}',
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final L = AppLocalizations.of(context)!;
@@ -79,36 +143,55 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Material(
                   color: NuveloColors.deepCard,
                   borderRadius: BorderRadius.circular(NuveloRadii.input),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(NuveloRadii.input),
-                    onTap: () => context.push('/search'),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.search,
-                              color: NuveloColors.textMuted),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              L.searchPlaceholder,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(color: NuveloColors.textMuted),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(NuveloRadii.input),
+                          onTap: () => context.push('/search'),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 14),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.search,
+                                    color: NuveloColors.textMuted),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    L.searchPlaceholder,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium
+                                        ?.copyWith(
+                                            color: NuveloColors.textMuted),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          const Icon(Icons.keyboard_arrow_down,
-                              color: NuveloColors.textMuted),
-                          const SizedBox(width: 4),
-                          Text(
-                            L.locationAllHungary,
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                        ],
+                        ),
                       ),
-                    ),
+                      InkWell(
+                        borderRadius: BorderRadius.circular(NuveloRadii.input),
+                        onTap: () => _showCityPicker(context, L),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(8, 14, 16, 14),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.keyboard_arrow_down,
+                                  color: NuveloColors.textMuted),
+                              const SizedBox(width: 4),
+                              Text(
+                                L.locationAllHungary,
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

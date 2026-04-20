@@ -97,6 +97,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get locationAllHungary => 'All Hungary';
 
   @override
+  String get chooseCity => 'Choose a city';
+
+  @override
   String get trendingAds => 'Trending ads';
 
   @override

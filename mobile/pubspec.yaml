@@ -32,6 +32,7 @@ dependencies:
   provider: ^6.1.2
   permission_handler: ^11.3.1
   path: ^1.9.0
+  app_links: ^6.3.3
 
 dev_dependencies:
   flutter_test:

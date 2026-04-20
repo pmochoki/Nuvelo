@@ -54,7 +54,7 @@ class _SearchScreenState extends State<SearchScreen> {
     final lang = Localizations.localeOf(context).languageCode;
 
     return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         leading: const BackButton(),
         title: TextField(

@@ -1,3 +1,4 @@
+import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -10,6 +11,24 @@ import 'core/router.dart';
 import 'core/supabase_client.dart';
 import 'core/theme.dart';
 import 'state/app_settings.dart';
+
+Future<void> _listenOAuthDeepLinks() async {
+  final appLinks = AppLinks();
+  Future<void> handle(Uri uri) async {
+    try {
+      await supabase.auth.getSessionFromUrl(uri);
+    } catch (_) {
+      // Invalid or stale callback; ignore.
+    }
+  }
+
+  try {
+    final initial = await appLinks.getInitialLink();
+    if (initial != null) await handle(initial);
+  } catch (_) {}
+
+  appLinks.uriLinkStream.listen(handle);
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,8 +46,12 @@ Future<void> main() async {
           defaultValue:
               'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoaXVqdWxqamJvem1md29xdGxpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU2MDQ5MDIsImV4cCI6MjA5MTE4MDkwMn0.q_Jz6qnkwuhU5svFDt9JShWN_KUhzc2TNKfSU5fHJOI',
         ),
+        authOptions: const FlutterAuthClientOptions(
+          authFlowType: AuthFlowType.pkce,
+        ),
       );
     }
+    await _listenOAuthDeepLinks();
   } catch (_) {
     // Splash screen has a fail-open fallback to route users forward.
   }

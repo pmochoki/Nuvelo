@@ -8,7 +8,7 @@ class AppSettingsController extends ChangeNotifier {
   AppSettingsController();
 
   Locale _locale = const Locale('en');
-  ThemeMode _themeMode = ThemeMode.dark;
+  ThemeMode _themeMode = ThemeMode.system;
 
   Locale get locale => _locale;
   ThemeMode get themeMode => _themeMode;
@@ -31,7 +31,8 @@ class AppSettingsController extends ChangeNotifier {
     _themeMode = switch (tm) {
       'light' => ThemeMode.light,
       'dark' => ThemeMode.dark,
-      _ => ThemeMode.dark,
+      'system' => ThemeMode.system,
+      _ => ThemeMode.system,
     };
     notifyListeners();
   }

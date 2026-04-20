@@ -272,6 +272,12 @@ abstract class AppLocalizations {
   /// **'All Hungary'**
   String get locationAllHungary;
 
+  /// No description provided for @chooseCity.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a city'**
+  String get chooseCity;
+
   /// No description provided for @trendingAds.
   ///
   /// In en, this message translates to:

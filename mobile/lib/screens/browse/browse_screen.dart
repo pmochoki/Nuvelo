@@ -15,9 +15,11 @@ import '../../widgets/nuvelo_app_bar.dart';
 import '../../widgets/nuvelo_screen.dart';
 
 class BrowseScreen extends StatefulWidget {
-  const BrowseScreen({super.key, this.initialCategoryId});
+  const BrowseScreen({super.key, this.initialCategoryId, this.initialCity});
 
   final String? initialCategoryId;
+  /// From `/browse?city=…` (e.g. Budapest). Must match [kHungarianCities] values.
+  final String? initialCity;
 
   @override
   State<BrowseScreen> createState() => _BrowseScreenState();
@@ -43,6 +45,9 @@ class _BrowseScreenState extends State<BrowseScreen> {
   void initState() {
     super.initState();
     _category = widget.initialCategoryId;
+    if (widget.initialCity != null && widget.initialCity!.isNotEmpty) {
+      _city = widget.initialCity!;
+    }
     _scroll.addListener(_onScroll);
     _load(reset: true);
   }
@@ -312,40 +317,65 @@ class _FilterSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.paddingOf(context).bottom;
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottom),
-        child: SingleChildScrollView(
+    return DraggableScrollableSheet(
+      expand: false,
+      initialChildSize: 0.55,
+      minChildSize: 0.35,
+      maxChildSize: 0.92,
+      builder: (context, scrollController) {
+        return SafeArea(
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Text(
-                'Filters',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: kHungarianCities
-                    .map(
-                      (c) => ActionChip(
-                        label: Text(c),
-                        onPressed: () => onCity(c),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 8),
+                child: Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'Filters',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800, fontSize: 18),
                       ),
-                    )
-                    .toList(),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 16),
-              OutlinedButton(
-                onPressed: onClear,
-                child: const Text('Clear filters'),
+              Expanded(
+                child: ListView.builder(
+                  controller: scrollController,
+                  padding: EdgeInsets.fromLTRB(24, 0, 24, 16 + bottom),
+                  itemCount: kHungarianCities.length + 1,
+                  itemBuilder: (context, i) {
+                    if (i == kHungarianCities.length) {
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 8),
+                        child: OutlinedButton(
+                          onPressed: onClear,
+                          child: const Text('Clear filters'),
+                        ),
+                      );
+                    }
+                    final c = kHungarianCities[i];
+                    final selected = city == c;
+                    return ListTile(
+                      title: Text(c),
+                      trailing: selected
+                          ? const Icon(Icons.check, color: NuveloColors.primaryOrange)
+                          : null,
+                      onTap: () => onCity(c),
+                    );
+                  },
+                ),
               ),
             ],
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

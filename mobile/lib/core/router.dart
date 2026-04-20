@@ -172,6 +172,10 @@ GoRouter createRouter(AuthRefreshNotifier authRefresh) {
                   child: BrowseScreen(
                     initialCategoryId:
                         state.uri.queryParameters['category'],
+                    initialCity: state.uri.queryParameters['city'] != null &&
+                            state.uri.queryParameters['city']!.isNotEmpty
+                        ? Uri.decodeComponent(state.uri.queryParameters['city']!)
+                        : null,
                   ),
                 ),
               ),

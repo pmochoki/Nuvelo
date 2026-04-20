@@ -49,7 +49,7 @@ class NuveloScreen extends StatelessWidget {
       );
     }
     return Scaffold(
-      backgroundColor: NuveloColors.darkNavy,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       resizeToAvoidBottomInset: resizeToAvoidBottomInset,
       appBar: appBar,
       body: body,
