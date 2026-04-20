@@ -32,7 +32,7 @@ class NuveloBottomNavigation extends StatelessWidget {
       child: SafeArea(
         top: false,
         child: SizedBox(
-          height: 72,
+          height: 78,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [

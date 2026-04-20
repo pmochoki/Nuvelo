@@ -13,20 +13,6 @@
       <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:0.3" />
       <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:0" />
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
-    <filter id="softGlow">
-      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
-      <feMerge>
-        <feMergeNode in="coloredBlur"/>
-        <feMergeNode in="SourceGraphic"/>
-      </feMerge>
-    </filter>
     <clipPath id="circleClip">
       <circle cx="90" cy="105" r="62"/>
     </clipPath>
@@ -48,14 +34,13 @@
   <circle cx="90" cy="105" r="52" fill="#7C3AED" fill-opacity="0.15"/>
 
   <!-- Crescent moon shape — large white circle -->
-  <circle cx="90" cy="105" r="38" fill="none" stroke="url(#symbolGrad)" stroke-width="0" filter="url(#glow)"/>
+  <circle cx="90" cy="105" r="38" fill="none" stroke="url(#symbolGrad)" stroke-width="0"/>
 
   <!-- Crescent: outer arc -->
   <path d="M 62 80 
            A 38 38 0 1 1 62 130 
            A 28 28 0 1 0 62 80 Z" 
-        fill="url(#symbolGrad)" 
-        filter="url(#glow)"/>
+       fill="url(#symbolGrad)"/>
 
   <!-- Inner swoosh line 1 -->
   <path d="M 78 72 Q 120 95 108 130" 
@@ -63,8 +48,7 @@
         stroke="white" 
         stroke-width="2.5" 
         stroke-linecap="round"
-        stroke-opacity="0.9"
-        filter="url(#glow)"/>
+        stroke-opacity="0.9"/>
 
   <!-- Inner swoosh line 2 -->
   <path d="M 68 82 Q 115 105 100 138" 
@@ -75,7 +59,7 @@
         stroke-opacity="0.5"/>
 
   <!-- Orbit dot -->
-  <circle cx="128" cy="78" r="5" fill="#A78BFA" filter="url(#glow)"/>
+  <circle cx="128" cy="78" r="5" fill="#A78BFA"/>
   <circle cx="128" cy="78" r="3" fill="white"/>
 
   <!-- NUVELO text -->
@@ -85,8 +69,7 @@
         font-size="58" 
         font-weight="900"
         letter-spacing="4"
-        fill="white"
-        filter="url(#glow)">NUVELO</text>
+       fill="white">NUVELO</text>
 
   <!-- Divider line -->
   <line x1="170" y1="108" x2="460" y2="108" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.5"/>

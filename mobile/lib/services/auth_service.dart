@@ -1,4 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/supabase_client.dart';
 import '../models/user_profile.dart';
@@ -53,6 +54,7 @@ class AuthService {
     await supabase.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: kOAuthRedirectUri.toString(),
+      authScreenLaunchMode: LaunchMode.externalApplication,
     );
   }
 
@@ -60,6 +62,7 @@ class AuthService {
     await supabase.auth.signInWithOAuth(
       OAuthProvider.facebook,
       redirectTo: kOAuthRedirectUri.toString(),
+      authScreenLaunchMode: LaunchMode.externalApplication,
     );
   }
 

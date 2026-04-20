@@ -134,6 +134,8 @@ class _BrowseScreenState extends State<BrowseScreen> {
                   icon: const Icon(Icons.filter_list_rounded),
                   onPressed: () => showModalBottomSheet<void>(
                     context: context,
+                    isScrollControlled: true,
+                    useSafeArea: true,
                     backgroundColor: NuveloColors.cardBg,
                     builder: (ctx) => _FilterSheet(
                       city: _city,
@@ -309,36 +311,39 @@ class _FilterSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Text(
-              'Filters',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: kHungarianCities
-                  .map(
-                    (c) => ActionChip(
-                      label: Text(c),
-                      onPressed: () => onCity(c),
-                    ),
-                  )
-                  .toList(),
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: onClear,
-              child: const Text('Clear filters'),
-            ),
-          ],
+        padding: EdgeInsets.fromLTRB(24, 24, 24, 24 + bottom),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Text(
+                'Filters',
+                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: kHungarianCities
+                    .map(
+                      (c) => ActionChip(
+                        label: Text(c),
+                        onPressed: () => onCity(c),
+                      ),
+                    )
+                    .toList(),
+              ),
+              const SizedBox(height: 16),
+              OutlinedButton(
+                onPressed: onClear,
+                child: const Text('Clear filters'),
+              ),
+            ],
+          ),
         ),
       ),
     );

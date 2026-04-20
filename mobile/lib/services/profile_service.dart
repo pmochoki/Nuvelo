@@ -3,14 +3,20 @@ import '../models/user_profile.dart';
 
 class ProfileService {
   Future<UserProfile?> fetchProfile(String userId) async {
-    final row =
-        await supabase.from('profiles').select().eq('id', userId).maybeSingle();
-    if (row == null) return null;
-    final u = supabase.auth.currentUser;
-    return UserProfile.fromSupabase(
-      Map<String, dynamic>.from(row as Map),
-      authMeta: u?.userMetadata,
-    );
+    try {
+      final row =
+          await supabase.from('profiles').select().eq('id', userId).maybeSingle();
+      if (row == null) return null;
+      final u = supabase.auth.currentUser;
+      return UserProfile.fromSupabase(
+        Map<String, dynamic>.from(row as Map),
+        authMeta: u?.userMetadata,
+      );
+    } catch (_) {
+      // Fail-safe for first-run/dev environments where `profiles` is not yet migrated.
+      // Splash flow treats null as "profile missing" and routes to /register.
+      return null;
+    }
   }
 
   Future<void> updateProfile({
