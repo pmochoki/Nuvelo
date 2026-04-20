@@ -29,34 +29,40 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _goNext() async {
-    if (!mounted) return;
-    final prefs = await SharedPreferences.getInstance();
-    final done = prefs.getBool(kPrefsOnboardingDone) ??
-        prefs.getBool('nuvelo_onboarding_done') ??
-        false;
-    final loggedIn = supabase.auth.currentSession != null;
+    try {
+      if (!mounted) return;
+      final prefs = await SharedPreferences.getInstance();
+      final done = prefs.getBool(kPrefsOnboardingDone) ??
+          prefs.getBool('nuvelo_onboarding_done') ??
+          false;
+      final loggedIn = supabase.auth.currentSession != null;
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (loggedIn) {
-      final uid = supabase.auth.currentUser?.id;
-      if (uid != null) {
-        final profile = await ProfileService().fetchProfile(uid);
-        if (!mounted) return;
-        if (profile == null) {
-          context.go('/register');
-          return;
+      if (loggedIn) {
+        final uid = supabase.auth.currentUser?.id;
+        if (uid != null) {
+          final profile = await ProfileService().fetchProfile(uid);
+          if (!mounted) return;
+          if (profile == null) {
+            context.go('/register');
+            return;
+          }
         }
+        if (!mounted) return;
+        context.go('/home');
+        return;
       }
+      if (!done) {
+        context.go('/onboarding');
+        return;
+      }
+      context.go('/home');
+    } catch (_) {
+      // Never block users on splash if auth/network/init has transient issues.
       if (!mounted) return;
       context.go('/home');
-      return;
     }
-    if (!done) {
-      context.go('/onboarding');
-      return;
-    }
-    context.go('/home');
   }
 
   @override
