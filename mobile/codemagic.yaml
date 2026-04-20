@@ -1,55 +1,38 @@
 workflows:
   ios-testflight:
-    name: Nuvelo iOS — TestFlight
+    name: Nuvelo iOS TestFlight
+    instance_type: mac_mini_m2
     max_build_duration: 60
-    instance_type: mac_mini_m1
-
     environment:
       flutter: stable
       xcode: latest
       cocoapods: default
-      vars:
-        BUNDLE_ID: one.nuvelo.app
-        APP_STORE_APP_ID: "6762571203"
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: one.nuvelo.app
       groups:
         - supabase_credentials
-        - apple_credentials
-
+        - appstore_credentials
+      vars:
+        BUNDLE_ID: one.nuvelo.app
     scripts:
       - name: Get Flutter packages
         script: |
           cd mobile
           flutter pub get
-
-      - name: Install CocoaPods
+      - name: Install pods
         script: |
           cd mobile/ios
           pod install
-
-      - name: Set build number
-        script: |
-          cd mobile
-          BUILD_NUMBER=$(($PROJECT_BUILD_NUMBER))
-          sed -i '' "s/^version: .*/version: 1.0.0+$BUILD_NUMBER/" pubspec.yaml
-
-      - name: Flutter build IPA
+      - name: Build IPA
         script: |
           cd mobile
           flutter build ipa --release \
             --dart-define=SUPABASE_URL=$SUPABASE_URL \
-            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY \
-            --export-options-plist=ios/ExportOptions.plist
-
-      - name: Verify build
-        script: |
-          ls -la mobile/build/ios/ipa/
-
+            --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
     artifacts:
       - mobile/build/ios/ipa/*.ipa
-      - mobile/build/ios/archive/Runner.xcarchive
       - /tmp/xcodebuild_logs/*.log
-      - flutter_drive.log
-
     publishing:
       email:
         recipients:
