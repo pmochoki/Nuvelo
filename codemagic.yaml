@@ -25,10 +25,17 @@ workflows:
         script: |
           cd mobile/ios
           pod install
+      - name: Set up code signing for Xcode (Flutter)
+        script: |
+          xcode-project use-profiles \
+            --project mobile/ios/Runner.xcodeproj \
+            --export-options-plist=/Users/builder/export_options.plist \
+            --archive-method=app-store
       - name: Build IPA
         script: |
           cd mobile
           flutter build ipa --release \
+            --export-options-plist=/Users/builder/export_options.plist \
             --dart-define=SUPABASE_URL=$SUPABASE_URL \
             --dart-define=SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY
     artifacts:
