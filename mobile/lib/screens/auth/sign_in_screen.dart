@@ -139,10 +139,11 @@ class _SignInScreenState extends State<SignInScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: 72,
+                    width: 92,
                     child: DropdownButtonFormField<String>(
                       decoration: const InputDecoration(labelText: ''),
                       initialValue: '+36',
+                      isExpanded: true,
                       items: const [
                         DropdownMenuItem(value: '+36', child: Text('+36')),
                       ],
@@ -166,6 +167,11 @@ class _SignInScreenState extends State<SignInScreen> {
               FilledButton(
                 onPressed: _busy ? null : _continueEmailPhone,
                 child: Text(L.continueBtn),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: _busy ? null : () => context.go('/home'),
+                child: Text(L.skipForNow),
               ),
               const SizedBox(height: 16),
               TextButton(

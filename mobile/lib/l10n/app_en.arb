@@ -8,6 +8,7 @@
   "email": "Email",
   "phone": "Phone",
   "continueBtn": "Continue",
+  "skipForNow": "Skip for now",
   "signInTitle": "Sign in",
   "registerTitle": "Create account",
   "verifyTitle": "Verify code",

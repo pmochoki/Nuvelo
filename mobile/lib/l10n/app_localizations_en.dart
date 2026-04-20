@@ -33,6 +33,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueBtn => 'Continue';
 
   @override
+  String get skipForNow => 'Skip for now';
+
+  @override
   String get signInTitle => 'Sign in';
 
   @override

@@ -146,6 +146,12 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get continueBtn;
 
+  /// No description provided for @skipForNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get skipForNow;
+
   /// No description provided for @signInTitle.
   ///
   /// In en, this message translates to:

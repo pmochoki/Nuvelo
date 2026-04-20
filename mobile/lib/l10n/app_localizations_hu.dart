@@ -33,6 +33,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get continueBtn => 'Tovább';
 
   @override
+  String get skipForNow => 'Kihagyás egyelőre';
+
+  @override
   String get signInTitle => 'Bejelentkezés';
 
   @override
