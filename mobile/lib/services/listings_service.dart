@@ -59,6 +59,10 @@ class ListingsService {
     if (userId != null) q['userId'] = userId;
 
     final res = await _client.get(_uri('/listings', q));
+    if (res.statusCode == 404) {
+      // Some deployments may not expose this route yet; treat as empty feed.
+      return [];
+    }
     if (res.statusCode != 200) {
       throw Exception('listings_http_${res.statusCode}');
     }
