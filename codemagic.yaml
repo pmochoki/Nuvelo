@@ -3,6 +3,8 @@ workflows:
     name: Nuvelo iOS TestFlight
     instance_type: mac_mini_m2
     max_build_duration: 60
+    integrations:
+      app_store_connect: codemagic
     environment:
       flutter: stable
       xcode: latest
@@ -12,7 +14,6 @@ workflows:
         bundle_identifier: one.nuvelo.app
       groups:
         - supabase_credentials
-        - appstore_credentials
       vars:
         BUNDLE_ID: one.nuvelo.app
     scripts:
@@ -41,9 +42,7 @@ workflows:
           success: true
           failure: true
       app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_ID
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        auth: integration
         submit_to_testflight: true
         beta_groups:
           - Nuvelians
