@@ -45,6 +45,8 @@
 		</array>
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
+		<key>ITSAppUsesNonExemptEncryption</key>
+		<false/>
 		<key>NSCameraUsageDescription</key>
 		<string>Nuvelo needs camera access to take photos for your listings.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
