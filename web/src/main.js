@@ -62,6 +62,9 @@ if (import.meta.env.VITE_API_URL == null || String(import.meta.env.VITE_API_URL)
 const deploymentAllowsLegacyBackendLogin =
   !import.meta.env.PROD || import.meta.env.VITE_ALLOW_LEGACY_AUTH === "true";
 
+/** Facebook OAuth — opt in with VITE_FACEBOOK_LOGIN_ENABLED=true after Meta App Review + Live. */
+const facebookLoginEnabled = import.meta.env.VITE_FACEBOOK_LOGIN_ENABLED === "true";
+
 const signInFlowsAvailable = isSupabaseConfigured || deploymentAllowsLegacyBackendLogin;
 
 /** Maps browser network failures (e.g. TypeError: Failed to fetch) to a clear message. */
@@ -1110,6 +1113,10 @@ document.getElementById("auth-apple-stub")?.addEventListener("click", async () =
 });
 
 document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
+  if (!facebookLoginEnabled) {
+    showNuveloToast(t("auth.facebook_pending_toast"), 5000);
+    return;
+  }
   if (!supabase) {
     showOAuthUnavailable("Facebook sign-in");
     return;

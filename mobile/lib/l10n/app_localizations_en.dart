@@ -21,6 +21,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueWithFacebook => 'Continue with Facebook';
 
   @override
+  String get facebookLoginPending =>
+      'Facebook sign-in is awaiting verification from Meta. Coming soon!';
+
+  @override
   String get orDivider => 'or';
 
   @override

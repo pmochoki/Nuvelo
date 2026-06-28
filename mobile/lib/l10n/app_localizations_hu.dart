@@ -21,6 +21,10 @@ class AppLocalizationsHu extends AppLocalizations {
   String get continueWithFacebook => 'Folytatás Facebookkal';
 
   @override
+  String get facebookLoginPending =>
+      'A Facebook bejelentkezés a Meta jóváhagyására vár. Hamarosan!';
+
+  @override
   String get orDivider => 'vagy';
 
   @override

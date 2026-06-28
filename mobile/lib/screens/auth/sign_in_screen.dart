@@ -109,8 +109,19 @@ class _SignInScreenState extends State<SignInScreen> {
                 style: FilledButton.styleFrom(
                   backgroundColor: const Color(0xFF1877F2),
                 ),
-                onPressed:
-                    _busy ? null : () => _oauth(_auth.signInWithFacebook),
+                onPressed: _busy
+                    ? null
+                    : () {
+                        if (!kFacebookLoginEnabled) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(L.facebookLoginPending),
+                            ),
+                          );
+                          return;
+                        }
+                        _oauth(_auth.signInWithFacebook);
+                      },
                 child: Text(L.continueWithFacebook),
               ),
               const SizedBox(height: 24),

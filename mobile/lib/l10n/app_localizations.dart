@@ -122,6 +122,12 @@ abstract class AppLocalizations {
   /// **'Continue with Facebook'**
   String get continueWithFacebook;
 
+  /// No description provided for @facebookLoginPending.
+  ///
+  /// In en, this message translates to:
+  /// **'Facebook sign-in is awaiting verification from Meta. Coming soon!'**
+  String get facebookLoginPending;
+
   /// No description provided for @orDivider.
   ///
   /// In en, this message translates to:

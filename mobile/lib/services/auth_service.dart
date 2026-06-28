@@ -8,6 +8,9 @@ import '../models/user_profile.dart';
 final Uri kOAuthRedirectUri =
     Uri(scheme: 'one.nuvelo.app', host: 'login-callback');
 
+/// Set to true after Meta App Review is approved and the Facebook app is Live.
+const kFacebookLoginEnabled = false;
+
 class AuthService {
   AuthService();
 
