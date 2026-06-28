@@ -121,10 +121,91 @@ nuvelo.one → Sign in → **Continue with Apple**.
 
 ## 3. Continue with Facebook (Meta)
 
-When Meta is ready:
+The **web app is already wired** — same OAuth redirect flow as Google. You only need a Meta app + Supabase credentials.
 
-- **OAuth redirect URI:** `https://ahiujuljjbozmfwoqtli.supabase.co/auth/v1/callback`
-- **Supabase → Providers → Facebook** → App ID + App Secret → Enable
+### Callback URL (copy exactly)
+
+```
+https://ahiujuljjbozmfwoqtli.supabase.co/auth/v1/callback
+```
+
+### Step A — Create a Meta app
+
+1. [developers.facebook.com](https://developers.facebook.com) → **My Apps** → **Create App**
+2. Use case: **Authenticate and request data from users with Facebook Login** (or **Other** → Consumer)
+3. App name: e.g. **Nuvelo** → Create app
+
+### Step B — Add Facebook Login
+
+1. App dashboard → **Add Product** → **Facebook Login** → **Set Up** → choose **Web**
+2. **Facebook Login → Settings** (left sidebar under Facebook Login)
+3. **Valid OAuth Redirect URIs** — add exactly:
+
+   `https://ahiujuljjbozmfwoqtli.supabase.co/auth/v1/callback`
+
+4. Save changes
+
+### Step C — App settings (Basic)
+
+**Settings → Basic**
+
+| Field | Value |
+|-------|--------|
+| **App Domains** | `nuvelo.one` |
+| **Privacy Policy URL** | `https://nuvelo.one/privacy` |
+| **Terms of Service URL** (optional) | `https://nuvelo.one/terms` |
+| **User data deletion** | `https://nuvelo.one/privacy` or your data-deletion page |
+| **Category** | e.g. Shopping |
+
+Copy **App ID** and **App Secret** (click Show).
+
+### Step D — Supabase
+
+**Option A — one command (recommended)**
+
+```bash
+cd ~/Desktop/Nuvelo-fresh
+FACEBOOK_APP_ID=your_app_id \
+FACEBOOK_APP_SECRET=your_app_secret \
+SUPABASE_ACCESS_TOKEN=sbp_your_token \
+node scripts/configure-supabase-facebook.mjs
+```
+
+**Option B — dashboard**
+
+**Authentication → Providers → Facebook**
+
+| Field | Value |
+|-------|--------|
+| **Enable** | ON |
+| **Facebook client ID** | Meta **App ID** |
+| **Facebook client secret** | Meta **App Secret** |
+
+### Step E — Development vs Live mode
+
+| Mode | Who can sign in |
+|------|-----------------|
+| **Development** | Only Meta app **Admins**, **Developers**, and **Testers** you add under App roles |
+| **Live** | Any Facebook user (required for public launch) |
+
+While testing in Development mode, add your Facebook account under **App roles → Testers** (or as Admin).
+
+To go **Live**: App Review may require **email** permission approval. For login, `public_profile` + `email` are standard — submit if Meta prompts you.
+
+### Test
+
+1. Hard-refresh [nuvelo.one](https://nuvelo.one)
+2. **Sign in → Continue with Facebook**
+3. Approve permissions → you return to nuvelo.one signed in
+
+**Common errors**
+
+| Error | Fix |
+|-------|-----|
+| “Facebook sign-in is not available yet” | Enable Facebook in Supabase (Step D) |
+| “URL blocked” / redirect mismatch | Add exact Supabase callback URL in Meta (Step B) |
+| Works for you only, not others | Meta app still in Development — switch to Live or add testers |
+| No email returned | Request `email` scope (already set in app code); approve in App Review for Live |
 
 ---
 
@@ -150,7 +231,7 @@ Edit email templates to say “Nuvelo” in subjects/bodies.
 | Feature | Status |
 |--------|--------|
 | Phone SMS | **Paused** (Twilio cost) |
-| Apple | Services ID + JWT in Supabase |
-| Facebook | Meta app (in progress) |
+| Apple | Services ID + Supabase Client ID (web uses Apple JS popup) |
+| Facebook | Meta app + App ID/Secret in Supabase |
 | Google | Enable in Supabase |
 | Branded email | Custom SMTP + DNS |
