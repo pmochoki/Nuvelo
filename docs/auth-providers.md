@@ -225,7 +225,20 @@ Meta syncs your **active profile** across laptop and phone via [Accounts Center]
 
 **Alternative:** use **Google** or **email + password** on Nuvelo; use Facebook login only with personal profiles.
 
-**Verify the integration without switching accounts:** Meta Developer → your app → **App roles → Test Users** → create a test user (has email) → log into facebook.com as that test user in incognito → try Nuvelo Facebook login.
+### I only have “Nuvelo Entreprises” — no personal Facebook profile
+
+If [Accounts Center → Profiles](https://accountscenter.facebook.com/profiles) lists **only** Nuvelo Entreprises (and Instagram/Threads/WhatsApp), you **cannot switch** to a personal profile that does not exist. Facebook login for Nuvelo will keep using Nuvelo Entreprises and **will not share an email** — that is expected.
+
+**Your options:**
+
+| Goal | What to do |
+|------|------------|
+| **Sign into Nuvelo yourself** | Use **Google**, **Apple**, or **email + password** on nuvelo.one — skip Facebook for your own account. |
+| **Test that Facebook login works** | Meta Developer → your app → **App roles → Test Users** → Create → log into facebook.com as that test user (incognito) → try Nuvelo. |
+| **Use Facebook login with a real personal account** | **Create** a personal Facebook account at [facebook.com/r.php](https://www.facebook.com/r.php) (your real name, not “Nuvelo Entreprises”), then **App roles → Testers** add that account while the app is in Development mode. Or click **Add accounts** in Accounts Center and sign in with a different Facebook login you already own. |
+| **Let customers use Facebook** | Normal buyers/sellers with **personal** Facebook accounts will work once the app is **Live** (and email permission is approved if Meta requires it). Your business-only Facebook identity is a special case. |
+
+Contact info in Accounts Center (`nuveloworld@gmail.com`) is **not** the same as Facebook sharing email to apps when you authenticate as a Page/business profile.
 | No email returned | Request `email` scope (already set in app code); approve in App Review for Live |
 
 ---
