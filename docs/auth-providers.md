@@ -93,7 +93,11 @@ SUPABASE_ACCESS_TOKEN=sbp_paste_your_token_here node scripts/configure-supabase-
 
 This generates a fresh JWT and writes it to Supabase via the Management API (`external_apple_client_id` + `external_apple_secret`).
 
-**Option B — manual dashboard**
+**Option B — manual dashboard (easy to get wrong)**
+
+⚠️ **Do not paste the JWT manually** unless you verify the full line is saved. Supabase’s Secret Key field can **truncate** the JWT (~120 chars), which causes `invalid_client`. If the saved value ends early (no full signature after the second `.`), Apple sign-in will fail.
+
+If you paste manually anyway:
 
 **Authentication → Providers → Apple**
 
@@ -101,9 +105,9 @@ This generates a fresh JWT and writes it to Supabase via the Management API (`ex
 |-------|----------------|
 | **Enable** | ON |
 | **Client IDs** | `one.nuvelo.web` (Services ID). Optionally add `one.nuvelo.app` comma-separated for the native app later. |
-| **Secret Key** | The **JWT** from the script (starts with `eyJ…`) |
+| **Secret Key** | The **entire** JWT line (290+ chars, three dot-separated parts). Must end with something like `...JZasY0F` |
 
-Save.
+After paste, confirm the field still shows the **full** token before Save. Prefer **Option A** (script) instead.
 
 **Reminder:** Apple JWT secrets expire (~6 months). Regenerate with the same script and update Supabase before expiry.
 
