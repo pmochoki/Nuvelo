@@ -4289,6 +4289,12 @@ button.jiji-promo-card {
   color: var(--purple-deep);
 }
 
+.auth-social__btn--apple {
+  background: #111827;
+  color: #ffffff;
+  border-color: #111827;
+}
+
 .auth-social__btn--facebook {
   background: var(--purple);
   color: var(--white);
@@ -7281,6 +7287,62 @@ button.jiji-promo-card {
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
   }
+}
+
+.settings-phone-verify {
+  margin-top: 0.65rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 10px;
+  background: var(--surface-muted, rgba(0, 0, 0, 0.03));
+  border: 1px solid var(--border-subtle, rgba(0, 0, 0, 0.08));
+}
+
+.settings-phone-verify__lead {
+  margin: 0 0 0.5rem;
+}
+
+.settings-phone-verify__status {
+  margin: 0 0 0.5rem;
+}
+
+.settings-phone-verify__badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 600;
+}
+
+.settings-phone-verify__badge--ok {
+  background: var(--alert-success-bg, #ecfdf5);
+  color: var(--alert-success-fg, #047857);
+}
+
+.settings-phone-verify__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.settings-phone-verify__otp {
+  margin-top: 0.65rem;
+}
+
+.settings-phone-verify__otp-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.settings-phone-verify__otp-row .form-input {
+  flex: 1 1 8rem;
+  min-width: 7rem;
+  max-width: 12rem;
+}
+
+.settings-phone-verify__ok {
+  color: var(--alert-success-fg, #047857);
+  margin: 0.35rem 0 0;
 }
 
 .settings-jiji-section__title {

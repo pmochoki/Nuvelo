@@ -141,11 +141,14 @@ async function requestPasswordResetEmail(email) {
 
 function mapOAuthReturnError(raw) {
   const msg = decodeURIComponent(String(raw || "").replace(/\+/g, " "));
-  if (/facebook/i.test(msg) || /provider is not enabled/i.test(msg)) {
+  if (/facebook/i.test(msg) || (/provider is not enabled/i.test(msg) && /facebook/i.test(msg))) {
     return t("auth.err.facebook_setup");
   }
-  if (/google/i.test(msg)) {
-    return t("auth.err.google");
+  if (/apple/i.test(msg)) {
+    return t("auth.err.apple_setup");
+  }
+  if (/google/i.test(msg) || /provider is not enabled/i.test(msg)) {
+    return t("auth.err.google_setup");
   }
   return msg || t("auth.err.generic");
 }
@@ -404,6 +407,7 @@ function applySupabaseSession(session) {
     role: meta.role || "buyer",
     email: u.email || "",
     phone: u.phone || "",
+    phoneVerified: Boolean(u.phone_confirmed_at),
     avatarUrl:
       meta.avatar_url ||
       meta.picture ||
@@ -1054,7 +1058,30 @@ document.getElementById("auth-google-stub")?.addEventListener("click", async () 
     options: { redirectTo }
   });
   if (error) {
-    showLoginError(error.message || t("auth.err.google"));
+    const msg = String(error.message || "");
+    showLoginError(
+      /not enabled|provider|google/i.test(msg) ? t("auth.err.google_setup") : msg || t("auth.err.google")
+    );
+  }
+});
+
+document.getElementById("auth-apple-stub")?.addEventListener("click", async () => {
+  if (!supabase) {
+    showOAuthUnavailable("Apple sign-in");
+    return;
+  }
+  showLoginError("");
+  showLoginSuccess("");
+  const redirectTo = getAuthRedirectUrl();
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: "apple",
+    options: { redirectTo }
+  });
+  if (error) {
+    const msg = String(error.message || "");
+    showLoginError(
+      /not enabled|provider|apple/i.test(msg) ? t("auth.err.apple_setup") : msg || t("auth.err.generic")
+    );
   }
 });
 
@@ -1496,6 +1523,7 @@ const buildProfileSettingsUser = (baseUser) => {
     birthday: stored.birthday || "",
     sex: stored.sex || "",
     phone: stored.phone || baseUser.phone || "",
+    phoneVerified: Boolean(baseUser.phoneVerified),
     email: stored.email || baseUser.email || "",
     bio: stored.bio || "",
     role: stored.role || baseUser.role || "Buyer"
@@ -1850,6 +1878,114 @@ function bindProfileSettingsPage() {
     const st = getFormState();
     const err = validateHuMobileNational(st.phoneNational);
     showPhoneError(err);
+  });
+
+  const phoneVerifyMsg = document.getElementById("settings-phone-verify-msg");
+  const phoneOtpWrap = document.getElementById("settings-phone-otp-wrap");
+  const phoneVerifyActions = document.getElementById("settings-phone-verify-actions");
+  const phoneVerifyStatus = document.getElementById("settings-phone-verify-status");
+  const phoneVerifyRoot = document.getElementById("settings-phone-verify");
+
+  const formatPhoneE164 = (national) => {
+    const d = String(national || "").replace(/\D/g, "");
+    return d ? `+36${d}` : "";
+  };
+
+  const showPhoneVerifyMsg = (msg, isError = false) => {
+    if (!phoneVerifyMsg) {
+      return;
+    }
+    phoneVerifyMsg.textContent = msg;
+    phoneVerifyMsg.hidden = !msg;
+    phoneVerifyMsg.classList.toggle("form-field__error", Boolean(isError && msg));
+    phoneVerifyMsg.classList.toggle("settings-phone-verify__ok", Boolean(!isError && msg));
+  };
+
+  const markPhoneVerifiedUi = () => {
+    phoneVerifyRoot?.setAttribute("data-phone-verified", "1");
+    phoneVerifyActions?.setAttribute("hidden", "");
+    phoneOtpWrap?.setAttribute("hidden", "");
+    phoneVerifyStatus?.removeAttribute("hidden");
+  };
+
+  document.getElementById("settings-phone-send-code")?.addEventListener("click", async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      showPhoneVerifyMsg(t("settings.phone_verify_failed"), true);
+      return;
+    }
+    clearFieldErrors();
+    showPhoneVerifyMsg("");
+    const st = getFormState();
+    const phoneValidation = validateHuMobileNational(st.phoneNational);
+    if (phoneValidation) {
+      showPhoneError(phoneValidation);
+      return;
+    }
+    const phone = formatPhoneE164(st.phoneNational);
+    const sendBtn = document.getElementById("settings-phone-send-code");
+    if (sendBtn instanceof HTMLButtonElement) {
+      sendBtn.disabled = true;
+    }
+    const { error } = await supabase.auth.updateUser({ phone });
+    if (sendBtn instanceof HTMLButtonElement) {
+      sendBtn.disabled = false;
+    }
+    if (error) {
+      const msg = String(error.message || "");
+      showPhoneVerifyMsg(
+        /twilio|sms|phone|provider/i.test(msg) ? t("settings.phone_verify_failed") : msg || t("settings.phone_verify_failed"),
+        true
+      );
+      return;
+    }
+    phoneOtpWrap?.removeAttribute("hidden");
+    document.getElementById("settings-phone-otp")?.focus();
+    showPhoneVerifyMsg(t("settings.phone_verify_sent"));
+  });
+
+  document.getElementById("settings-phone-verify-btn")?.addEventListener("click", async () => {
+    if (!isSupabaseConfigured || !supabase) {
+      showPhoneVerifyMsg(t("settings.phone_verify_failed"), true);
+      return;
+    }
+    const st = getFormState();
+    const phone = formatPhoneE164(st.phoneNational);
+    const otpEl = document.getElementById("settings-phone-otp");
+    const token = otpEl instanceof HTMLInputElement ? String(otpEl.value || "").trim() : "";
+    if (!phone || !token) {
+      showPhoneVerifyMsg(t("settings.phone_verify_failed"), true);
+      return;
+    }
+    const verifyBtn = document.getElementById("settings-phone-verify-btn");
+    if (verifyBtn instanceof HTMLButtonElement) {
+      verifyBtn.disabled = true;
+    }
+    const { data, error } = await supabase.auth.verifyOtp({
+      phone,
+      token,
+      type: "phone_change"
+    });
+    if (verifyBtn instanceof HTMLButtonElement) {
+      verifyBtn.disabled = false;
+    }
+    if (error) {
+      showPhoneVerifyMsg(error.message || t("settings.phone_verify_failed"), true);
+      return;
+    }
+    if (data?.session) {
+      applySupabaseSession(data.session);
+    }
+    const phoneFull = phone;
+    writeNuveloProfile({ ...readMergedProfileStore(), phone: phoneFull, updatedAt: new Date().toISOString() });
+    const u = getUser();
+    if (u) {
+      cachedUser = { ...u, phone: phoneFull, phoneVerified: true };
+      writeStoredUser(cachedUser);
+    }
+    markPhoneVerifiedUi();
+    showPhoneVerifyMsg(t("settings.phone_verified"));
+    updateAuthUi();
+    updateProfileChromeFromUser(getUser());
   });
 
   ["settings-first-name", "settings-last-name"].forEach((id) => {
