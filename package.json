@@ -4,7 +4,15 @@
   "engines": {
     "node": ">=18"
   },
+  "scripts": {
+    "record:meta-review": "node scripts/record-meta-app-review-video.mjs"
+  },
   "dependencies": {
-    "@supabase/supabase-js": "^2.49.1"
+    "@supabase/supabase-js": "^2.49.1",
+    "@vercel/speed-insights": "^2.0.0"
+  },
+  "devDependencies": {
+    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "playwright": "^1.52.0"
   }
 }

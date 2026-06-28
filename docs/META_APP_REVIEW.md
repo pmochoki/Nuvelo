@@ -73,7 +73,7 @@ Test note: App admins testing from a Facebook business/Page profile (e.g. "Nuvel
 3. **App settings** — confirm icon, display name, privacy URL
 4. **Allowed usage** — answer how each permission is used (see above)
 5. **Data handling** — confirm encryption, retention, deletion via privacy policy
-6. **Reviewer instructions** — paste the block above; add a short screen recording if Meta asks
+6. **Reviewer instructions** — paste the block above; **upload the demo MP4** (recommended — see below)
 7. **Submit for review**
 8. After approval → **Publish** → switch app **Live**
 
@@ -81,6 +81,41 @@ Test note: App admins testing from a Facebook business/Page profile (e.g. "Nuvel
 
 - Any Facebook user with a personal account can use **Continue with Facebook**
 - You can add real listings and onboard sellers without tester-role limits
+
+## Demo video for Meta (recommended)
+
+Meta marks video as optional, but a ~60s recording reduces “could not verify usage” rejections.
+
+### Generate automatically
+
+```bash
+npm install
+npx playwright install chromium
+npm run record:meta-review
+```
+
+Output: `docs/meta-review-assets/nuvelo-meta-app-review-demo.mp4` (gitignored — upload from disk).
+
+The script records: homepage → **Sign in** → **Continue with Facebook** → Facebook OAuth screen. It does **not** store Facebook credentials.
+
+### Upload in Meta
+
+1. **App Review → Submissions** → your draft → **Reviewer instructions**
+2. **(Optional) Include supporting documentation** (`documents-web-1`)
+3. Drag and drop `nuvelo-meta-app-review-demo.mp4`
+4. Save (auto-save) and continue
+
+See also `docs/meta-review-assets/README.md`.
+
+### Record manually (best if you can log in)
+
+Use **QuickTime → New Screen Recording** (~60s):
+
+1. Chrome → `https://nuvelo.one` → **Sign in** → **Continue with Facebook**
+2. Approve **email** + **public profile** with a **personal** Facebook account
+3. Show return to nuvelo.one, signed in
+
+Save as `.mp4` and upload to the same Meta field.
 
 ## While waiting for review
 
