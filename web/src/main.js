@@ -712,10 +712,13 @@ const openModal = (mode = "signin") => {
   }
   loginModal.hidden = false;
   syncAuthSignInAvailability();
-  if (mode === "register" && formEl) {
-    loginModal.querySelector("input[name='name']")?.focus();
-  } else if (mode === "signin" && formEl) {
-    formEl.querySelector("input[name='email']")?.focus();
+  const prefersNoAutofocus = window.matchMedia("(max-width: 639px), (pointer: coarse)").matches;
+  if (!prefersNoAutofocus) {
+    if (mode === "register" && formEl) {
+      loginModal.querySelector("input[name='name']")?.focus();
+    } else if (mode === "signin" && formEl) {
+      formEl.querySelector("input[name='email']")?.focus();
+    }
   }
 };
 

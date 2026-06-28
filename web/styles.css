@@ -1588,7 +1588,10 @@ body.loc-modal-open {
 input,
 select,
 textarea {
-  font: inherit;
+  font-family: inherit;
+  font-size: 1rem; /* ≥16px — prevents iOS Safari zoom on focus */
+  font-weight: inherit;
+  line-height: inherit;
   padding: 0.55rem 0.65rem;
   border-radius: 8px;
   border: 1px solid var(--purple-border);
