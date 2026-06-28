@@ -142,6 +142,9 @@ async function requestPasswordResetEmail(email) {
 
 function mapOAuthReturnError(raw) {
   const msg = decodeURIComponent(String(raw || "").replace(/\+/g, " "));
+  if (/email from external provider|unable to find email.*facebook/i.test(msg)) {
+    return t("auth.err.facebook_no_email");
+  }
   if (/facebook/i.test(msg) || (/provider is not enabled/i.test(msg) && /facebook/i.test(msg))) {
     return t("auth.err.facebook_setup");
   }
@@ -1116,7 +1119,10 @@ document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
     provider: "facebook",
     options: {
       redirectTo,
-      scopes: "email public_profile"
+      scopes: "public_profile email",
+      queryParams: {
+        auth_type: "rerequest"
+      }
     }
   });
   if (error) {
