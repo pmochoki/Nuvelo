@@ -3205,16 +3205,21 @@ const syncMobileTabBarScroll = () => {
   }
 
   const y = Math.max(0, window.scrollY);
+  const maxScroll = Math.max(
+    0,
+    document.documentElement.scrollHeight - window.innerHeight
+  );
+  const nearPageBottom = y >= maxScroll - 96;
 
   if (!mobileTabBarScrollReady) {
     mobileTabBarLastScrollY = y;
     mobileTabBarScrollReady = true;
-    setMobileTabBarVisibility(bar, y <= MOBILE_TAB_TOP_THRESHOLD_PX);
+    setMobileTabBarVisibility(bar, y <= MOBILE_TAB_TOP_THRESHOLD_PX || nearPageBottom);
     return;
   }
 
   let visible = bar.classList.contains("mobile-tab-bar--visible");
-  if (y <= MOBILE_TAB_TOP_THRESHOLD_PX) {
+  if (y <= MOBILE_TAB_TOP_THRESHOLD_PX || nearPageBottom) {
     visible = true;
   } else {
     const delta = y - mobileTabBarLastScrollY;
