@@ -143,6 +143,7 @@ async function requestPasswordResetEmail(email) {
 function mapOAuthReturnError(raw) {
   const msg = decodeURIComponent(String(raw || "").replace(/\+/g, " "));
   if (/email from external provider|unable to find email.*facebook/i.test(msg)) {
+    sessionStorage.setItem("nuvelo_fb_email_retry", "1");
     return t("auth.err.facebook_no_email");
   }
   if (/facebook/i.test(msg) || (/provider is not enabled/i.test(msg) && /facebook/i.test(msg))) {
@@ -574,6 +575,7 @@ async function initAuth() {
         return;
       }
       if (event === "SIGNED_IN") {
+        sessionStorage.removeItem("nuvelo_fb_email_retry");
         resetAuthModalMessages();
         void refreshMessageNavBadge();
         const u = getUser();
@@ -1115,14 +1117,15 @@ document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
   showLoginError("");
   showLoginSuccess("");
   const redirectTo = getAuthRedirectUrl();
+  const retryEmail = sessionStorage.getItem("nuvelo_fb_email_retry") === "1";
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "facebook",
     options: {
       redirectTo,
       scopes: "public_profile email",
-      queryParams: {
-        auth_type: "rerequest"
-      }
+      ...(retryEmail
+        ? { queryParams: { auth_type: "rerequest" } }
+        : {})
     }
   });
   if (error) {

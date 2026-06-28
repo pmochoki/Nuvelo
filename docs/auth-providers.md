@@ -121,6 +121,22 @@ nuvelo.one → Sign in → **Continue with Apple**.
 
 ## 3. Continue with Facebook (Meta)
 
+### Activation status (verified 2026-06-28)
+
+| Layer | Status |
+|-------|--------|
+| **Nuvelo web app** | Wired — `Continue with Facebook` → Supabase OAuth |
+| **Supabase** | Facebook provider **enabled**, App ID `4426473634349036`, callback configured |
+| **Meta redirect URI** | Saved — `https://ahiujuljjbozmfwoqtli.supabase.co/auth/v1/callback` |
+| **Meta Basic settings** | App domains, privacy, terms, category filled |
+| **Meta app mode** | **Unpublished** — only Admins / Developers / **Testers** can sign in until you **Publish** |
+| **Your Nuvelo Entreprises account** | **Cannot work** — business/Page profile does not share email to apps |
+| **Public customers** | Blocked until app is **Live** (+ Meta business verification / App Review for `email` if prompted) |
+
+**To prove Facebook login works today:** add your **personal** Facebook as **App roles → Testers**, open Chrome **incognito**, log into facebook.com with that personal account, then **Continue with Facebook** on nuvelo.one.
+
+**To enable all customers:** Meta Developer → **Publish** → complete **Business verification** → submit **App Review** for `email` if required → switch app **Live**.
+
 The **web app is already wired** — same OAuth redirect flow as Google. You only need a Meta app + Supabase credentials.
 
 ### Callback URL (copy exactly)
