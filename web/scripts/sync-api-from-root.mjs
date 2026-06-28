@@ -1,4 +1,4 @@
-import { cpSync, existsSync, rmSync } from "node:fs";
+import { cpSync, existsSync, rmSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,4 +14,5 @@ if (!existsSync(src)) {
 
 rmSync(dest, { recursive: true, force: true });
 cpSync(src, dest, { recursive: true });
+writeFileSync(resolve(dest, "package.json"), JSON.stringify({ type: "commonjs" }, null, 2) + "\n");
 console.log("[sync-api] copied ../api → web/api");
