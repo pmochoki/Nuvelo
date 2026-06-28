@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nuvelo_marketplace/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../core/constants.dart';
 import '../../core/theme.dart';
+import '../../widgets/nuvelo_logo.dart';
 import '../../widgets/nuvelo_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -80,10 +80,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       children: [
                         Icon(s.$3, size: 120, color: NuveloColors.primaryOrange),
                         const SizedBox(height: 32),
-                        SvgPicture.asset(
-                          'assets/images/nuvelo-logo.svg',
-                          height: 36,
-                        ),
+                        const NuveloLogo(height: 36),
                         const SizedBox(height: 28),
                         Text(
                           s.$1,

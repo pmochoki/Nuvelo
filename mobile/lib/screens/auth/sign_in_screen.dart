@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nuvelo_marketplace/l10n/app_localizations.dart';
 
 import '../../core/theme.dart';
 import '../../services/auth_service.dart';
+import '../../widgets/nuvelo_logo.dart';
 import '../../widgets/nuvelo_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -98,10 +98,7 @@ class _SignInScreenState extends State<SignInScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SvgPicture.asset(
-                'assets/images/nuvelo-logo.svg',
-                height: 40,
-              ),
+              const NuveloLogo(height: 40),
               const SizedBox(height: 28),
               FilledButton(
                 onPressed: _busy ? null : () => _oauth(_auth.signInWithGoogle),

@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import 'package:nuvelo_marketplace/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +9,7 @@ import '../../core/constants.dart';
 import '../../core/supabase_client.dart';
 import '../../core/theme.dart';
 import '../../services/profile_service.dart';
+import '../../widgets/nuvelo_logo.dart';
 import '../../widgets/nuvelo_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -80,10 +80,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            SvgPicture.asset(
-              'assets/images/nuvelo-logo.svg',
-              height: 56,
-            ),
+            const NuveloLogo(height: 56),
             const SizedBox(height: 24),
             Text(
               L.taglineNiceVibesOnly,

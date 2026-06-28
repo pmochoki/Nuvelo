@@ -860,6 +860,30 @@ body.loc-modal-open {
   filter: none;
 }
 
+.brand__logo--light {
+  display: none;
+}
+
+[data-color-scheme="light"] body:not(.is-landing) .brand__logo--dark {
+  display: none;
+}
+
+[data-color-scheme="light"] body:not(.is-landing) .brand__logo--light {
+  display: block;
+}
+
+[data-color-scheme="light"] .site-footer__logo--dark {
+  display: none;
+}
+
+[data-color-scheme="light"] .site-footer__logo--light {
+  display: block;
+}
+
+.site-footer__logo--light {
+  display: none;
+}
+
 .jiji-header__text-link {
   background: none;
   border: none;

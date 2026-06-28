@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme.dart';
+import 'nuvelo_logo.dart';
 
 class NuveloAppBar extends StatelessWidget implements PreferredSizeWidget {
   const NuveloAppBar({
@@ -34,19 +34,13 @@ class NuveloAppBar extends StatelessWidget implements PreferredSizeWidget {
           : showLogo
               ? Padding(
                   padding: const EdgeInsets.only(left: 8),
-                  child: SvgPicture.asset(
-                    'assets/images/nuvelo-logo.svg',
-                    height: 28,
-                  ),
+                  child: const NuveloLogo(height: 28),
                 )
               : null,
       title: title != null
           ? Text(title!)
           : (!showLogo && !showBack
-              ? SvgPicture.asset(
-                  'assets/images/nuvelo-logo.svg',
-                  height: 26,
-                )
+              ? const NuveloLogo(height: 26)
               : null),
       actions: [
         IconButton(

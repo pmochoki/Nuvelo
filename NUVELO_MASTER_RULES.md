@@ -200,7 +200,8 @@ Typography:
   Mobile:  Use Google Fonts DM Sans via flutter_google_fonts package
 
 Logo files:
-  /web/public/nuvelo-logo.svg    (full wordmark)
+  /web/public/nuvelo-logo.png         (full wordmark, transparent)
+  /web/public/nuvelo-logo-light.png   (navy wordmark for light backgrounds)
   /web/public/nuvelo-icon.svg    (icon/favicon — crescent moon symbol)
 
 ---
