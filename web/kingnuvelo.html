@@ -384,10 +384,11 @@
     return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
   }
 
+  const ADMIN_PASSWORD_SHA256 = __ADMIN_PASSWORD_SHA256_JSON__;
+
   async function verifyPassword(plain) {
     const a = await sha256Hex(plain);
-    const b = await sha256Hex("nuvelo-admin");
-    return a === b;
+    return a === ADMIN_PASSWORD_SHA256;
   }
 
   function toast(msg, type = "ok") {

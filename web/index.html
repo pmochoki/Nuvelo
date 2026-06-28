@@ -753,9 +753,10 @@
             </select>
           </label>
           <label>
-            <span data-i18n="auth.email">Email (optional — we’ll send a sign-in link)</span>
-            <input name="email" type="email" autocomplete="email" placeholder="you@example.com" />
+            <span data-i18n="auth.email">Email — we’ll send a sign-in link</span>
+            <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
           </label>
+          <div id="auth-phone-block" hidden>
           <label>
             <span data-i18n="auth.phone">Phone (optional — SMS code)</span>
             <input
@@ -799,6 +800,7 @@
             >
               Verify code
             </button>
+          </div>
           </div>
           <button type="submit" class="btn btn--primary auth-submit-full" id="login-form-submit">
             <span class="auth-submit-inner">

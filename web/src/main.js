@@ -24,9 +24,8 @@ import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from ".
 import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
 import { tfn } from "./i18n/format.js";
-import { formatMoneyAmount, formatNumber, formatPrice } from "./utils/format.js";
-
-const FALLBACK_HUNGARIAN_LOCATIONS = () => [
+/** Phone SMS sign-in hidden until Twilio (or similar) is configured in Supabase. */
+const AUTH_PHONE_UI_ENABLED = false;
   { value: "all", label: t("search.allhungary") },
   { value: "budapest", label: "Budapest" },
   { value: "debrecen", label: "Debrecen" },
@@ -885,6 +884,11 @@ loginForm?.addEventListener("submit", async (e) => {
     return;
   }
 
+  if (!AUTH_PHONE_UI_ENABLED && !email) {
+    showLoginError(t("auth.err.need_email"));
+    return;
+  }
+
   /* Email branch runs first; both filled would skip SMS and leave phoneOtpPending unset */
   if (email && phone) {
     showLoginError(t("auth.err.not_both"));
@@ -928,6 +932,11 @@ loginForm?.addEventListener("submit", async (e) => {
           return;
         }
         showLoginSuccess(t("auth.success.email"));
+        return;
+      }
+
+      if (!AUTH_PHONE_UI_ENABLED) {
+        showLoginError(t("auth.err.need_email"));
         return;
       }
 

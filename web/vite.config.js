@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
@@ -6,7 +7,15 @@ const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
 const DEFAULT_ADMIN_SUPABASE_URL = "https://ahiujuljjbozmfwoqtli.supabase.co";
 
-/** Bake VITE_SUPABASE_* into admin.html at build (Vercel env). Dev: use web/.env */
+function adminPasswordSha256() {
+  const pw =
+    typeof process.env.VITE_ADMIN_PASSWORD === "string" && process.env.VITE_ADMIN_PASSWORD.trim() !== ""
+      ? process.env.VITE_ADMIN_PASSWORD.trim()
+      : "nuvelo-admin";
+  return createHash("sha256").update(pw).digest("hex");
+}
+
+/** Bake VITE_SUPABASE_* + admin password hash into kingnuvelo.html at build (Vercel env). */
 function injectAdminHtmlEnv() {
   return {
     name: "inject-admin-html-env",
@@ -16,9 +25,11 @@ function injectAdminHtmlEnv() {
       }
       const url = process.env.VITE_SUPABASE_URL || DEFAULT_ADMIN_SUPABASE_URL;
       const anon = process.env.VITE_SUPABASE_ANON_KEY || "";
+      const pwHash = adminPasswordSha256();
       return html
         .replaceAll("__ADMIN_VITE_SUPABASE_URL_JSON__", JSON.stringify(url))
-        .replaceAll("__ADMIN_VITE_SUPABASE_ANON_JSON__", JSON.stringify(anon));
+        .replaceAll("__ADMIN_VITE_SUPABASE_ANON_JSON__", JSON.stringify(anon))
+        .replaceAll("__ADMIN_PASSWORD_SHA256_JSON__", JSON.stringify(pwHash));
     }
   };
 }

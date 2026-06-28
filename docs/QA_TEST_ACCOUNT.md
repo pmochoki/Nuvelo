@@ -14,14 +14,13 @@ Private account for you (and agents helping you) to feel the **logged-in** exper
 ## Create the account (no special backend step)
 
 1. Open **https://nuvelo.one** → **Registration**.
-2. Enter display name + role.
-3. Use **email only** (leave phone empty) for the simplest path:
-   - Tap **Continue** → Supabase sends a **magic link** to your inbox.
-   - Open the link on the same phone or laptop → you are signed in.
-4. Or use **phone only** (leave email empty):
-   - Enter `+36…` → **Continue** → enter the **SMS code** → **Verify code**.
+2. Enter display name + role + **email only**.
+3. Tap **Continue** → Supabase sends a **magic link** to your inbox.
+4. Open the link on the same device → you are signed in.
 
-There is no separate “test user” table — it is a normal Supabase Auth user. Keep the email/phone private.
+**Note:** Nuvelo web sign-in uses **email magic links**, not a password field. If you created a user in Supabase with a password, use **Sign in** → enter that email → **Continue** → open the magic link (or use Supabase Dashboard → Authentication → Users → send magic link).
+
+Phone SMS is **disabled on the site** until Twilio is configured.
 
 ## After sign-in, try
 
@@ -32,7 +31,7 @@ There is no separate “test user” table — it is a normal Supabase Auth user
 
 ## Admin approval
 
-Approve your test ads at **https://nuvelo.one/kingnuvelo** (password in Vercel `VITE_ADMIN_PASSWORD` or default team password).
+Approve your test ads at **https://nuvelo.one/kingnuvelo** (password: set `VITE_ADMIN_PASSWORD` in Vercel → redeploy).
 
 ## SMS in Hungary
 
