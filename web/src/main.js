@@ -144,8 +144,8 @@ function mapOAuthReturnError(raw) {
   if (/facebook/i.test(msg) || (/provider is not enabled/i.test(msg) && /facebook/i.test(msg))) {
     return t("auth.err.facebook_setup");
   }
-  if (/apple/i.test(msg)) {
-    return t("auth.err.apple_setup");
+  if (/exchange external code|invalid_client|client_secret|apple/i.test(msg)) {
+    return t("auth.err.apple_exchange");
   }
   if (/google/i.test(msg) || /provider is not enabled/i.test(msg)) {
     return t("auth.err.google_setup");

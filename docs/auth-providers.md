@@ -66,9 +66,9 @@ Your **bundle ID** (`one.nuvelo.app`) is for the iOS app. **Web** sign-in needs 
 ```bash
 cd ~/Desktop/Nuvelo-fresh && node scripts/generate-apple-client-secret.mjs \
   --team-id H9JAV8HGW9 \
-  --key-id HUZH5M955B \
+  --key-id FX25BH5D5X \
   --client-id one.nuvelo.web \
-  --p8 ~/Downloads/AuthKey_HUZH5M955B.p8
+  --p8 ~/Desktop/AuthKey_FX25BH5D5X.p8
 ```
 
 If your key is **`FX25BH5D5X`** instead, change `--key-id` and `--p8` to match `AuthKey_FX25BH5D5X.p8`.

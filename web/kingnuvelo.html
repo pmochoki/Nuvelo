@@ -103,8 +103,16 @@
     .sidebar {
       background: var(--sidebar); border-right: 1px solid var(--border); display: flex; flex-direction: column;
       position: fixed; left: 0; top: 0; bottom: 0; width: 220px; z-index: 40;
+      overflow: hidden;
     }
-    .sidebar-brand { padding: 1rem 1rem 0.5rem; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; }
+    .sidebar-nav-scroll {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      -webkit-overflow-scrolling: touch;
+    }
+    .sidebar-brand { padding: 1rem 1rem 0.5rem; font-weight: 700; font-size: 0.95rem; letter-spacing: -0.02em; flex-shrink: 0; }
     .nav-section { margin-top: 0.75rem; padding: 0 0.5rem; }
     .nav-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); padding: 0.35rem 0.5rem; }
     .nav-item {
@@ -115,7 +123,7 @@
     .nav-item.active {
       background: rgba(234, 88, 12, 0.12); color: var(--accent); border-left-color: var(--accent);
     }
-    .sidebar-footer { margin-top: auto; padding: 1rem; font-size: 0.7rem; color: var(--muted); border-top: 1px solid var(--border); }
+    .sidebar-footer { flex-shrink: 0; margin-top: auto; padding: 1rem; font-size: 0.7rem; color: var(--muted); border-top: 1px solid var(--border); }
     .main-wrap {
       margin-left: 220px;
       display: flex;
@@ -265,47 +273,49 @@
   <div id="app" hidden>
     <aside class="sidebar">
       <div class="sidebar-brand">Nuvelo</div>
-      <nav class="nav-section">
-        <div class="nav-label">Overview</div>
-        <a href="#" class="nav-item active" data-page="dashboard"><span>▦</span> Dashboard</a>
-      </nav>
-      <nav class="nav-section">
-        <div class="nav-label">Users</div>
-        <a href="#" class="nav-item" data-page="users-all"><span>👤</span> All users</a>
-        <a href="#" class="nav-item" data-page="users-flagged"><span>⚑</span> Flagged users</a>
-        <a href="#" class="nav-item" data-page="users-verify"><span>✓</span> Verification queue</a>
-      </nav>
-      <nav class="nav-section">
-        <div class="nav-label">Listings</div>
-        <a href="#" class="nav-item" data-page="listings-all"><span>☰</span> All listings</a>
-        <a href="#" class="nav-item" data-page="listings-pending"><span>⏱</span> Pending review</a>
-        <a href="#" class="nav-item" data-page="listings-reported"><span>⚠</span> Reported</a>
-        <a href="#" class="nav-item" data-page="listings-expired"><span>⌛</span> Expired</a>
-      </nav>
-      <nav class="nav-section">
-        <div class="nav-label">Moderation</div>
-        <a href="#" class="nav-item" data-page="mod-reports"><span>⛁</span> Reports queue</a>
-        <a href="#" class="nav-item" data-page="mod-banned"><span>⛔</span> Banned content</a>
-        <a href="#" class="nav-item" data-page="mod-appeals"><span>📨</span> Appeals</a>
-      </nav>
-      <nav class="nav-section">
-        <div class="nav-label">Finance</div>
-        <a href="#" class="nav-item" data-page="fin-revenue"><span>◆</span> Revenue overview</a>
-        <a href="#" class="nav-item" data-page="fin-boost"><span>🚀</span> Boost purchases</a>
-        <a href="#" class="nav-item" data-page="fin-payout"><span>💸</span> Payouts</a>
-      </nav>
-      <nav class="nav-section">
-        <div class="nav-label">Content</div>
-        <a href="#" class="nav-item" data-page="content-categories"><span>📁</span> Categories</a>
-        <a href="#" class="nav-item" data-page="content-locations"><span>📍</span> Locations</a>
-        <a href="#" class="nav-item" data-page="site-settings"><span>⚙</span> Site settings</a>
-      </nav>
-      <nav class="nav-section">
-        <div class="nav-label">System</div>
-        <a href="#" class="nav-item" data-page="sys-logs"><span>📋</span> Logs</a>
-        <a href="#" class="nav-item" data-page="sys-health"><span>♥</span> API health</a>
-        <a href="#" class="nav-item" data-page="sys-admins"><span>🔐</span> Admin accounts</a>
-      </nav>
+      <div class="sidebar-nav-scroll">
+        <nav class="nav-section">
+          <div class="nav-label">Overview</div>
+          <a href="#" class="nav-item active" data-page="dashboard"><span>▦</span> Dashboard</a>
+        </nav>
+        <nav class="nav-section">
+          <div class="nav-label">Users</div>
+          <a href="#" class="nav-item" data-page="users-all"><span>👤</span> All users</a>
+          <a href="#" class="nav-item" data-page="users-flagged"><span>⚑</span> Flagged users</a>
+          <a href="#" class="nav-item" data-page="users-verify"><span>✓</span> Verification queue</a>
+        </nav>
+        <nav class="nav-section">
+          <div class="nav-label">Listings</div>
+          <a href="#" class="nav-item" data-page="listings-all"><span>☰</span> All listings</a>
+          <a href="#" class="nav-item" data-page="listings-pending"><span>⏱</span> Pending review</a>
+          <a href="#" class="nav-item" data-page="listings-reported"><span>⚠</span> Reported</a>
+          <a href="#" class="nav-item" data-page="listings-expired"><span>⌛</span> Expired</a>
+        </nav>
+        <nav class="nav-section">
+          <div class="nav-label">Moderation</div>
+          <a href="#" class="nav-item" data-page="mod-reports"><span>⛁</span> Reports queue</a>
+          <a href="#" class="nav-item" data-page="mod-banned"><span>⛔</span> Banned content</a>
+          <a href="#" class="nav-item" data-page="mod-appeals"><span>📨</span> Appeals</a>
+        </nav>
+        <nav class="nav-section">
+          <div class="nav-label">Finance</div>
+          <a href="#" class="nav-item" data-page="fin-revenue"><span>◆</span> Revenue overview</a>
+          <a href="#" class="nav-item" data-page="fin-boost"><span>🚀</span> Boost purchases</a>
+          <a href="#" class="nav-item" data-page="fin-payout"><span>💸</span> Payouts</a>
+        </nav>
+        <nav class="nav-section">
+          <div class="nav-label">Content</div>
+          <a href="#" class="nav-item" data-page="content-categories"><span>📁</span> Categories</a>
+          <a href="#" class="nav-item" data-page="content-locations"><span>📍</span> Locations</a>
+          <a href="#" class="nav-item" data-page="site-settings"><span>⚙</span> Site settings</a>
+        </nav>
+        <nav class="nav-section">
+          <div class="nav-label">System</div>
+          <a href="#" class="nav-item" data-page="sys-logs"><span>📋</span> Logs</a>
+          <a href="#" class="nav-item" data-page="sys-health"><span>♥</span> API health</a>
+          <a href="#" class="nav-item" data-page="sys-admins"><span>🔐</span> Admin accounts</a>
+        </nav>
+      </div>
       <div class="sidebar-footer">Nuvelo Admin v2.0</div>
     </aside>
     <div class="main-wrap">

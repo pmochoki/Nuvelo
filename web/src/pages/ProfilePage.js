@@ -539,28 +539,40 @@ function renderFeedbackSection(user) {
     </div>`;
 }
 
+/** Mobile hub grid; desktop uses sidebar + section content instead. */
+function isProfileDesktopLayout() {
+  return (
+    typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches
+  );
+}
+
 /**
  * @param {object} user — { name, phone, avatarUrl, role, adverts?, savedAds? }
  * @param {string} [sectionFromRoute] — from router; falls back to pathname
  */
 export function renderProfilePage(user, sectionFromRoute) {
   const section = sectionFromRoute || getProfileSectionFromPathname();
+  const effectiveSection =
+    section === "hub" && isProfileDesktopLayout() ? "adverts" : section;
+  const isHubView = effectiveSection === "hub";
   const mainExtra =
-    section === "messages"
+    effectiveSection === "messages"
       ? " profile-content--messages"
-      : section === "hub"
+      : isHubView
         ? " profile-content--hub"
         : "";
-  const showMobileHeader = section !== "hub" && section !== "messages";
+  const showMobileHeader = !isHubView && effectiveSection !== "messages";
+  const sidebarSection =
+    effectiveSection === "settings" ? "adverts" : effectiveSection;
 
   return `
-<div class="profile-shell${section === "hub" ? " profile-shell--hub" : ""}">
+<div class="profile-shell${isHubView ? " profile-shell--hub" : ""}">
   ${showMobileHeader ? renderProfileMobileHeader(user) : ""}
   ${renderProfileMobileTabs(section)}
-  <div class="profile-layout profile-layout--jiji${section === "hub" ? " profile-layout--profile-hub" : ""}">
-    ${renderProfileSidebar(user, section === "settings" ? "adverts" : section)}
+  <div class="profile-layout profile-layout--jiji${isHubView ? " profile-layout--profile-hub" : ""}">
+    ${renderProfileSidebar(user, sidebarSection)}
     <main class="profile-content profile-content--jiji profile-card${mainExtra}">
-      ${renderProfileSection(section, user)}
+      ${renderProfileSection(effectiveSection, user)}
     </main>
   </div>
 </div>`;
