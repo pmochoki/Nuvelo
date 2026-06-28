@@ -42,7 +42,6 @@ function renderContactDetailsForm(user) {
   const phoneRest = phone
     .replace(/^\+\s*36\s*/i, "")
     .replace(/[^\d]/g, "");
-  const phoneVerified = Boolean(user.phoneVerified);
   const city = user.city || "";
   const birthday = String(user.birthday || "");
   const sex = String(user.sex || "");
