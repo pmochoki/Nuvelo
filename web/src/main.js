@@ -1041,6 +1041,10 @@ const esc = (s) => {
   return d.innerHTML;
 };
 
+/** Home › current page — matches Events browse breadcrumb pattern. */
+const browseBreadcrumbHtml = (currentLabel) =>
+  `<nav class="breadcrumb-jiji" aria-label="${esc(t("breadcrumb.label"))}"><a href="/">${esc(t("nav.home"))}</a> › <span aria-current="page">${esc(currentLabel)}</span></nav>`;
+
 const readJsonStore = (key, fallback) => {
   try {
     const raw = localStorage.getItem(key);
@@ -3572,7 +3576,7 @@ async function hydrateLandingListings(hadCached) {
   paintLandingListingGrid(listings, false);
 }
 
-const buildBrowseSkeletonHtml = () => {
+const buildBrowseSkeletonHtml = (categoryId = "") => {
   const cards = [0, 1, 2, 3]
     .map(
       () => `<article class="lc lc--grid lc--skeleton" aria-hidden="true">
@@ -3586,7 +3590,7 @@ const buildBrowseSkeletonHtml = () => {
     )
     .join("");
   return `<div class="feed-layout feed-layout--browse">
-    <nav class="breadcrumb-jiji" aria-label="${esc(t("breadcrumb.label"))}"><a href="/browse">${esc(t("browse.all_ads"))}</a></nav>
+    ${browseBreadcrumbHtml(categoryId ? categoryDisplayName(categoryId) : t("browse.all_ads"))}
     <p class="muted small browse-skeleton-status" style="margin:0.75rem 0" role="status">${esc(t("browse.loading"))}</p>
     <div class="ad-grid--lc browse-skeleton-grid" data-view="grid" aria-busy="true">${cards}</div>
   </div>`;
@@ -3621,7 +3625,7 @@ const renderList = async () => {
   const cacheKey = browseCacheKey(fetchFilters);
   const cacheHit = browseListingsCache.key === cacheKey;
   if (!cacheHit) {
-    appEl.innerHTML = buildBrowseSkeletonHtml();
+    appEl.innerHTML = buildBrowseSkeletonHtml(filters.categoryId || "");
   }
 
   let listings = [];
@@ -3789,13 +3793,13 @@ const renderList = async () => {
     pagHtml += "</nav>";
   }
 
-  const bcCat = filters.categoryId ? ` › ${esc(categoryDisplayName(filters.categoryId))}` : "";
+  const bcCurrent = filters.categoryId
+    ? categoryDisplayName(filters.categoryId)
+    : t("browse.all_ads");
 
   appEl.innerHTML = `
     <div class="feed-layout feed-layout--browse">
-      <nav class="breadcrumb-jiji" aria-label="${esc(t("breadcrumb.label"))}">
-        <a href="/browse">${esc(t("browse.all_ads"))}</a>${bcCat}
-      </nav>
+      ${browseBreadcrumbHtml(bcCurrent)}
       <div class="category-rail-wrap category-strip-wrap browse-cat-rail-mobile">
         <div class="category-strip" id="category-rail" role="tablist">${catChips}</div>
       </div>
@@ -4180,7 +4184,7 @@ const renderDetail = async (id) => {
 
   appEl.innerHTML = `
     <nav class="breadcrumb-jiji" data-i18n-aria-label="breadcrumb.label" aria-label="Breadcrumb">
-      <a href="/browse" data-i18n="browse.all_ads">All ads</a> ›
+      <a href="/">${esc(t("nav.home"))}</a> ›
       <a href="${catBrowseHref}">${esc(categoryDisplayName(listing.categoryId))}</a> ›
       <span class="muted">${esc(bcTitle)}</span>
     </nav>
@@ -4404,7 +4408,7 @@ const renderEventsList = async () => {
 
   appEl.innerHTML = `
     <div class="feed-layout feed-layout--browse">
-      <nav class="breadcrumb-jiji"><a href="/">Home</a> › <span>Events</span></nav>
+      ${browseBreadcrumbHtml(t("browse.cat_events"))}
       <button type="button" class="btn btn--outline browse-filter-btn-mobile" id="events-filter-open">${filtersOpenLabel}</button>
       <div class="browse-layout browse-layout--jiji">
         <aside class="browse-sidebar browse-sidebar--desktop">
@@ -4531,7 +4535,7 @@ const renderEventDetail = async (eventId) => {
   }
 
   appEl.innerHTML = `
-    <nav class="breadcrumb-jiji"><a href="/events">Events</a> › <span>${esc(row.title)}</span></nav>
+    <nav class="breadcrumb-jiji" aria-label="${esc(t("breadcrumb.label"))}"><a href="/">${esc(t("nav.home"))}</a> › <a href="/events">${esc(t("browse.cat_events"))}</a> › <span aria-current="page">${esc(row.title)}</span></nav>
     <div class="detail-jiji-wrap">
       <div class="detail-jiji-main">
         <div class="detail-gallery__main"><img src="${esc(row.image)}" alt="" /></div>
@@ -4593,9 +4597,7 @@ const staticPageShell = (title, bodyHtml) => `
 /** Static info pages with Home › current breadcrumb (matches browse breadcrumb styling). */
 const staticInfoPageShell = (h1Title, breadcrumbCurrent, bodyAfterH1Html) => `
   <div class="stack static-info-page" style="max-width:920px;margin:0 auto;padding:0 0 2rem">
-    <nav class="breadcrumb-jiji" aria-label="Breadcrumb" style="margin-bottom:1rem;font-size:0.875rem">
-      <a href="/">Home</a> › <span aria-current="page">${esc(breadcrumbCurrent)}</span>
-    </nav>
+    ${browseBreadcrumbHtml(breadcrumbCurrent)}
     <article class="stack" style="margin:0;padding:0">
       <h1 style="margin:0 0 1rem">${esc(h1Title)}</h1>
       ${bodyAfterH1Html}
