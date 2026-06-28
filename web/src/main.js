@@ -112,6 +112,28 @@ function mapSupabaseAuthError(error, mode = "signin") {
   return msg || t("auth.err.generic");
 }
 
+/** Server checks registration before Supabase sends recovery email (service role). */
+async function requestPasswordResetEmail(email) {
+  const res = await fetch("/api/auth/forgot-password", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  });
+  let data = {};
+  try {
+    data = await res.json();
+  } catch {
+    /* ignore */
+  }
+  if (res.status === 404 && data.code === "not_registered") {
+    return { ok: false, notRegistered: true };
+  }
+  if (!res.ok) {
+    return { ok: false, error: String(data.error || data.code || "reset_failed") };
+  }
+  return { ok: true };
+}
+
 /** OAuth needs Supabase env vars baked in at build time (Vercel → Production env → redeploy). */
 const showOAuthUnavailable = (providerLabel) => {
   console.warn(
@@ -1140,11 +1162,17 @@ loginForm?.addEventListener("submit", async (e) => {
     }, 30000);
     try {
       if (authModalMode === "forgot") {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: getPasswordRecoveryRedirectUrl()
-        });
-        if (error) {
-          showLoginError(mapSupabaseAuthError(error, "forgot"));
+        const result = await requestPasswordResetEmail(email);
+        if (result.notRegistered) {
+          showLoginError(t("auth.err.not_registered"));
+          return;
+        }
+        if (!result.ok) {
+          showLoginError(
+            result.error === "service_unavailable"
+              ? t("auth.err.signin_down")
+              : t("auth.err.reset_failed")
+          );
           return;
         }
         showLoginSuccess(t("auth.success.reset_sent"));
