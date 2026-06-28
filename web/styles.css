@@ -4273,6 +4273,12 @@ button.jiji-promo-card {
   margin-bottom: 0.75rem;
 }
 
+.auth-social__hint {
+  margin: -0.15rem 0 0.35rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
 .auth-social__btn {
   width: 100%;
   padding: 0.65rem 1rem;

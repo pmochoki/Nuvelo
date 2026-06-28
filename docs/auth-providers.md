@@ -205,6 +205,27 @@ To go **Live**: App Review may require **email** permission approval. For login,
 | “Facebook sign-in is not available yet” | Enable Facebook in Supabase (Step D) |
 | “URL blocked” / redirect mismatch | Add exact Supabase callback URL in Meta (Step B) |
 | Works for you only, not others | Meta app still in Development — switch to Live or add testers |
+| **“Error getting user email from external provider”** / dialog says **“Continue as Nuvelo”** | You are signed into Facebook as a **business or Page profile** (e.g. Nuvelo Entreprises). Meta does **not** share an email for those profiles, and Supabase requires an email. **Fix:** switch to your **personal** Facebook profile, then retry (see below). |
+
+### Business / Page profile (“Nuvelo Entreprises”) — why login always fails
+
+If Facebook shows **“Continue as Nuvelo”** or your top-right account is **Nuvelo Entreprises**, you are **not** using a personal Facebook account. Nuvelo’s integration is working; Facebook simply returns **no email** for business/Page identities.
+
+Meta syncs your **active profile** across laptop and phone via [Accounts Center](https://accountscenter.facebook.com/profiles), so every device keeps picking the same business profile until you switch.
+
+**Fix (do all of these once):**
+
+1. Open [Accounts Center → Profiles](https://accountscenter.facebook.com/profiles) on **phone and laptop**.
+2. Switch the **active profile** to your **personal** name (not Nuvelo Entreprises / your Page).
+3. Confirm facebook.com top-right shows your **personal** name.
+4. Remove Nuvelo: [Facebook → Settings → Apps and websites](https://www.facebook.com/settings?tab=applications) → **Nuvelo** → Remove.
+5. Hard-refresh [nuvelo.one](https://nuvelo.one) → **Continue with Facebook**. The dialog should say **“Continue as [Your Name]”**, not “Continue as Nuvelo”.
+
+**Quick test in a clean session:** open a **private/incognito** window → log into facebook.com with your **personal** account only → then sign in on nuvelo.one with Facebook.
+
+**Alternative:** use **Google** or **email + password** on Nuvelo; use Facebook login only with personal profiles.
+
+**Verify the integration without switching accounts:** Meta Developer → your app → **App roles → Test Users** → create a test user (has email) → log into facebook.com as that test user in incognito → try Nuvelo Facebook login.
 | No email returned | Request `email` scope (already set in app code); approve in App Review for Live |
 
 ---
