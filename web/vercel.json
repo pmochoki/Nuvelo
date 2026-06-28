@@ -36,6 +36,10 @@
       "destination": "/api/sitemap-listings"
     },
     {
+      "source": "/kingnuvelo",
+      "destination": "/kingnuvelo.html"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }

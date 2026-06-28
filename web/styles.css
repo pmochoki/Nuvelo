@@ -3394,6 +3394,89 @@ button.jiji-promo-card {
   min-height: 120px;
 }
 
+.post-photo-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.post-photo-picker__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-height: 120px;
+  padding: 1rem;
+  border: 2px dashed var(--purple-border);
+  border-radius: 12px;
+  background: var(--purple-surface);
+  color: var(--text-secondary);
+  text-align: center;
+  cursor: pointer;
+}
+
+.post-photo-picker__drop.is-dragover {
+  border-color: var(--orange);
+  background: rgba(234, 88, 12, 0.08);
+}
+
+.post-photo-picker__drop strong {
+  color: var(--text);
+  font-size: 0.95rem;
+}
+
+.post-photo-picker__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.post-photo-picker__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.post-photo-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
+  gap: 0.5rem;
+}
+
+.post-photo-picker__thumb {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--purple-border);
+  background: var(--purple-card);
+}
+
+.post-photo-picker__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.post-photo-picker__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
 @media (min-width: 1024px) {
   .browse-cat-rail-mobile {
     display: none;

@@ -13,17 +13,17 @@
 
 The repo has a **root** [`vercel.json`](../vercel.json) that builds the Vite app under `web/`, publishes **`web/dist`** as static output, and exposes **Node serverless handlers** from the repo-root [`api/`](../api/) directory (for example `/api/health`, `/api/listings`).
 
-**Why `/api/*` returned `NOT_FOUND` before:** If the Vercel project **Root Directory** was set to **`web`**, only `web/` was deployed. Vercel looks for an `api/` folder **at the project root**, so with Root Directory = `web` there is no `api/` and routes like `https://nuvelo.one/api/health` fail.
+**Why `/api/*` returned `NOT_FOUND`:** The Vercel project **Root Directory** is set to **`web`** (confirmed via `vercel project inspect nuvelo`). Serverless handlers must live in **`web/api/`** (synced from repo-root `api/` on each build). If you change Root Directory to the repository root instead, you could use top-level `api/` only — current setup keeps `web` as root.
 
 ### Correct Vercel project settings
 
 1. Log in at [vercel.com](https://vercel.com) with your Google account (**pmochoki@gmail.com**).
-2. Open the Nuvelo project → **Settings** → **General**.
-3. **Root Directory:** leave **empty** (repository root). Do **not** set it to `web`.
-4. **Build & Output Settings** should follow the root `vercel.json` (or match it in the dashboard):
-   - **Install Command:** `npm install --prefix web`
-   - **Build Command:** `npm run build --prefix web`
-   - **Output Directory:** `web/dist`
+2. Open the **nuvelo** project → **Settings** → **General**.
+3. **Root Directory:** should be **`web`** (current production setting). In the dashboard UI: **Settings → General → scroll to "Root Directory"** (sometimes under "Build & Development Settings"). Click **Edit** if you need to change it.
+4. **Build & Output Settings** (for `web` root):
+   - **Install Command:** `npm install` (runs in `web/`; `prebuild` syncs `api/`)
+   - **Build Command:** `npm run build`
+   - **Output Directory:** `dist`
 5. Framework preset: **Other** (root `vercel.json` sets `"framework": null`).
 6. **Environment variables:** set any required by [`api/`](../api/) (for example backend URL if used by proxies—see `api/_backend.js`). The SPA may still call Render for data depending on `web/app.js` → `API_BASE`.
 7. **Save**, then **Deployments** → **Redeploy** the latest production deployment (or push to `main`).

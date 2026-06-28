@@ -88,7 +88,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: resolve(__dirname, "index.html"),
-        admin: resolve(__dirname, "admin.html")
+        kingnuvelo: resolve(__dirname, "kingnuvelo.html")
       },
       output: {
         manualChunks(id) {

@@ -6,6 +6,8 @@
     "node": ">=20"
   },
   "scripts": {
+    "sync-api": "node scripts/sync-api-from-root.mjs",
+    "prebuild": "node scripts/sync-api-from-root.mjs",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"

@@ -41,7 +41,7 @@ Rules:
 - All API calls go directly to Supabase from the browser
 - Backend listings API is at LISTINGS_BACKEND_URL on Render
   (used for legacy listing operations until fully migrated to Supabase)
-- Admin dashboard is at /admin.html (password: nuvelo-admin, SHA-256 hashed)
+- Admin dashboard is at **/kingnuvelo** (`kingnuvelo.html`, `noindex`). Password: `VITE_ADMIN_PASSWORD` on Vercel, or default `nuvelo-admin` (SHA-256 hashed in client).
 - NEVER touch Flutter files
 - NEVER touch /mobile folder
 

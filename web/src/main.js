@@ -5027,6 +5027,68 @@ const bindPostPriceInputPreview = (input, preview) => {
   sync();
 };
 
+const postPhotoState = { files: [] };
+
+function initPostPhotoPicker() {
+  const input = document.getElementById("post-photo-input");
+  const grid = document.getElementById("post-photo-grid");
+  const drop = document.getElementById("post-photo-drop");
+  if (!input || !grid) {
+    return;
+  }
+  postPhotoState.files = [];
+
+  const render = () => {
+    if (!postPhotoState.files.length) {
+      grid.hidden = true;
+      grid.innerHTML = "";
+      return;
+    }
+    grid.hidden = false;
+    grid.innerHTML = postPhotoState.files
+      .map(
+        (file, idx) => `
+        <div class="post-photo-picker__thumb">
+          <img src="${URL.createObjectURL(file)}" alt="" />
+          <button type="button" class="post-photo-picker__remove" data-photo-remove="${idx}" aria-label="Remove photo">×</button>
+        </div>`
+      )
+      .join("");
+    grid.querySelectorAll("[data-photo-remove]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const i = Number(btn.getAttribute("data-photo-remove"));
+        postPhotoState.files.splice(i, 1);
+        render();
+      });
+    });
+  };
+
+  const addFiles = (fileList) => {
+    const incoming = Array.from(fileList || []).filter((f) => f.type.startsWith("image/"));
+    if (!incoming.length) {
+      return;
+    }
+    postPhotoState.files = [...postPhotoState.files, ...incoming].slice(0, 12);
+    input.value = "";
+    render();
+  };
+
+  input.onchange = () => addFiles(input.files);
+  if (drop) {
+    drop.ondragover = (e) => {
+      e.preventDefault();
+      drop.classList.add("is-dragover");
+    };
+    drop.ondragleave = () => drop.classList.remove("is-dragover");
+    drop.ondrop = (e) => {
+      e.preventDefault();
+      drop.classList.remove("is-dragover");
+      addFiles(e.dataTransfer?.files);
+    };
+  }
+  render();
+}
+
 const renderPost = async () => {
   const appEl = mainShell();
   if (!appEl) {
@@ -5198,10 +5260,22 @@ const renderPost = async () => {
         <input name="contactPhone" type="tel" placeholder="+36 …" value="${esc(getUser()?.phone || "")}" />
       </label>
       <div id="post-cat-fields">${categoryFieldHtml(defaultCat)}</div>
-      <label class="post-photo-zone">
-        <span class="filter-panel__label">Photos — paste image URLs (one per line)</span>
-        <textarea name="images" required rows="4" placeholder="Drag photos here or paste URLs (https://…), one per line"></textarea>
-      </label>
+      <div class="post-photo-zone post-photo-picker" id="post-photo-picker">
+        <span class="filter-panel__label">Photos</span>
+        <label class="post-photo-picker__drop" id="post-photo-drop" for="post-photo-input">
+          <strong>Tap to add photos</strong>
+          <span>From your phone gallery or laptop files</span>
+          <p class="post-photo-picker__hint">Up to 12 images · each up to 28MB (large iPhone photos OK)</p>
+        </label>
+        <input
+          id="post-photo-input"
+          class="post-photo-picker__input"
+          type="file"
+          accept="image/*"
+          multiple
+        />
+        <div class="post-photo-picker__grid" id="post-photo-grid" hidden></div>
+      </div>
       <div class="button-row" style="justify-content:space-between">
         <a class="btn btn--ghost" href="/browse">Cancel</a>
         <button type="submit" class="btn btn--primary" style="border-radius:8px">Post Ad</button>
@@ -5250,16 +5324,22 @@ const renderPost = async () => {
     document.getElementById("post-event-price-preview")
   );
 
+  initPostPhotoPicker();
+
   document.getElementById("post-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
     const form = e.target;
     const fd = new FormData(form);
     const categoryId = String(fd.get("categoryId") || "");
-    const imagesRaw = String(fd.get("images") || "")
-      .split(/\r?\n/)
-      .map((s) => s.trim())
-      .filter(Boolean);
     const isEvent = categoryId === EVENTS_CATEGORY;
+    const photoFiles = postPhotoState.files.slice();
+    if (!isEvent && !photoFiles.length) {
+      const msg = document.getElementById("post-msg");
+      if (msg) {
+        msg.textContent = "Add at least one photo.";
+      }
+      return;
+    }
     const isDonationPost = categoryId === DONATIONS_CATEGORY_ID;
     const eventPriceDigits = getPostFormPriceDigits(document.getElementById("post-event-price-input"));
     if (isEvent && String(fd.get("eventPriceType") || "free") === "paid") {
@@ -5300,7 +5380,7 @@ const renderPost = async () => {
           })(),
       currency: "HUF",
       location: String(fd.get("location") || "").trim(),
-      images: imagesRaw,
+      images: [],
       condition: condApi,
       categoryFields: buildCategoryFields(categoryId, fd),
       userId: user.id
@@ -5308,6 +5388,12 @@ const renderPost = async () => {
     const msg = document.getElementById("post-msg");
     msg.textContent = "";
     try {
+      if (!isEvent && photoFiles.length) {
+        msg.textContent = "Uploading photos…";
+        const { uploadListingImages } = await import("./lib/listingImageUpload.js");
+        const draftId = crypto.randomUUID();
+        payload.images = await uploadListingImages(user.id, draftId, photoFiles);
+      }
       if (isEvent) {
         const date = String(fd.get("eventDate") || "").trim();
         const time = String(fd.get("eventTime") || "19:00").trim();
