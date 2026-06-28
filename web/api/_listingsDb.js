@@ -46,6 +46,7 @@ function mapRow(row) {
     viewCount: Number(row.view_count) || 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    expiresAt: row.expires_at ?? undefined,
     moderationNote: row.moderation_note ?? undefined,
     moderatedAt: row.moderated_at ?? undefined,
     moderatedBy: row.moderated_by ?? undefined

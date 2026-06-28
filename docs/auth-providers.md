@@ -29,7 +29,7 @@ No phone fields or SMS in the app until Twilio budget is ready. Sign-in is **Goo
 | **App bundle ID** | `one.nuvelo.app` |
 | **Sign in with Apple key** | `Nuvelo sign in` |
 | **Key ID** | `FX25BH5D5X` |
-| **Private key file** | `AuthKey_FX25BH5D5X.p8` (download once; store safely) |
+| **Private key file** | `AuthKey_FX25BH5D5X.p8` on Desktop |
 
 ### The `.p8` file is not an app
 

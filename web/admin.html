@@ -488,6 +488,7 @@
       status: String(row.status || "pending"),
       images: imgs,
       createdAt: row.createdAt || row.created_at || "",
+      expiresAt: row.expiresAt || row.expires_at || "",
       thumb: imgs[0] || ""
     };
   }
@@ -541,14 +542,15 @@
       return true;
     } catch (e) {
       if (sb) {
-        const { error } = await sb
-          .from("nuvelo_listings")
-          .update({
-            status,
-            moderation_note: moderationNote || null,
-            moderated_at: new Date().toISOString()
-          })
-          .eq("id", id);
+        const patch = {
+          status,
+          moderation_note: moderationNote || null,
+          moderated_at: new Date().toISOString()
+        };
+        if (status === "approved") {
+          patch.expires_at = new Date(Date.now() + 90 * 864e5).toISOString();
+        }
+        const { error } = await sb.from("nuvelo_listings").update(patch).eq("id", id);
         if (!error) {
           audit("listing_status", id, "listing", moderationNote);
           toast("Listing updated (Supabase)", "ok");
@@ -1164,26 +1166,25 @@
   async function renderListingsExpired() {
     $("#page-title").textContent = TITLES["listings-expired"];
     await loadListings();
-    const staleDays = 90;
     const now = Date.now();
     const rows = listingsCache.filter((l) => {
-      if (String(l.status).toLowerCase() !== "approved") return false;
-      const t = new Date(l.createdAt || 0).getTime();
-      return t > 0 && (now - t) / 864e5 >= staleDays;
+      const st = String(l.status || "").toLowerCase();
+      if (st === "expired") return true;
+      const exp = l.expiresAt ? new Date(l.expiresAt).getTime() : 0;
+      if (exp > 0 && exp <= now && st === "approved") return true;
+      return false;
     });
     $("#content").innerHTML =
-      '<div class="config-banner">There is no <code>expires_at</code> on listings yet — showing <strong>approved</strong> listings older than ' +
-      staleDays +
-      " days as <strong>renewal candidates</strong> (not true expiry).</div>" +
-      '<div class="table-wrap"><table><thead><tr><th>Title</th><th>Category</th><th>City</th><th>Posted</th><th>Status</th></tr></thead><tbody>' +
+      '<p style="color:#94a3b8;font-size:0.85rem;margin:0 0 1rem">Listings with status <strong>expired</strong> or past <code>expires_at</code> (default 90 days after approval).</p>' +
+      '<div class="table-wrap"><table><thead><tr><th>Title</th><th>Category</th><th>City</th><th>Posted</th><th>Expires</th><th>Status</th></tr></thead><tbody>' +
       (rows.length
         ? rows
             .map((l) => {
               const st = listingUiStatus(l.status);
-              return `<tr><td>${esc(l.title)}</td><td>${esc(l.categoryId)}</td><td>${esc(l.location)}</td><td>${esc(formatDate(l.createdAt))}</td><td><span class="badge ${st.cls}">${esc(st.label)}</span></td></tr>`;
+              return `<tr><td>${esc(l.title)}</td><td>${esc(l.categoryId)}</td><td>${esc(l.location)}</td><td>${esc(formatDate(l.createdAt))}</td><td>${esc(l.expiresAt ? formatDate(l.expiresAt) : "—")}</td><td><span class="badge ${st.cls}">${esc(st.label)}</span></td></tr>`;
             })
             .join("")
-        : '<tr><td colspan="5" style="text-align:center;color:#64748b">No stale approved listings in cache.</td></tr>') +
+        : '<tr><td colspan="6" style="text-align:center;color:#64748b">No expired listings.</td></tr>') +
       "</tbody></table></div>";
   }
 
