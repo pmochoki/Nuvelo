@@ -1164,6 +1164,52 @@ body.loc-modal-open {
   }
 }
 
+@media (max-width: 639px) {
+  .site-header.jiji-header {
+    --jiji-header-bar-height: 3.5rem;
+  }
+
+  /* Lock page scroll; drawer panel scrolls independently */
+  body.nav-drawer-open {
+    overflow: hidden;
+    position: fixed;
+    width: 100%;
+    left: 0;
+    right: 0;
+  }
+
+  body.nav-drawer-open .jiji-header__inner {
+    position: relative;
+    z-index: 31;
+  }
+
+  body.nav-drawer-open .site-header.jiji-header {
+    z-index: 30;
+  }
+
+  body.nav-drawer-open.is-landing .site-header.jiji-header {
+    background: var(--purple-deep);
+  }
+
+  body.nav-drawer-open .nav-drawer:not([hidden]) {
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: var(--jiji-header-bar-height);
+    bottom: 0;
+    z-index: 29;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding: 0.75rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    margin: 0;
+  }
+
+  body.nav-drawer-open.mobile-tab-bar-pad .nav-drawer:not([hidden]) {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ── Mobile bottom dock: language strip + tab bar (slide up together) ── */
 .mobile-bottom-dock {
   display: none;

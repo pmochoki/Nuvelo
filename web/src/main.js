@@ -5351,6 +5351,7 @@ const renderPost = async () => {
 
 const navDrawerEl = () => document.getElementById("nav-drawer");
 const navBurgerEl = () => document.getElementById("nav-burger");
+let navDrawerScrollLockY = 0;
 
 const setNavDrawerOpen = (open) => {
   const drawer = navDrawerEl();
@@ -5358,10 +5359,26 @@ const setNavDrawerOpen = (open) => {
   if (!drawer || !burger) {
     return;
   }
-  drawer.hidden = !open;
-  drawer.setAttribute("aria-hidden", open ? "false" : "true");
-  burger.setAttribute("aria-expanded", open ? "true" : "false");
-  document.body.classList.toggle("nav-drawer-open", open);
+  const mobileDrawer = window.matchMedia("(max-width: 639px)").matches;
+  if (open) {
+    if (mobileDrawer) {
+      navDrawerScrollLockY = window.scrollY;
+      document.body.style.top = `-${navDrawerScrollLockY}px`;
+    }
+    drawer.hidden = false;
+    drawer.setAttribute("aria-hidden", "false");
+    burger.setAttribute("aria-expanded", "true");
+    document.body.classList.add("nav-drawer-open");
+    return;
+  }
+  drawer.hidden = true;
+  drawer.setAttribute("aria-hidden", "true");
+  burger.setAttribute("aria-expanded", "false");
+  document.body.classList.remove("nav-drawer-open");
+  if (mobileDrawer) {
+    document.body.style.top = "";
+    window.scrollTo(0, navDrawerScrollLockY);
+  }
 };
 
 const render = async () => {
