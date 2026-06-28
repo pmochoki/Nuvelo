@@ -198,31 +198,7 @@ function renderContactDetailsForm(user) {
                 />
               </div>
               <p class="form-field__error" id="settings-phone-error" role="alert" hidden></p>
-              <div class="settings-phone-verify" id="settings-phone-verify" data-phone-verified="${phoneVerified ? "1" : "0"}">
-                <p class="settings-phone-verify__lead muted small" data-i18n="settings.phone_verify_lead">Verify your Hungarian mobile (+36) with a one-time SMS code.</p>
-                <p class="settings-phone-verify__status small" id="settings-phone-verify-status" ${phoneVerified ? "" : "hidden"}>
-                  <span class="settings-phone-verify__badge settings-phone-verify__badge--ok" data-i18n="settings.phone_verified">Phone number verified.</span>
-                </p>
-                <div class="settings-phone-verify__actions" id="settings-phone-verify-actions" ${phoneVerified ? "hidden" : ""}>
-                  <button type="button" class="btn btn--ghost btn--sm" id="settings-phone-send-code" data-i18n="settings.phone_send_code">Send verification code</button>
-                </div>
-                <div class="settings-phone-verify__otp" id="settings-phone-otp-wrap" hidden>
-                  <label class="form-label" for="settings-phone-otp" data-i18n="settings.phone_code_label">SMS code</label>
-                  <div class="settings-phone-verify__otp-row">
-                    <input
-                      type="text"
-                      id="settings-phone-otp"
-                      class="form-input"
-                      inputmode="numeric"
-                      autocomplete="one-time-code"
-                      maxlength="8"
-                      placeholder="123456"
-                    />
-                    <button type="button" class="btn btn--primary btn--sm" id="settings-phone-verify-btn" data-i18n="settings.phone_confirm_code">Verify number</button>
-                  </div>
-                </div>
-                <p class="form-field__error" id="settings-phone-verify-msg" role="status" hidden></p>
-              </div>
+              <p class="settings-phone-verify__paused muted small" data-i18n="settings.phone_verify_paused">SMS verification is paused for now — you can still save your number here.</p>
             </div>
             <div class="form-field">
               <label class="form-label" for="settings-location" data-i18n="settings.location_city">Location / city</label>
