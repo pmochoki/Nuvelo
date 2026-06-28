@@ -738,6 +738,7 @@
         </div>
 
         <form id="login-form" class="stack auth-email-form">
+          <div id="auth-signup-block" class="auth-signup-block">
           <label class="auth-field--signup">
             <span data-i18n="auth.displayname">Display name</span>
             <input name="name" minlength="2" autocomplete="name" placeholder="Maria Kovacs" />
@@ -752,10 +753,12 @@
               <option value="landlord" data-i18n="role.landlord">Landlord</option>
             </select>
           </label>
-          <label>
+          </div>
+          <label id="auth-email-block">
             <span data-i18n="auth.email">Email</span>
             <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
           </label>
+          <div id="auth-password-block">
           <label>
             <span data-i18n="auth.password">Password</span>
             <input
@@ -768,6 +771,36 @@
               required
             />
           </label>
+          <p class="auth-forgot-row small" id="auth-forgot-row">
+            <button type="button" class="btn btn--link auth-inline-link" id="auth-forgot-btn" data-i18n="auth.forgot_password">
+              Forgot password?
+            </button>
+          </p>
+          </div>
+          <div id="auth-recovery-block" class="auth-recovery-block" hidden>
+            <label>
+              <span data-i18n="auth.new_password">New password</span>
+              <input
+                name="new_password"
+                id="auth-new-password-input"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                placeholder="••••••••"
+              />
+            </label>
+            <label>
+              <span data-i18n="auth.confirm_password">Confirm password</span>
+              <input
+                name="confirm_password"
+                id="auth-confirm-password-input"
+                type="password"
+                autocomplete="new-password"
+                minlength="8"
+                placeholder="••••••••"
+              />
+            </label>
+          </div>
           <button type="submit" class="btn btn--primary auth-submit-full" id="login-form-submit">
             <span class="auth-submit-inner">
               <span class="auth-submit-spinner" aria-hidden="true"></span>
@@ -782,6 +815,11 @@
         <p class="auth-switch small muted" id="auth-switch-line">
           <button type="button" class="btn btn--link auth-inline-link" id="auth-switch-mode">
             Don’t have an account? Register
+          </button>
+        </p>
+        <p class="auth-back-row small muted" id="auth-back-row" hidden>
+          <button type="button" class="btn btn--link auth-inline-link" id="auth-back-signin" data-i18n="auth.back_signin">
+            Back to sign in
           </button>
         </p>
         <p class="auth-legal small muted" data-i18n="auth.terms">

@@ -394,6 +394,12 @@ async function initAuth() {
   }
   applySupabaseSession(session ?? null);
   updateAuthUi();
+  const hashParams = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
+  const queryParams = new URLSearchParams(window.location.search || "");
+  if (hashParams.get("type") === "recovery" || queryParams.get("type") === "recovery") {
+    authRecoveryPending = true;
+    openModal("recovery");
+  }
   void mergeProfileAvatarFromDb().then(() => {
     updateAuthUi();
   });
@@ -404,9 +410,18 @@ async function initAuth() {
     void mergeProfileAvatarFromDb().then(() => {
       updateAuthUi();
     });
+    if (event === "PASSWORD_RECOVERY") {
+      authRecoveryPending = true;
+      openModal("recovery");
+      return;
+    }
     if (event === "SIGNED_IN") {
       resetAuthModalMessages();
       void refreshMessageNavBadge();
+      if (authRecoveryPending) {
+        openModal("recovery");
+        return;
+      }
       const u = getUser();
       if (u) {
         onAuthSuccess(u);
@@ -580,6 +595,80 @@ userChip?.addEventListener("click", () => void signOutNuvelo());
 
 /** @type {"signin" | "register"} */
 let authModalMode = "signin";
+/** True after user opens the reset link from email — block profile redirect until password is set. */
+let authRecoveryPending = false;
+
+const syncAuthModalLayout = (mode) => {
+  const signupBlock = document.getElementById("auth-signup-block");
+  const passwordBlock = document.getElementById("auth-password-block");
+  const recoveryBlock = document.getElementById("auth-recovery-block");
+  const forgotRow = document.getElementById("auth-forgot-row");
+  const socialBlock = document.getElementById("login-social-block");
+  const switchLine = document.getElementById("auth-switch-line");
+  const backRow = document.getElementById("auth-back-row");
+  const formEl = document.getElementById("login-form");
+  const passwordInput = formEl?.querySelector("#auth-password-input");
+  const newPasswordInput = formEl?.querySelector("#auth-new-password-input");
+  const confirmPasswordInput = formEl?.querySelector("#auth-confirm-password-input");
+  const nameInput = formEl?.querySelector("input[name='name']");
+  const roleSelect = formEl?.querySelector("select[name='role']");
+  const submitLabel = formEl?.querySelector(".auth-submit-label");
+
+  const isSignIn = mode === "signin";
+  const isRegister = mode === "register";
+  const isForgot = mode === "forgot";
+  const isRecovery = mode === "recovery";
+
+  if (signupBlock) {
+    signupBlock.hidden = !isRegister;
+  }
+  if (passwordBlock) {
+    passwordBlock.hidden = isForgot || isRecovery;
+  }
+  if (recoveryBlock) {
+    recoveryBlock.hidden = !isRecovery;
+  }
+  if (forgotRow) {
+    forgotRow.hidden = !isSignIn;
+  }
+  if (socialBlock) {
+    socialBlock.hidden = isForgot || isRecovery;
+  }
+  if (switchLine) {
+    switchLine.hidden = isForgot || isRecovery;
+  }
+  if (backRow) {
+    backRow.hidden = !(isForgot || isRecovery);
+  }
+
+  if (nameInput) {
+    nameInput.required = isRegister;
+  }
+  if (roleSelect) {
+    roleSelect.required = isRegister;
+  }
+  if (passwordInput) {
+    passwordInput.required = isSignIn || isRegister;
+    passwordInput.autocomplete = isRegister ? "new-password" : "current-password";
+  }
+  if (newPasswordInput) {
+    newPasswordInput.required = isRecovery;
+  }
+  if (confirmPasswordInput) {
+    confirmPasswordInput.required = isRecovery;
+  }
+  if (submitLabel) {
+    if (isRegister) {
+      submitLabel.textContent = t("auth.create_account");
+    } else if (isForgot) {
+      submitLabel.textContent = t("auth.send_reset");
+    } else if (isRecovery) {
+      submitLabel.textContent = t("auth.set_password");
+    } else {
+      submitLabel.textContent = t("auth.signin");
+    }
+  }
+};
 
 /** Hides OAuth/email UI when production has neither Supabase nor legacy opt-in. */
 const syncAuthSignInAvailability = () => {
@@ -609,7 +698,7 @@ const syncAuthSignInAvailability = () => {
 /**
  * Opens the auth overlay. Call only from user-driven handlers (Sign in, Registration, drawer, etc.).
  * Do not invoke on page load. Implementation: #login-modal is a div with `hidden`, not <dialog>.showModal().
- * @param {"signin" | "register"} [mode]
+ * @param {"signin" | "register" | "forgot" | "recovery"} [mode]
  */
 const openModal = (mode = "signin") => {
   if (!loginModal) {
@@ -641,14 +730,27 @@ const openModal = (mode = "signin") => {
   }
 
   if (titleEl) {
-    titleEl.textContent = mode === "register" ? t("auth.title_create") : t("auth.title");
+    if (mode === "register") {
+      titleEl.textContent = t("auth.title_create");
+    } else if (mode === "forgot") {
+      titleEl.textContent = t("auth.title_forgot");
+    } else if (mode === "recovery") {
+      titleEl.textContent = t("auth.title_recovery");
+    } else {
+      titleEl.textContent = t("auth.title");
+    }
   }
   if (subEl) {
     subEl.hidden = false;
-    subEl.textContent =
-      mode === "register"
-        ? t("auth.subtitle_register")
-        : t("auth.subtitle_signin_flow");
+    if (mode === "register") {
+      subEl.textContent = t("auth.subtitle_register");
+    } else if (mode === "forgot") {
+      subEl.textContent = t("auth.subtitle_forgot");
+    } else if (mode === "recovery") {
+      subEl.textContent = t("auth.subtitle_recovery");
+    } else {
+      subEl.textContent = t("auth.subtitle_signin_flow");
+    }
   }
   if (errEl) {
     errEl.textContent = "";
@@ -656,25 +758,7 @@ const openModal = (mode = "signin") => {
   }
   if (formEl) {
     formEl.hidden = false;
-    loginModal.querySelectorAll(".auth-field--signup").forEach((el) => {
-      el.hidden = mode === "signin";
-    });
-    const nameInput = formEl.querySelector("input[name='name']");
-    const roleSelect = formEl.querySelector("select[name='role']");
-    if (nameInput) {
-      nameInput.required = mode === "register";
-    }
-    if (roleSelect) {
-      roleSelect.required = mode === "register";
-    }
-    const passwordInput = formEl.querySelector("#auth-password-input");
-    const submitLabel = formEl.querySelector(".auth-submit-label");
-    if (passwordInput) {
-      passwordInput.autocomplete = mode === "register" ? "new-password" : "current-password";
-    }
-    if (submitLabel) {
-      submitLabel.textContent = mode === "register" ? t("auth.create_account") : t("auth.signin");
-    }
+    syncAuthModalLayout(mode);
   }
   if (switchBtn) {
     switchBtn.textContent =
@@ -709,14 +793,27 @@ const syncAuthModalStaticCopy = () => {
   const subEl = document.getElementById("login-subtitle");
   const switchBtn = document.getElementById("auth-switch-mode");
   if (titleEl) {
-    titleEl.textContent = authModalMode === "register" ? t("auth.title_create") : t("auth.title");
+    if (authModalMode === "register") {
+      titleEl.textContent = t("auth.title_create");
+    } else if (authModalMode === "forgot") {
+      titleEl.textContent = t("auth.title_forgot");
+    } else if (authModalMode === "recovery") {
+      titleEl.textContent = t("auth.title_recovery");
+    } else {
+      titleEl.textContent = t("auth.title");
+    }
   }
   if (subEl) {
     subEl.hidden = false;
-    subEl.textContent =
-      authModalMode === "register"
-        ? t("auth.subtitle_register")
-        : t("auth.subtitle_signin_flow");
+    if (authModalMode === "register") {
+      subEl.textContent = t("auth.subtitle_register");
+    } else if (authModalMode === "forgot") {
+      subEl.textContent = t("auth.subtitle_forgot");
+    } else if (authModalMode === "recovery") {
+      subEl.textContent = t("auth.subtitle_recovery");
+    } else {
+      subEl.textContent = t("auth.subtitle_signin_flow");
+    }
   }
   if (switchBtn) {
     switchBtn.textContent =
@@ -775,6 +872,15 @@ document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
   if (error) {
     showLoginError(error.message || t("auth.err.facebook"));
   }
+});
+
+document.getElementById("auth-forgot-btn")?.addEventListener("click", () => {
+  openModal("forgot");
+});
+
+document.getElementById("auth-back-signin")?.addEventListener("click", () => {
+  authRecoveryPending = false;
+  openModal("signin");
 });
 
 document.getElementById("auth-switch-mode")?.addEventListener("click", () => {
@@ -849,13 +955,24 @@ loginForm?.addEventListener("submit", async (e) => {
   const role = String(fd.get("role") || "").trim();
   const email = String(fd.get("email") || "").trim();
   const password = String(fd.get("password") || "");
+  const newPassword = String(fd.get("new_password") || "");
+  const confirmPassword = String(fd.get("confirm_password") || "");
 
-  if (!email) {
+  if (authModalMode === "recovery") {
+    if (!newPassword || newPassword.length < 8) {
+      showLoginError(t("auth.err.need_password"));
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      showLoginError(t("auth.err.password_mismatch"));
+      return;
+    }
+  } else if (!email) {
     showLoginError(t("auth.err.need_email"));
     return;
-  }
-
-  if (!password || password.length < 8) {
+  } else if (authModalMode === "forgot") {
+    /* email only */
+  } else if (!password || password.length < 8) {
     showLoginError(t("auth.err.need_password"));
     return;
   }
@@ -874,6 +991,35 @@ loginForm?.addEventListener("submit", async (e) => {
       showLoginError(t("auth.err.slow"));
     }, 30000);
     try {
+      if (authModalMode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: getAuthRedirectUrl()
+        });
+        if (error) {
+          showLoginError(mapSupabaseAuthError(error, "forgot"));
+          return;
+        }
+        showLoginSuccess(t("auth.success.reset_sent"));
+        return;
+      }
+
+      if (authModalMode === "recovery") {
+        const { error } = await supabase.auth.updateUser({ password: newPassword });
+        if (error) {
+          showLoginError(mapSupabaseAuthError(error, "recovery"));
+          return;
+        }
+        authRecoveryPending = false;
+        showLoginSuccess(t("auth.success.password_updated"));
+        const u = getUser();
+        if (u) {
+          onAuthSuccess(u);
+        } else {
+          closeModal();
+        }
+        return;
+      }
+
       const metaName = name || email.split("@")[0] || "Member";
       const metaRole = role || "buyer";
       const meta = {

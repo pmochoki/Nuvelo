@@ -9,7 +9,7 @@ export const isSupabaseConfigured = Boolean(
 );
 
 /**
- * OAuth + magic-link redirect. Production builds use https://nuvelo.one unless
+ * OAuth + password-reset redirect. Production builds use https://nuvelo.one unless
  * VITE_AUTH_REDIRECT_URL is set. Local dev uses the current origin.
  */
 export const getAuthRedirectUrl = () => {

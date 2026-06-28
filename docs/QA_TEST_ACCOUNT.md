@@ -20,6 +20,7 @@ Private account for you (and agents helping you) to feel the **logged-in** exper
 ## Sign in again
 
 1. **Sign in** → **Continue with Google** / **Facebook**, or enter **email + password** → **Sign in**.
+2. Forgot password? Tap **Forgot password?** → enter email → **Send reset link** → open the email link → set a new password.
 
 Phone SMS is **not shown** on the site until Twilio is configured in Supabase.
 

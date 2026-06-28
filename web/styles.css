@@ -1766,6 +1766,36 @@ textarea {
   color: var(--text-secondary);
 }
 
+/* `.stack label { display: flex }` overrides the HTML `hidden` attribute — force hide. */
+.stack label[hidden],
+.auth-field--signup[hidden],
+#auth-signup-block[hidden],
+#auth-password-block[hidden],
+#auth-recovery-block[hidden],
+#auth-forgot-row[hidden],
+#auth-back-row[hidden],
+#auth-switch-line[hidden],
+#login-social-block[hidden] {
+  display: none !important;
+}
+
+.auth-forgot-row {
+  margin: -0.35rem 0 0;
+  text-align: right;
+}
+
+.auth-signup-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.auth-recovery-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
 .detail {
   max-width: 720px;
 }
