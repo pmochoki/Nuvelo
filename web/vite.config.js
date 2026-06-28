@@ -89,6 +89,25 @@ export default defineConfig({
       input: {
         main: resolve(__dirname, "index.html"),
         admin: resolve(__dirname, "admin.html")
+      },
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules/@supabase")) {
+            return "supabase";
+          }
+          if (id.includes("/src/i18n/translations.js")) {
+            return "i18n";
+          }
+          if (id.includes("/src/pages/ProfilePage.js")) {
+            return "profile";
+          }
+          if (id.includes("/src/pages/ProfileSettingsPage.js")) {
+            return "profile-settings";
+          }
+          if (id.includes("/src/lib/messaging.js")) {
+            return "messaging";
+          }
+        }
       }
     }
   }

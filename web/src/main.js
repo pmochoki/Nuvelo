@@ -20,23 +20,6 @@ import {
   donationCollectionMeta
 } from "./data/donationConstants.js";
 import { getDisplayInitials } from "./lib/profileInitials.js";
-import { uploadUserAvatarToSupabase } from "./lib/avatarUpload.js";
-import {
-  buildChatPanelHtml,
-  buildMessageThreadRowHtml,
-  renderProfilePage
-} from "./pages/ProfilePage.js";
-import {
-  fetchMessages,
-  fetchThreadsForCurrentUser,
-  fetchUnreadThreadCount,
-  getOrCreateThread,
-  isUuid,
-  sendMessage,
-  subscribeToThreadMessages
-} from "./lib/messaging.js";
-import { renderSettingsPage } from "./pages/ProfileSettingsPage.js";
-import { fetchNotificationsForCurrentUser } from "./lib/notificationsApi.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
@@ -448,8 +431,10 @@ async function initAuth() {
     console.error(error);
   }
   applySupabaseSession(session ?? null);
-  await mergeProfileAvatarFromDb();
   updateAuthUi();
+  void mergeProfileAvatarFromDb().then(() => {
+    updateAuthUi();
+  });
   void refreshMessageNavBadge();
 
   supabase.auth.onAuthStateChange((event, session) => {
@@ -510,6 +495,7 @@ async function refreshMessageNavBadge() {
     return;
   }
   try {
+    const { fetchUnreadThreadCount } = await import("./lib/messaging.js");
     const n = await fetchUnreadThreadCount();
     try {
       localStorage.setItem("nuvelo_unread_messages", String(n));
@@ -1301,6 +1287,7 @@ async function persistAvatarFromFile(file) {
 
   if (isSupabaseConfigured && supabase) {
     try {
+      const { uploadUserAvatarToSupabase } = await import("./lib/avatarUpload.js");
       const url = await uploadUserAvatarToSupabase(u.id, file);
       writeStoredAvatarDataUrl("");
       cachedUser = { ...u, avatarUrl: url };
@@ -1679,6 +1666,17 @@ function bindProfileSidebarAvatar() {
 }
 
 function initMessagesPageUi() {
+  void (async () => {
+    const [{ buildChatPanelHtml, buildMessageThreadRowHtml }, messaging] = await Promise.all([
+      import("./pages/ProfilePage.js"),
+      import("./lib/messaging.js")
+    ]);
+    const {
+      fetchMessages,
+      fetchThreadsForCurrentUser,
+      sendMessage,
+      subscribeToThreadMessages
+    } = messaging;
   const root = document.querySelector("[data-messages-root]");
   if (!root) {
     return;
@@ -1994,6 +1992,7 @@ function initMessagesPageUi() {
       void openThread(param);
     }
   });
+  })();
 }
 
 function initFeedbackPageUi() {
@@ -2109,6 +2108,7 @@ async function initNotificationsPageUi() {
     errEl.textContent = "";
   }
   try {
+    const { fetchNotificationsForCurrentUser } = await import("./lib/notificationsApi.js");
     const rows = await fetchNotificationsForCurrentUser();
     if (loadEl) {
       loadEl.hidden = true;
@@ -2621,6 +2621,33 @@ const fetchListings = async (params) => {
 const PAGE_SIZE = 12;
 
 let browseListingsCache = { key: "", data: [] };
+
+const HOME_LISTINGS_CACHE_KEY = "nuvelo_home_listings_v1";
+const LISTINGS_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function readPersistedListings(cacheKey) {
+  try {
+    const raw = sessionStorage.getItem(cacheKey);
+    if (!raw) {
+      return null;
+    }
+    const parsed = JSON.parse(raw);
+    if (!parsed?.data || Date.now() - parsed.at > LISTINGS_CACHE_TTL_MS) {
+      return null;
+    }
+    return parsed.data;
+  } catch {
+    return null;
+  }
+}
+
+function writePersistedListings(cacheKey, data) {
+  try {
+    sessionStorage.setItem(cacheKey, JSON.stringify({ at: Date.now(), data }));
+  } catch {
+    /* ignore */
+  }
+}
 
 const parseBrowseParams = () => {
   const p = new URLSearchParams(window.location.search);
@@ -3377,22 +3404,12 @@ const buildListingCardEl = (listing, opts = {}) => {
   return card;
 };
 
-const renderLanding = async () => {
+const renderLanding = () => {
   const appEl = mainShell();
   if (!appEl) {
     return;
   }
-  let listings = [];
-  let listingsLoadFailed = false;
-  try {
-    listings = await fetchListings({});
-  } catch (err) {
-    console.error(err);
-    listingsLoadFailed = true;
-    listings = [];
-  }
   const viewMode = getListViewMode();
-  const trending = sortListings([...listings], "popular").slice(0, 24);
   const homeCategoryGrid = buildHomeCategoryGridHtml();
 
   const pills = [
@@ -3466,25 +3483,12 @@ const renderLanding = async () => {
                 <button type="button" id="home-view-list" aria-pressed="${viewMode === "list"}" aria-label="${esc(t("browse.list_view"))}" title="${esc(t("browse.list_view"))}">☰</button>
               </div>
             </div>
-            <div class="ad-grid--lc" id="home-listing-grid" data-view="${viewMode}"></div>
+            <div class="ad-grid--lc" id="home-listing-grid" data-view="${viewMode}" aria-busy="true"></div>
           </section>
         </div>
       </div>
     </div>
   `;
-
-  const grid = document.getElementById("home-listing-grid");
-  if (listingsLoadFailed) {
-    grid.innerHTML = browseListingsFetchErrorHtml();
-  } else if (!listings.length) {
-    grid.innerHTML = browseEmptyGridHtml();
-  } else {
-    trending.forEach((listing, i) => {
-      grid.appendChild(
-        buildListingCardEl(listing, { viewMode, markPopular: true, idx: i })
-      );
-    });
-  }
 
   const heroLocRoot = document.querySelector("#home-hero-form [data-loc-combobox]");
   initLocationCombobox(heroLocRoot);
@@ -3515,7 +3519,58 @@ const renderLanding = async () => {
     setListViewMode("list");
     render();
   });
+
+  const cached = readPersistedListings(HOME_LISTINGS_CACHE_KEY);
+  if (cached) {
+    paintLandingListingGrid(cached, false);
+  }
+
+  void hydrateLandingListings(Boolean(cached));
 };
+
+function paintLandingListingGrid(listings, listingsLoadFailed) {
+  const grid = document.getElementById("home-listing-grid");
+  if (!grid) {
+    return;
+  }
+  const viewMode = getListViewMode();
+  grid.setAttribute("data-view", viewMode);
+  grid.setAttribute("aria-busy", "false");
+  grid.replaceChildren();
+  if (listingsLoadFailed) {
+    grid.innerHTML = browseListingsFetchErrorHtml();
+    return;
+  }
+  if (!listings.length) {
+    grid.innerHTML = browseEmptyGridHtml();
+    return;
+  }
+  const trending = sortListings([...listings], "popular").slice(0, 24);
+  trending.forEach((listing, i) => {
+    grid.appendChild(buildListingCardEl(listing, { viewMode, markPopular: true, idx: i }));
+  });
+}
+
+async function hydrateLandingListings(hadCached) {
+  let listings = [];
+  let listingsLoadFailed = false;
+  try {
+    listings = await fetchListings({});
+    writePersistedListings(HOME_LISTINGS_CACHE_KEY, listings);
+  } catch (err) {
+    console.error(err);
+    listingsLoadFailed = true;
+    if (!hadCached) {
+      paintLandingListingGrid([], true);
+    }
+    return;
+  }
+  if (!hadCached) {
+    paintLandingListingGrid(listings, false);
+    return;
+  }
+  paintLandingListingGrid(listings, false);
+}
 
 const buildBrowseSkeletonHtml = () => {
   const cards = [0, 1, 2, 3]
@@ -4247,13 +4302,14 @@ const renderDetail = async (id) => {
       msg.textContent = "Messaging is temporarily unavailable. Please try again later.";
       return;
     }
-    if (!isUuid(listing.userId)) {
-      msg.textContent =
-        "This listing uses a demo seller account. Chat works for listings posted by registered users.";
-      return;
-    }
     msg.textContent = "Opening chat…";
     try {
+      const { getOrCreateThread, isUuid } = await import("./lib/messaging.js");
+      if (!isUuid(listing.userId)) {
+        msg.textContent =
+          "This listing uses a demo seller account. Chat works for listings posted by registered users.";
+        return;
+      }
       const thumb = listingImageUrl(listing);
       const tid = await getOrCreateThread({
         listingId: listing.id,
@@ -4607,6 +4663,7 @@ const renderProfile = async (section) => {
       adverts,
       savedAds
     };
+    const { renderProfilePage } = await import("./pages/ProfilePage.js");
     appEl.innerHTML = renderProfilePage(profileUser, section);
   } catch (e) {
     console.error(e);
@@ -4644,6 +4701,7 @@ const renderProfileSettings = async (settingsSection) => {
     return;
   }
   const profileUser = buildProfileSettingsUser(user);
+  const { renderSettingsPage } = await import("./pages/ProfileSettingsPage.js");
   appEl.innerHTML = renderSettingsPage(profileUser, settingsSection);
   initSettingsHandlers();
   bindProfileSidebarAvatar();
@@ -5316,13 +5374,7 @@ const render = async () => {
   }
   try {
     if (route.view === "landing") {
-      appEl.innerHTML = `
-        <div class="page-loading" role="status" aria-live="polite" aria-busy="true">
-          <span class="page-loading__spinner" aria-hidden="true"></span>
-          <span class="page-loading__text">${esc(t("general.loading"))}</span>
-        </div>
-      `;
-      await renderLanding();
+      renderLanding();
       return;
     }
     if (route.view === "list") {
@@ -5594,11 +5646,13 @@ window.addEventListener("nuvelo:locale", () => {
 void (async () => {
   initTheme();
   initI18n();
-  await initAuth();
+  syncAuthFromStoredUser();
+  updateAuthUi();
   syncAuthSignInAvailability();
   syncAuthModalStaticCopy();
   bindAuthPhoneFocusHint();
   ensureNavUserDropdown();
+  void initAuth();
   await render().catch((e) => console.error(e));
 })();
 
