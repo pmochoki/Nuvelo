@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
-/// Brand wordmark — theme-aware PNG (white text on dark, navy text on light).
+/// Brand wordmark — theme-aware SVG (white text on dark, navy text on light).
 class NuveloLogo extends StatelessWidget {
   const NuveloLogo({super.key, this.height = 28});
 
@@ -9,14 +10,13 @@ class NuveloLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isLight = Theme.of(context).brightness == Brightness.light;
-    return Image.asset(
+    return SvgPicture.asset(
       isLight
-          ? 'assets/images/nuvelo-logo-light.png'
-          : 'assets/images/nuvelo-logo.png',
+          ? 'assets/images/nuvelo-logo-light.svg'
+          : 'assets/images/nuvelo-logo.svg',
       height: height,
       fit: BoxFit.contain,
-      filterQuality: FilterQuality.high,
-      semanticLabel: 'Nuvelo',
+      semanticsLabel: 'Nuvelo',
     );
   }
 }
