@@ -2632,6 +2632,26 @@ body.is-landing .jiji-hero {
   margin-bottom: 0.5rem;
 }
 
+.site-footer__col--brand .site-footer__logo--light {
+  display: none;
+}
+
+[data-color-scheme="light"] .site-footer__col--brand .site-footer__logo--dark {
+  display: none;
+}
+
+[data-color-scheme="light"] .site-footer__col--brand .site-footer__logo--light {
+  display: block;
+}
+
+[data-color-scheme="dark"] .site-footer__col--brand .site-footer__logo--light {
+  display: none;
+}
+
+[data-color-scheme="dark"] .site-footer__col--brand .site-footer__logo--dark {
+  display: block;
+}
+
 .site-footer__col {
   display: flex;
   flex-direction: column;
