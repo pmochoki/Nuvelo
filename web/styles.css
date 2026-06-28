@@ -1486,8 +1486,7 @@ body.loc-modal-open {
 }
 
 /* Theme logo variants — must follow .brand__logo (same elements carry both classes). */
-.jiji-header__brand .brand__logo--light,
-.site-footer__logo--light {
+.jiji-header__brand .brand__logo--light {
   display: none;
 }
 
@@ -1496,14 +1495,6 @@ body.loc-modal-open {
 }
 
 [data-color-scheme="light"] body:not(.is-landing) .jiji-header__brand .brand__logo--light {
-  display: block;
-}
-
-[data-color-scheme="light"] .site-footer__logo--dark {
-  display: none;
-}
-
-[data-color-scheme="light"] .site-footer__logo--light {
   display: block;
 }
 
