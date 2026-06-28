@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 /// Nuvelo design tokens — matches NUVELO_MASTER_RULES brand colors.
 abstract final class NuveloColors {
-  static const Color primaryOrange = Color(0xFFF97316);
+  static const Color primaryOrange = Color(0xFFEA580C);
   static const Color darkNavy = Color(0xFF0A1628);
   static const Color cardBg = Color(0xFF0F1F33);
   static const Color deepCard = Color(0xFF162A42);

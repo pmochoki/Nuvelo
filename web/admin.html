@@ -20,7 +20,7 @@
       --bg: #0f1117;
       --sidebar: #161b27;
       --card: #15263d;
-      --accent: #f97316;
+      --accent: #ea580c;
       --success: #22c55e;
       --warning: #f59e0b;
       --danger: #ef4444;
@@ -112,7 +112,7 @@
     }
     .nav-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
     .nav-item.active {
-      background: rgba(249, 115, 22, 0.12); color: var(--accent); border-left-color: var(--accent);
+      background: rgba(234, 88, 12, 0.12); color: var(--accent); border-left-color: var(--accent);
     }
     .sidebar-footer { margin-top: auto; padding: 1rem; font-size: 0.7rem; color: var(--muted); border-top: 1px solid var(--border); }
     .main-wrap {
@@ -687,7 +687,7 @@
     if (ctxL && window.Chart) {
       chartLine = new Chart(ctxL, {
         type: "line",
-        data: { labels, datasets: [{ label: "Listings", data: vals, borderColor: "#f97316", backgroundColor: "rgba(249,115,22,0.1)", fill: true, tension: 0.25, pointRadius: 0 }] },
+        data: { labels, datasets: [{ label: "Listings", data: vals, borderColor: "#ea580c", backgroundColor: "rgba(234,88,12,0.1)", fill: true, tension: 0.25, pointRadius: 0 }] },
         options: {
           responsive: true,
           maintainAspectRatio: false,
@@ -703,7 +703,7 @@
     if (ctxD && window.Chart) {
       chartDonut = new Chart(ctxD, {
         type: "doughnut",
-        data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: ["#f97316", "#22c55e", "#3b82f6", "#14b8a6", "#eab308", "#64748b"] }] },
+        data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: ["#ea580c", "#22c55e", "#3b82f6", "#14b8a6", "#eab308", "#64748b"] }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#94a3b8" } } } }
       });
     }
@@ -1583,7 +1583,7 @@
         type: "line",
         data: {
           labels,
-          datasets: [{ label: "HUF (paid)", data: bucket, borderColor: "#f97316", tension: 0.2 }]
+          datasets: [{ label: "HUF (paid)", data: bucket, borderColor: "#ea580c", tension: 0.2 }]
         },
         options: {
           responsive: true,

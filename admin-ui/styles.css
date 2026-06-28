@@ -2,8 +2,8 @@
   --purple-deep: #0a1628;
   --purple: #14b8a6;
   --purple-light: #5eead4;
-  --orange: #f97316;
-  --orange-dark: #ea580c;
+  --orange: #ea580c;
+  --orange-dark: #c2410c;
   --white: #ffffff;
 }
 
@@ -83,7 +83,7 @@ h2 {
 
 .card button:hover {
   filter: brightness(1.08);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.4);
+  box-shadow: 0 8px 20px rgba(234, 88, 12, 0.4);
   transform: translateY(-1px);
 }
 

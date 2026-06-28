@@ -182,7 +182,7 @@ Domain:         nuvelo.one
 Support email:  support@nuvelo.one
 
 Colors:
-  Primary orange:   #f97316  (buttons, CTAs, active states)
+  Primary orange:   #ea580c  (buttons, CTAs, active states)
   Dark navy bg:     #0A1628  (main background)
   Card bg:          #0F1F33  (cards, panels)
   Deep card:        #162A42  (secondary cards)

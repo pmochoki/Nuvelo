@@ -11,8 +11,8 @@
   --purple-border: #2a3b52;
   --purple: #14b8a6;
   --purple-light: #5eead4;
-  --orange: #f97316;
-  --orange-dark: #ea580c;
+  --orange: #ea580c;
+  --orange-dark: #c2410c;
   --white: #ffffff;
   --text: #fafafa;
   --text-secondary: #a9c2d9;
@@ -750,7 +750,7 @@ body.loc-modal-open {
 
 .lang-btn.is-active {
   font-weight: 500;
-  color: #f97316;
+  color: #ea580c;
 }
 
 .lang-switcher__sep {
@@ -785,7 +785,7 @@ body.loc-modal-open {
 @media (max-width: 767px) {
   .mobile-bottom-dock .lang-switcher--mobile-dock .lang-btn.is-active {
     font-weight: 500;
-    color: #f97316;
+    color: #ea580c;
   }
 }
 
@@ -6418,7 +6418,7 @@ body.mobile-tab-bar-pad .profile-hub-fab {
 }
 
 .msg-row--unread .msg-row__thumb-dot {
-  background: #f97316;
+  background: #ea580c;
 }
 
 .msg-row__listing-title {
