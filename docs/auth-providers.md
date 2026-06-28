@@ -79,7 +79,21 @@ If your key is **`FX25BH5D5X`** instead, change `--key-id` and `--p8` to match `
 **Wrong:** pasting the `.p8` file contents (`MIGTAgEA…`) or the Key ID alone.  
 **Right:** the one-line `eyJ…` string from the script.
 
-### Step C — Supabase
+### Step C — Supabase (dashboard or one command)
+
+**Option A — automatic (recommended if dashboard paste keeps failing)**
+
+1. Create a personal access token: [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)
+2. Run once in Terminal:
+
+```bash
+cd ~/Desktop/Nuvelo-fresh
+SUPABASE_ACCESS_TOKEN=sbp_paste_your_token_here node scripts/configure-supabase-apple.mjs
+```
+
+This generates a fresh JWT and writes it to Supabase via the Management API (`external_apple_client_id` + `external_apple_secret`).
+
+**Option B — manual dashboard**
 
 **Authentication → Providers → Apple**
 
