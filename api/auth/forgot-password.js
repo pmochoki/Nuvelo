@@ -53,20 +53,32 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { data, error: listError } = await admin.auth.admin.listUsers({
-      page: 1,
-      perPage: 5,
-      filter: email
+    const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
+      type: "recovery",
+      email,
+      options: { redirectTo: recoveryRedirectUrl() }
     });
-    if (listError) {
-      console.error("[api/auth/forgot-password] listUsers:", listError);
+    if (linkError) {
+      const msg = String(linkError.message || "").toLowerCase();
+      const status = linkError.status || linkError.code;
+      if (
+        status === 404 ||
+        msg.includes("user not found") ||
+        msg.includes("not found") ||
+        msg.includes("no user") ||
+        msg.includes("invalid email")
+      ) {
+        res.statusCode = 404;
+        res.setHeader("Content-Type", "application/json");
+        return res.end(JSON.stringify({ error: "not_registered", code: "not_registered" }));
+      }
+      console.error("[api/auth/forgot-password] generateLink:", linkError);
       res.statusCode = 502;
       res.setHeader("Content-Type", "application/json");
       return res.end(JSON.stringify({ error: "lookup_failed", code: "lookup_failed" }));
     }
 
-    const registered = (data?.users || []).some((u) => normalizeEmail(u.email) === email);
-    if (!registered) {
+    if (!linkData?.user?.id) {
       res.statusCode = 404;
       res.setHeader("Content-Type", "application/json");
       return res.end(JSON.stringify({ error: "not_registered", code: "not_registered" }));

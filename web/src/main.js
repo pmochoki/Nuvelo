@@ -114,24 +114,59 @@ function mapSupabaseAuthError(error, mode = "signin") {
 
 /** Server checks registration before Supabase sends recovery email (service role). */
 async function requestPasswordResetEmail(email) {
+  const normalized = String(email || "").trim().toLowerCase();
   const res = await fetch("/api/auth/forgot-password", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email })
+    headers: { "Content-Type": "application/json", Accept: "application/json" },
+    body: JSON.stringify({ email: normalized })
   });
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return { ok: false, error: "reset_failed" };
+  }
   let data = {};
   try {
     data = await res.json();
   } catch {
-    /* ignore */
+    return { ok: false, error: "reset_failed" };
   }
-  if (res.status === 404 && data.code === "not_registered") {
+  if (data.code === "not_registered" || res.status === 404) {
     return { ok: false, notRegistered: true };
   }
-  if (!res.ok) {
-    return { ok: false, error: String(data.error || data.code || "reset_failed") };
+  if (!res.ok || data.ok !== true) {
+    return { ok: false, error: String(data.code || data.error || "reset_failed") };
   }
   return { ok: true };
+}
+
+function mapOAuthReturnError(raw) {
+  const msg = decodeURIComponent(String(raw || "").replace(/\+/g, " "));
+  if (/facebook/i.test(msg) || /provider is not enabled/i.test(msg)) {
+    return t("auth.err.facebook_setup");
+  }
+  if (/google/i.test(msg)) {
+    return t("auth.err.google");
+  }
+  return msg || t("auth.err.generic");
+}
+
+function consumeOAuthErrorFromUrl() {
+  const hash = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
+  const query = new URLSearchParams(window.location.search || "");
+  const denied = hash.get("error") === "access_denied" || query.get("error") === "access_denied";
+  if (denied) {
+    openModal("signin");
+    showLoginError(t("auth.err.oauth_cancelled"));
+    window.history.replaceState(null, "", window.location.pathname);
+    return;
+  }
+  const err = hash.get("error_description") || query.get("error_description") || hash.get("error") || query.get("error");
+  if (!err) {
+    return;
+  }
+  openModal("signin");
+  showLoginError(mapOAuthReturnError(err));
+  window.history.replaceState(null, "", window.location.pathname);
 }
 
 /** OAuth needs Supabase env vars baked in at build time (Vercel → Production env → redeploy). */
@@ -1033,10 +1068,16 @@ document.getElementById("auth-fb-stub")?.addEventListener("click", async () => {
   const redirectTo = getAuthRedirectUrl();
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "facebook",
-    options: { redirectTo }
+    options: {
+      redirectTo,
+      scopes: "email public_profile"
+    }
   });
   if (error) {
-    showLoginError(error.message || t("auth.err.facebook"));
+    const msg = String(error.message || "");
+    showLoginError(
+      /not enabled|provider|facebook/i.test(msg) ? t("auth.err.facebook_setup") : msg || t("auth.err.facebook")
+    );
   }
 });
 
@@ -1152,6 +1193,42 @@ loginForm?.addEventListener("submit", async (e) => {
     return;
   }
 
+  if (authModalMode === "forgot") {
+    if (submitBtn) {
+      submitBtn.disabled = true;
+    }
+    setLoginContinueLoading(true);
+    loginContinueSlowTimer = setTimeout(() => {
+      showLoginError(t("auth.err.slow"));
+    }, 30000);
+    try {
+      const result = await requestPasswordResetEmail(email);
+      if (result.notRegistered) {
+        showLoginError(t("auth.err.not_registered"));
+        return;
+      }
+      if (!result.ok) {
+        showLoginError(
+          result.error === "service_unavailable"
+            ? t("auth.err.signin_down")
+            : t("auth.err.reset_failed")
+        );
+        return;
+      }
+      showLoginSuccess(t("auth.success.reset_sent"));
+    } catch (err) {
+      console.error(err);
+      showLoginError(friendlyNetworkError(err));
+    } finally {
+      clearLoginContinueSlowTimer();
+      setLoginContinueLoading(false);
+      if (submitBtn) {
+        submitBtn.disabled = false;
+      }
+    }
+    return;
+  }
+
   if (supabase) {
     if (submitBtn) {
       submitBtn.disabled = true;
@@ -1161,24 +1238,6 @@ loginForm?.addEventListener("submit", async (e) => {
       showLoginError(t("auth.err.slow"));
     }, 30000);
     try {
-      if (authModalMode === "forgot") {
-        const result = await requestPasswordResetEmail(email);
-        if (result.notRegistered) {
-          showLoginError(t("auth.err.not_registered"));
-          return;
-        }
-        if (!result.ok) {
-          showLoginError(
-            result.error === "service_unavailable"
-              ? t("auth.err.signin_down")
-              : t("auth.err.reset_failed")
-          );
-          return;
-        }
-        showLoginSuccess(t("auth.success.reset_sent"));
-        return;
-      }
-
       if (authModalMode === "recovery") {
         const {
           data: { session }
@@ -6015,6 +6074,7 @@ void (async () => {
   syncAuthSignInAvailability();
   syncAuthModalStaticCopy();
   ensureNavUserDropdown();
+  consumeOAuthErrorFromUrl();
   await initAuth();
   await render().catch((e) => console.error(e));
 })();
