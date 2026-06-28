@@ -4,6 +4,17 @@ Supabase project: `ahiujuljjbozmfwoqtli`
 Production site: `https://nuvelo.one`  
 Auth callback (all OAuth): `https://ahiujuljjbozmfwoqtli.supabase.co/auth/v1/callback`
 
+## Sign-in / sign-up readiness (production)
+
+| Method | App wired | Supabase enabled | Public ready |
+|--------|-----------|------------------|--------------|
+| **Email + password** | Yes | Yes | Yes — use Registration on nuvelo.one |
+| **Google** | Yes | Yes | Yes |
+| **Apple** | Yes | Yes | Yes |
+| **Facebook** | Yes | Yes | **After Meta App Review + Live** — see [`docs/META_APP_REVIEW.md`](META_APP_REVIEW.md) |
+
+Forgot password → `/reset-password`. Phone SMS is off until Twilio is configured.
+
 **Supabase → Authentication → URL Configuration**
 
 | Setting | Value |
@@ -136,6 +147,8 @@ nuvelo.one → Sign in → **Continue with Apple**.
 **To prove Facebook login works today:** add your **personal** Facebook as **App roles → Testers**, open Chrome **incognito**, log into facebook.com with that personal account, then **Continue with Facebook** on nuvelo.one.
 
 **To enable all customers:** Meta Developer → **Publish** → complete **Business verification** → submit **App Review** for `email` if required → switch app **Live**.
+
+**Step-by-step App Review copy-paste text:** see [`docs/META_APP_REVIEW.md`](META_APP_REVIEW.md).
 
 The **web app is already wired** — same OAuth redirect flow as Google. You only need a Meta app + Supabase credentials.
 
