@@ -860,30 +860,6 @@ body.loc-modal-open {
   filter: none;
 }
 
-.brand__logo--light {
-  display: none;
-}
-
-[data-color-scheme="light"] body:not(.is-landing) .brand__logo--dark {
-  display: none;
-}
-
-[data-color-scheme="light"] body:not(.is-landing) .brand__logo--light {
-  display: block;
-}
-
-[data-color-scheme="light"] .site-footer__logo--dark {
-  display: none;
-}
-
-[data-color-scheme="light"] .site-footer__logo--light {
-  display: block;
-}
-
-.site-footer__logo--light {
-  display: none;
-}
-
 .jiji-header__text-link {
   background: none;
   border: none;
@@ -1507,6 +1483,28 @@ body.loc-modal-open {
   max-width: min(200px, 42vw);
   object-fit: contain;
   object-position: left center;
+}
+
+/* Theme logo variants — must follow .brand__logo (same elements carry both classes). */
+.jiji-header__brand .brand__logo--light,
+.site-footer__logo--light {
+  display: none;
+}
+
+[data-color-scheme="light"] body:not(.is-landing) .jiji-header__brand .brand__logo--dark {
+  display: none;
+}
+
+[data-color-scheme="light"] body:not(.is-landing) .jiji-header__brand .brand__logo--light {
+  display: block;
+}
+
+[data-color-scheme="light"] .site-footer__logo--dark {
+  display: none;
+}
+
+[data-color-scheme="light"] .site-footer__logo--light {
+  display: block;
 }
 
 .user-chip {
