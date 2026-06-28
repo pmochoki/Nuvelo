@@ -32,7 +32,7 @@ function setMetaThemeColor(scheme) {
   if (!meta) {
     return;
   }
-  meta.setAttribute("content", scheme === "dark" ? "#0d0a1e" : "#f3f0fa");
+  meta.setAttribute("content", scheme === "dark" ? "#0a1628" : "#f4f7fa");
 }
 
 function syncThemeSelects(pref) {

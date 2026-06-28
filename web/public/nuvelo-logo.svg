@@ -2,16 +2,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 220" width="500" height="220">
   <defs>
     <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#0D0A1E;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#13102A;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#0A1628;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0F1F33;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="symbolGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#A78BFA;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="0%" style="stop-color:#5EEAD4;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14B8A6;stop-opacity:1" />
     </linearGradient>
     <linearGradient id="glowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" style="stop-color:#8B5CF6;stop-opacity:0.3" />
-      <stop offset="100%" style="stop-color:#7C3AED;stop-opacity:0" />
+      <stop offset="0%" style="stop-color:#2DD4BF;stop-opacity:0.3" />
+      <stop offset="100%" style="stop-color:#14B8A6;stop-opacity:0" />
     </linearGradient>
     <filter id="glow">
       <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
@@ -39,13 +39,13 @@
   <circle cx="90" cy="105" r="75" fill="url(#glowGrad)"/>
 
   <!-- Outer orbit ring -->
-  <circle cx="90" cy="105" r="60" fill="none" stroke="#7C3AED" stroke-width="1.5" stroke-opacity="0.4"/>
+  <circle cx="90" cy="105" r="60" fill="none" stroke="#14B8A6" stroke-width="1.5" stroke-opacity="0.4"/>
 
   <!-- Inner orbit ring -->
-  <circle cx="90" cy="105" r="42" fill="none" stroke="#8B5CF6" stroke-width="1" stroke-opacity="0.3"/>
+  <circle cx="90" cy="105" r="42" fill="none" stroke="#2DD4BF" stroke-width="1" stroke-opacity="0.3"/>
 
   <!-- Main circle fill -->
-  <circle cx="90" cy="105" r="52" fill="#7C3AED" fill-opacity="0.15"/>
+  <circle cx="90" cy="105" r="52" fill="#14B8A6" fill-opacity="0.15"/>
 
   <!-- Crescent moon shape — large white circle -->
   <circle cx="90" cy="105" r="38" fill="none" stroke="url(#symbolGrad)" stroke-width="0" filter="url(#glow)"/>
@@ -75,7 +75,7 @@
         stroke-opacity="0.5"/>
 
   <!-- Orbit dot -->
-  <circle cx="128" cy="78" r="5" fill="#A78BFA" filter="url(#glow)"/>
+  <circle cx="128" cy="78" r="5" fill="#5EEAD4" filter="url(#glow)"/>
   <circle cx="128" cy="78" r="3" fill="white"/>
 
   <!-- NUVELO text -->
@@ -89,7 +89,7 @@
         filter="url(#glow)">NUVELO</text>
 
   <!-- Divider line -->
-  <line x1="170" y1="108" x2="460" y2="108" stroke="#7C3AED" stroke-width="1" stroke-opacity="0.5"/>
+  <line x1="170" y1="108" x2="460" y2="108" stroke="#14B8A6" stroke-width="1" stroke-opacity="0.5"/>
 
   <!-- Nice Vibes Only tagline -->
   <text x="170" 
@@ -98,7 +98,7 @@
         font-size="14" 
         font-weight="400"
         letter-spacing="5"
-        fill="#A78BFA"
+        fill="#5EEAD4"
         fill-opacity="0.85">NICE VIBES ONLY</text>
 
 </svg>

@@ -183,13 +183,14 @@ Support email:  support@nuvelo.one
 
 Colors:
   Primary orange:   #f97316  (buttons, CTAs, active states)
-  Dark navy bg:     #0D0A1E  (main background)
-  Card bg:          #13102A  (cards, panels)
-  Deep card:        #1E1A35  (secondary cards)
-  Purple accent:    #7C3AED / #8B5CF6  (highlights, badges)
+  Dark navy bg:     #0A1628  (main background)
+  Card bg:          #0F1F33  (cards, panels)
+  Deep card:        #162A42  (secondary cards)
+  Teal accent:      #14B8A6 / #2DD4BF  (dark highlights); #0D9488 / #14B8A6 (light)
+  Light page bg:    #F4F7FA
   Text primary:     #F1F5F9
   Text muted:       #94A3B8
-  Border:           #2A3347
+  Border:           #2A3B52
   Success:          #22C55E
   Warning:          #F59E0B
   Danger:           #EF4444

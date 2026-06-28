@@ -4,14 +4,16 @@ import 'package:google_fonts/google_fonts.dart';
 /// Nuvelo design tokens — matches NUVELO_MASTER_RULES brand colors.
 abstract final class NuveloColors {
   static const Color primaryOrange = Color(0xFFF97316);
-  static const Color darkNavy = Color(0xFF0D0A1E);
-  static const Color cardBg = Color(0xFF13102A);
-  static const Color deepCard = Color(0xFF1E1A35);
-  static const Color purpleAccent = Color(0xFF7C3AED);
-  static const Color purpleLight = Color(0xFF8B5CF6);
+  static const Color darkNavy = Color(0xFF0A1628);
+  static const Color cardBg = Color(0xFF0F1F33);
+  static const Color deepCard = Color(0xFF162A42);
+  static const Color purpleAccent = Color(0xFF14B8A6);
+  static const Color purpleLight = Color(0xFF2DD4BF);
+  /// Darker teal for light surfaces (matches web light `--purple`).
+  static const Color tealAccentOnLight = Color(0xFF0D9488);
   static const Color textPrimary = Color(0xFFF1F5F9);
   static const Color textMuted = Color(0xFF94A3B8);
-  static const Color borderColor = Color(0xFF2A3347);
+  static const Color borderColor = Color(0xFF2A3B52);
   static const Color success = Color(0xFF22C55E);
   static const Color warning = Color(0xFFF59E0B);
   static const Color danger = Color(0xFFEF4444);
@@ -162,7 +164,7 @@ ThemeData nuveloThemeLight() {
     cardColor: NuveloColors.lightCard,
     colorScheme: ColorScheme.light(
       primary: NuveloColors.primaryOrange,
-      secondary: NuveloColors.purpleAccent,
+      secondary: NuveloColors.tealAccentOnLight,
       surface: NuveloColors.lightCard,
       error: NuveloColors.danger,
       onPrimary: Colors.white,

@@ -19,14 +19,14 @@
     :root {
       --bg: #0f1117;
       --sidebar: #161b27;
-      --card: #1e2535;
+      --card: #15263d;
       --accent: #f97316;
       --success: #22c55e;
       --warning: #f59e0b;
       --danger: #ef4444;
       --text: #f1f5f9;
       --muted: #94a3b8;
-      --border: #2a3347;
+      --border: #2a3b52;
       --radius: 8px;
       --radius-sm: 6px;
       --font: Inter, system-ui, sans-serif;
@@ -195,7 +195,7 @@
     .badge-banned { background: rgba(127,29,29,0.4); color: #fecaca; }
     .toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; align-items: center; }
     .toolbar input, .toolbar select { max-width: 180px; }
-    .skeleton { animation: pulse 1.2s ease-in-out infinite; background: linear-gradient(90deg, #1e2535 25%, #2a3347 50%, #1e2535 75%); background-size: 200% 100%; border-radius: 4px; height: 1rem; }
+    .skeleton { animation: pulse 1.2s ease-in-out infinite; background: linear-gradient(90deg, #15263d 25%, #2a3b52 50%, #15263d 75%); background-size: 200% 100%; border-radius: 4px; height: 1rem; }
     @keyframes pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
     .empty { text-align: center; padding: 2.5rem 1rem; color: var(--muted); }
     .empty-icon { font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5; }
@@ -692,7 +692,7 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: { legend: { display: false } },
-          scales: { x: { ticks: { color: "#94a3b8", maxRotation: 45, minRotation: 45 } }, y: { ticks: { color: "#94a3b8" }, grid: { color: "#2a3347" } } }
+          scales: { x: { ticks: { color: "#94a3b8", maxRotation: 45, minRotation: 45 } }, y: { ticks: { color: "#94a3b8" }, grid: { color: "#2a3b52" } } }
         }
       });
     }
@@ -703,7 +703,7 @@
     if (ctxD && window.Chart) {
       chartDonut = new Chart(ctxD, {
         type: "doughnut",
-        data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: ["#f97316", "#22c55e", "#3b82f6", "#a855f7", "#eab308", "#64748b"] }] },
+        data: { labels: Object.keys(catMap), datasets: [{ data: Object.values(catMap), backgroundColor: ["#f97316", "#22c55e", "#3b82f6", "#14b8a6", "#eab308", "#64748b"] }] },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "right", labels: { color: "#94a3b8" } } } }
       });
     }
@@ -888,7 +888,7 @@
       const listingCount = (uid) => listingsCache.filter((l) => l.userId === uid).length;
       $("#users-tbl").innerHTML = "<table><thead><tr><th></th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>City</th><th>Joined</th><th>Listings</th><th>Status</th><th>Actions</th></tr></thead><tbody>" +
         rows.map((u) => {
-          const av = u.avatar_url ? `<img src="${esc(u.avatar_url)}" width="32" height="32" style="border-radius:50%;object-fit:cover"/>` : `<div style="width:32px;height:32px;border-radius:50%;background:#2a3347"></div>`;
+          const av = u.avatar_url ? `<img src="${esc(u.avatar_url)}" width="32" height="32" style="border-radius:50%;object-fit:cover"/>` : `<div style="width:32px;height:32px;border-radius:50%;background:#2a3b52"></div>`;
           return `<tr data-uid="${esc(u.id)}" style="cursor:pointer"><td>${av}</td><td>${esc(u.display_name || "—")}</td><td>—</td><td>${esc(u.phone || "—")}</td><td>${esc(u.role || "—")}</td><td>—</td><td>${esc(formatDate(u.created_at))}</td><td>${listingCount(String(u.id))}</td><td><span class="badge badge-active">ACTIVE</span></td><td><button type="button" class="btn btn-sm" data-a="v">View</button><button type="button" class="btn btn-sm" data-a="w">Warn</button><button type="button" class="btn btn-sm" data-a="s">Suspend</button></td></tr>`;
         }).join("") + "</tbody></table>";
       $("#users-tbl").querySelectorAll("tr[data-uid]").forEach((tr) => tr.addEventListener("click", (ev) => { if (ev.target.closest("button")) return; openUserPanel(tr.getAttribute("data-uid")); }));

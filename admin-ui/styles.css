@@ -1,7 +1,7 @@
 :root {
-  --purple-deep: #0d0a1e;
-  --purple: #7c3aed;
-  --purple-light: #a78bfa;
+  --purple-deep: #0a1628;
+  --purple: #14b8a6;
+  --purple-light: #5eead4;
   --orange: #f97316;
   --orange-dark: #ea580c;
   --white: #ffffff;
@@ -20,7 +20,7 @@ header {
   background: linear-gradient(
     135deg,
     var(--purple-deep) 0%,
-    #1a1040 45%,
+    #0d2035 45%,
     var(--purple) 100%
   );
   color: var(--white);
@@ -62,7 +62,7 @@ h2 {
 
 .card {
   background: var(--white);
-  color: #1a1432;
+  color: #142a42;
   padding: 18px;
   border-radius: 16px;
   border: 1px solid var(--purple-light);
@@ -103,15 +103,15 @@ label {
 input {
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid #c4b5fd;
+  border: 1px solid #94ccc4;
   background: #fafafa;
-  color: #1a1432;
+  color: #142a42;
   font-size: 14px;
 }
 
 input:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.35);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.35);
 }
 
 .button-row {

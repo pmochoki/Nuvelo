@@ -4,27 +4,27 @@
   --bp-tablet: 640px;
   --bp-desktop: 1024px;
 
-  /* Purple–orange–white theme (default = dark appearance) */
-  --purple-deep: #0d0a1e;
-  --purple-surface: #13102a;
-  --purple-card: #1a1432;
-  --purple-border: #3d3558;
-  --purple: #7c3aed;
-  --purple-light: #a78bfa;
+  /* Navy–teal–orange theme (default = dark appearance) */
+  --purple-deep: #0a1628;
+  --purple-surface: #0f1f33;
+  --purple-card: #142a42;
+  --purple-border: #2a3b52;
+  --purple: #14b8a6;
+  --purple-light: #5eead4;
   --orange: #f97316;
   --orange-dark: #ea580c;
   --white: #ffffff;
   --text: #fafafa;
-  --text-secondary: #c9b8f3;
-  --text-muted: #9485b8;
+  --text-secondary: #a9c2d9;
+  --text-muted: #7c93ac;
   --danger: #f87171;
   --radius: 12px;
   --font: "DM Sans", system-ui, sans-serif;
-  --color-page-bg: #0d0a1e;
+  --color-page-bg: #0a1628;
   /* Elevated surfaces + mobile tab bar — must track theme (was hardcoded white in dark mode) */
   --surface-elevated: var(--purple-card);
   --surface-tab-bar: var(--purple-card);
-  --ink-on-light: #0d0a1e;
+  --ink-on-light: #0a1628;
   --btn-ghost-bg: var(--purple-surface);
   --btn-ghost-border: var(--purple-border);
   --btn-ghost-hover-bg: rgba(255, 255, 255, 0.07);
@@ -41,18 +41,18 @@
   --chat-bubble-me-border: rgba(34, 197, 94, 0.45);
   /* Profile shell — follows app theme (dark default) */
   --profile-surface: var(--purple-card);
-  --profile-surface-2: #1f1a34;
+  --profile-surface-2: #15263d;
   --profile-border: var(--purple-border);
   --profile-border-subtle: rgba(255, 255, 255, 0.08);
   --profile-heading: var(--text);
   --profile-body: var(--text);
   --profile-muted: var(--text-muted);
   --profile-faint: var(--text-secondary);
-  --profile-link-muted: #a8a4b8;
+  --profile-link-muted: #94a3b8;
   --profile-avatar-ring: var(--purple-border);
-  --profile-sidenav-fg: #e8e6f0;
+  --profile-sidenav-fg: #d8e4ee;
   --profile-sidenav-border: rgba(255, 255, 255, 0.08);
-  --profile-sidenav-hover: rgba(167, 139, 250, 0.12);
+  --profile-sidenav-hover: rgba(94, 234, 212, 0.12);
   --profile-sidenav-active-bg: rgba(45, 140, 78, 0.22);
   --profile-sidenav-active-fg: #86efac;
   --profile-sidenav-icon: var(--text-muted);
@@ -75,26 +75,26 @@
   --navy-border: var(--purple-border);
 }
 
-/* Light mode — keep dark text tokens for cards on white; page background is soft lavender */
+/* Light mode — keep dark text tokens for cards on white; page background is cool off-white */
 [data-color-scheme="light"] {
   color-scheme: light;
-  --purple-deep: #14101f;
-  --purple-surface: #f4f2fb;
+  --purple-deep: #0f1f33;
+  --purple-surface: #eef4f8;
   --purple-card: #ffffff;
-  --purple-border: #e4dff0;
-  --purple: #6d28d9;
-  --purple-light: #7c3aed;
+  --purple-border: #dce6f0;
+  --purple: #0d9488;
+  --purple-light: #14b8a6;
   --orange: #ea580c;
   --orange-dark: #c2410c;
   --white: #ffffff;
-  --text: #17131f;
-  --text-secondary: #4b4659;
-  --text-muted: #6f677a;
+  --text: #0f1a24;
+  --text-secondary: #3d4f63;
+  --text-muted: #64748b;
   --danger: #dc2626;
-  --color-page-bg: #f3f0fa;
+  --color-page-bg: #f4f7fa;
   --surface-elevated: #ffffff;
   --surface-tab-bar: #ffffff;
-  --ink-on-light: #14101f;
+  --ink-on-light: #0f1f33;
   --btn-ghost-bg: #ffffff;
   --btn-ghost-border: #e2e8f0;
   --btn-ghost-hover-bg: #f8fafc;
@@ -160,7 +160,7 @@ body {
   font-family: var(--font);
   background: radial-gradient(
       ellipse 120% 80% at 50% -20%,
-      rgba(124, 58, 237, 0.22),
+      rgba(20, 184, 166, 0.22),
       transparent 55%
     ),
     var(--color-page-bg);
@@ -174,10 +174,10 @@ body {
 [data-color-scheme="light"] body {
   background: radial-gradient(
       ellipse 100% 70% at 50% -15%,
-      rgba(124, 58, 237, 0.12),
+      rgba(20, 184, 166, 0.12),
       transparent 50%
     ),
-    linear-gradient(180deg, #ede9fe 0%, var(--color-page-bg) 45%, #faf8ff 100%);
+    linear-gradient(180deg, #d6f5f0 0%, var(--color-page-bg) 45%, #f4f7fa 100%);
   background-color: var(--color-page-bg);
 }
 
@@ -633,7 +633,7 @@ body.loc-modal-open {
 }
 
 .loc-modal__row:hover {
-  background: rgba(124, 58, 237, 0.08);
+  background: rgba(20, 184, 166, 0.08);
 }
 
 .loc-modal__row-main {
@@ -844,7 +844,7 @@ body.loc-modal-open {
 }
 
 [data-color-scheme="light"] .nav-burger {
-  background: #f4f2fb;
+  background: #eef4f8;
   border-color: var(--purple-border);
 }
 
@@ -1917,10 +1917,10 @@ textarea {
   display: none;
 }
 
-/* Landing: one purple block from top of viewport through hero search (no white header strip) */
+/* Landing: one teal block from top of viewport through hero search (no white header strip) */
 body.is-landing {
   background:
-    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(124, 58, 237, 0.22), transparent 55%),
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(20, 184, 166, 0.22), transparent 55%),
     linear-gradient(135deg, var(--purple) 0%, var(--purple-deep) 100%);
 }
 
@@ -2042,7 +2042,7 @@ body.is-landing .jiji-hero {
 }
 
 .btn--outline:hover {
-  background: rgba(167, 139, 250, 0.12);
+  background: rgba(94, 234, 212, 0.12);
   border-color: var(--orange);
   color: var(--orange);
 }
@@ -2406,7 +2406,7 @@ body.is-landing .jiji-hero {
 }
 
 .ad-card__badge--featured {
-  background: rgba(124, 58, 237, 0.95);
+  background: rgba(20, 184, 166, 0.95);
   color: var(--white);
   border: 1px solid var(--purple-light);
 }
@@ -2428,7 +2428,7 @@ body.is-landing .jiji-hero {
   height: 100%;
   background: linear-gradient(
     145deg,
-    rgba(124, 58, 237, 0.35) 0%,
+    rgba(20, 184, 166, 0.35) 0%,
     rgba(19, 16, 42, 0.9) 100%
   );
 }
@@ -2847,7 +2847,7 @@ body.is-landing .jiji-hero {
 }
 
 .jiji-cat-tile:hover {
-  background: rgba(124, 58, 237, 0.06);
+  background: rgba(20, 184, 166, 0.06);
 }
 
 .jiji-cat-tile:focus-visible {
@@ -3268,7 +3268,7 @@ button.jiji-promo-card {
   min-height: 140px;
   background: linear-gradient(
     145deg,
-    rgba(124, 58, 237, 0.25) 0%,
+    rgba(20, 184, 166, 0.25) 0%,
     rgba(19, 16, 42, 0.85) 100%
   );
 }
@@ -3989,7 +3989,7 @@ button.jiji-promo-card {
   line-height: 1.45;
   padding: 0.5rem 0.65rem;
   border-radius: 8px;
-  background: rgba(124, 58, 237, 0.12);
+  background: rgba(20, 184, 166, 0.12);
   border: 1px solid var(--purple-border);
 }
 

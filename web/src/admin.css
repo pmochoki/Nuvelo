@@ -1,7 +1,7 @@
 :root {
-  --purple-deep: #0d0a1e;
-  --purple: #7c3aed;
-  --purple-light: #a78bfa;
+  --purple-deep: #0a1628;
+  --purple: #14b8a6;
+  --purple-light: #5eead4;
   --orange: #f97316;
   --orange-dark: #ea580c;
   --white: #ffffff;
@@ -17,7 +17,7 @@ body {
 
 .admin-header {
   padding: 32px 24px;
-  background: linear-gradient(135deg, var(--purple-deep) 0%, #1a1040 45%, var(--purple) 100%);
+  background: linear-gradient(135deg, var(--purple-deep) 0%, #0d2035 45%, var(--purple) 100%);
   color: var(--white);
   border-bottom: 2px solid var(--orange);
 }
@@ -57,7 +57,7 @@ body {
 
 .card {
   background: var(--white);
-  color: #1a1432;
+  color: #142a42;
   padding: 18px;
   border-radius: 16px;
   border: 1px solid var(--purple-light);
@@ -104,7 +104,7 @@ table.admin-listings {
   width: 100%;
   border-collapse: collapse;
   background: #fff;
-  color: #1a1432;
+  color: #142a42;
   font-size: 14px;
 }
 
@@ -112,11 +112,11 @@ table.admin-listings th,
 table.admin-listings td {
   padding: 10px 12px;
   text-align: left;
-  border-bottom: 1px solid #e9d5ff;
+  border-bottom: 1px solid #b8e6de;
 }
 
 table.admin-listings th {
-  background: #f5f3ff;
+  background: #edf7f5;
   font-weight: 700;
 }
 
@@ -135,9 +135,9 @@ form.admin-form label {
 form.admin-form input {
   padding: 8px 10px;
   border-radius: 8px;
-  border: 1px solid #c4b5fd;
+  border: 1px solid #94ccc4;
   background: #fafafa;
-  color: #1a1432;
+  color: #142a42;
   font-size: 14px;
 }
 
@@ -152,7 +152,7 @@ form.admin-form input {
 .admin-mock-banner {
   padding: 14px 18px;
   border-radius: 10px;
-  background: rgba(167, 139, 250, 0.2);
+  background: rgba(94, 234, 212, 0.2);
   border: 1px solid var(--purple-light);
   color: rgba(255, 255, 255, 0.95);
   line-height: 1.5;
