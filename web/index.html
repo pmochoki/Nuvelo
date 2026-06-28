@@ -718,8 +718,8 @@
       <div class="modal__panel modal__panel--jiji">
         <button type="button" class="modal__close-x" data-close-modal data-i18n-aria-label="header.close" aria-label="Close">×</button>
         <h2 id="login-title">Sign in</h2>
-        <p class="muted small" id="login-subtitle">
-          Use the same name and email as before to reconnect to your listings.
+        <p class="muted small" id="login-subtitle" data-i18n="auth.subtitle_signin_flow">
+          Use Google, Facebook, or your email and password.
         </p>
         <p id="login-error" class="login-error" role="alert" hidden></p>
         <p id="login-success" class="login-success" role="status" hidden></p>
@@ -753,59 +753,25 @@
             </select>
           </label>
           <label>
-            <span data-i18n="auth.email">Email — we’ll send a sign-in link</span>
+            <span data-i18n="auth.email">Email</span>
             <input name="email" type="email" autocomplete="email" placeholder="you@example.com" required />
           </label>
-          <div id="auth-phone-block" hidden>
           <label>
-            <span data-i18n="auth.phone">Phone (optional — SMS code)</span>
+            <span data-i18n="auth.password">Password</span>
             <input
-              name="phone"
-              type="tel"
-              autocomplete="tel"
-              placeholder="+36 …"
-              aria-describedby="auth-phone-focus-hint"
+              name="password"
+              id="auth-password-input"
+              type="password"
+              autocomplete="current-password"
+              minlength="8"
+              placeholder="••••••••"
+              required
             />
-            <span id="auth-phone-focus-hint" class="auth-phone-focus-hint muted small" hidden data-i18n="auth.phone_hint">
-              For SMS sign-in: leave email empty, enter your phone, then tap Continue. We’ll text you a
-              code — enter it below and tap Verify code.
-            </span>
           </label>
-          <p id="auth-sms-steps" class="auth-sms-hint muted small visually-hidden" data-i18n="auth.sms_visually">
-            SMS verification steps (visible when phone field is focused).
-          </p>
-          <!-- SMS code UI: visibility toggled from main.js via smsSent (shown only after successful OTP send). -->
-          <div id="auth-phone-verify" class="auth-phone-verify stack" hidden>
-            <p class="muted small" style="margin: 0 0 0.5rem" data-i18n="auth.phone_enter_code">
-              Enter the code we sent to your phone.
-            </p>
-            <label>
-              <span data-i18n="auth.smscode">SMS code</span>
-              <input
-                id="auth-phone-otp-input"
-                type="text"
-                name="phone_otp"
-                inputmode="numeric"
-                autocomplete="one-time-code"
-                maxlength="8"
-                placeholder="123456"
-              />
-            </label>
-            <button
-              type="button"
-              class="btn btn--primary auth-submit-full"
-              id="auth-phone-verify-btn"
-              aria-describedby="auth-phone-focus-hint"
-              data-i18n="auth.verify"
-            >
-              Verify code
-            </button>
-          </div>
-          </div>
           <button type="submit" class="btn btn--primary auth-submit-full" id="login-form-submit">
             <span class="auth-submit-inner">
               <span class="auth-submit-spinner" aria-hidden="true"></span>
-              <span class="auth-submit-label" data-i18n="auth.continue">Continue</span>
+              <span class="auth-submit-label" data-i18n="auth.signin">Sign in</span>
             </span>
           </button>
           <button type="button" class="btn btn--ghost auth-submit-full" data-close-modal data-i18n="auth.cancel">

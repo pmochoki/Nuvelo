@@ -24,8 +24,9 @@ import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from ".
 import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
 import { tfn } from "./i18n/format.js";
-/** Phone SMS sign-in hidden until Twilio (or similar) is configured in Supabase. */
-const AUTH_PHONE_UI_ENABLED = false;
+
+function FALLBACK_HUNGARIAN_LOCATIONS() {
+  return [
   { value: "all", label: t("search.allhungary") },
   { value: "budapest", label: "Budapest" },
   { value: "debrecen", label: "Debrecen" },
@@ -33,7 +34,8 @@ const AUTH_PHONE_UI_ENABLED = false;
   { value: "pecs", label: "Pécs" },
   { value: "gyor", label: "Győr" },
   { value: "szeged", label: "Szeged" }
-];
+  ];
+}
 
 /** Bundled full list, or major-city fallback if data is missing or empty. */
 const HUNGARIAN_LOCATIONS =
@@ -48,8 +50,8 @@ if (import.meta.env.VITE_API_URL == null || String(import.meta.env.VITE_API_URL)
 }
 
 /**
- * Production sign-in is Supabase (OTP + OAuth). Legacy POST /api/auth/login → Render exists for
- * local/dev or rare demos; opt in on Vercel with VITE_ALLOW_LEGACY_AUTH=true.
+ * Production sign-in is Supabase (email/password + OAuth). Legacy POST /api/auth/login → Render
+ * exists for local/dev or rare demos; opt in on Vercel with VITE_ALLOW_LEGACY_AUTH=true.
  */
 const deploymentAllowsLegacyBackendLogin =
   !import.meta.env.PROD || import.meta.env.VITE_ALLOW_LEGACY_AUTH === "true";
@@ -90,36 +92,19 @@ const friendlyPageLoadError = (err) => {
   return msg || t("auth.err.generic");
 };
 
-/** Supabase SMS expects E.164 (e.g. +36201234567). Strips spaces, dashes, parentheses. */
-function normalizePhoneE164(raw) {
-  if (raw == null || typeof raw !== "string") {
-    return null;
+/** Maps Supabase auth errors to friendly copy for the sign-in modal. */
+function mapSupabaseAuthError(error, mode = "signin") {
+  const msg = String(error?.message || "");
+  if (/invalid login credentials/i.test(msg)) {
+    return t("auth.err.bad_credentials");
   }
-  const trimmed = raw.trim();
-  if (!trimmed) {
-    return null;
+  if (/user already registered|already been registered|already exists/i.test(msg)) {
+    return t("auth.err.email_taken");
   }
-  const core = trimmed.replace(/[\s\-().]/g, "");
-  let digits;
-  if (core.startsWith("+")) {
-    digits = core.slice(1).replace(/\D/g, "");
-  } else if (core.startsWith("00")) {
-    digits = core.slice(2).replace(/\D/g, "");
-  } else {
-    digits = core.replace(/\D/g, "");
+  if (/password/i.test(msg) && /(short|least|weak|characters)/i.test(msg)) {
+    return t("auth.err.need_password");
   }
-  if (!digits || digits.length < 8 || digits.length > 15) {
-    return null;
-  }
-  return `+${digits}`;
-}
-
-function mapSupabasePhoneError(message) {
-  const m = String(message || "");
-  if (/unsupported phone provider/i.test(m)) {
-    return t("auth.err.sms_provider");
-  }
-  return m;
+  return msg || t("auth.err.generic");
 }
 
 /** OAuth needs Supabase env vars baked in at build time (Vercel → Production env → redeploy). */
@@ -155,10 +140,6 @@ const EVENTS_ANON_KEY = "nuvelo_events_anon";
 const EVENTS_CATEGORY = "events";
 
 let cachedUser = null;
-/** Set after sending phone OTP until verified or modal reset. */
-let phoneOtpPending = null;
-/** True only after the backend successfully accepts an SMS OTP send (Continue with phone-only path). */
-let smsSent = false;
 
 let loginContinueSlowTimer = null;
 
@@ -182,17 +163,6 @@ function setLoginContinueLoading(loading) {
   }
 }
 
-function syncAuthPhoneVerifySection() {
-  const pv = document.getElementById("auth-phone-verify");
-  if (pv) {
-    pv.hidden = !smsSent;
-  }
-}
-
-function setSmsSent(value) {
-  smsSent = Boolean(value);
-  syncAuthPhoneVerifySection();
-}
 const VIEW_MODE_KEY = "nuvelo_list_view";
 const CATEGORY_SLUGS = {
   events: "events",
@@ -351,13 +321,6 @@ function resetAuthModalMessages() {
   }
   showLoginError("");
   showLoginSuccess("");
-  phoneOtpPending = null;
-  smsSent = false;
-  syncAuthPhoneVerifySection();
-  const otp = document.getElementById("auth-phone-otp-input");
-  if (otp) {
-    otp.value = "";
-  }
 }
 
 function applySupabaseSession(session) {
@@ -704,6 +667,14 @@ const openModal = (mode = "signin") => {
     if (roleSelect) {
       roleSelect.required = mode === "register";
     }
+    const passwordInput = formEl.querySelector("#auth-password-input");
+    const submitLabel = formEl.querySelector(".auth-submit-label");
+    if (passwordInput) {
+      passwordInput.autocomplete = mode === "register" ? "new-password" : "current-password";
+    }
+    if (submitLabel) {
+      submitLabel.textContent = mode === "register" ? t("auth.create_account") : t("auth.signin");
+    }
   }
   if (switchBtn) {
     switchBtn.textContent =
@@ -876,22 +847,16 @@ loginForm?.addEventListener("submit", async (e) => {
   const fd = new FormData(loginForm);
   const name = String(fd.get("name") || "").trim();
   const role = String(fd.get("role") || "").trim();
-  const email = String(fd.get("email") || "").trim() || "";
-  const phone = String(fd.get("phone") || "").trim() || "";
+  const email = String(fd.get("email") || "").trim();
+  const password = String(fd.get("password") || "");
 
-  if (!email && !phone) {
-    showLoginError(t("auth.err.need_email_phone"));
-    return;
-  }
-
-  if (!AUTH_PHONE_UI_ENABLED && !email) {
+  if (!email) {
     showLoginError(t("auth.err.need_email"));
     return;
   }
 
-  /* Email branch runs first; both filled would skip SMS and leave phoneOtpPending unset */
-  if (email && phone) {
-    showLoginError(t("auth.err.not_both"));
+  if (!password || password.length < 8) {
+    showLoginError(t("auth.err.need_password"));
     return;
   }
 
@@ -909,8 +874,7 @@ loginForm?.addEventListener("submit", async (e) => {
       showLoginError(t("auth.err.slow"));
     }, 30000);
     try {
-      const redirectTo = getAuthRedirectUrl();
-      const metaName = name || (email ? email.split("@")[0] : "") || "Member";
+      const metaName = name || email.split("@")[0] || "Member";
       const metaRole = role || "buyer";
       const meta = {
         name: metaName,
@@ -919,54 +883,34 @@ loginForm?.addEventListener("submit", async (e) => {
         display_name: metaName
       };
 
-      if (email) {
-        const { error } = await supabase.auth.signInWithOtp({
+      if (authModalMode === "register") {
+        const { data, error } = await supabase.auth.signUp({
           email,
-          options: {
-            emailRedirectTo: redirectTo,
-            data: meta
-          }
+          password,
+          options: { data: meta }
         });
         if (error) {
-          showLoginError(error.message || t("auth.err.email_send"));
+          showLoginError(mapSupabaseAuthError(error, "register"));
           return;
         }
-        showLoginSuccess(t("auth.success.email"));
+        if (data.session) {
+          showLoginSuccess(t("auth.success.signed_in"));
+          return;
+        }
+        if (data.user && !data.session) {
+          showLoginSuccess(t("auth.success.email"));
+          return;
+        }
+        showLoginSuccess(t("auth.success.signed_in"));
         return;
       }
 
-      if (!AUTH_PHONE_UI_ENABLED) {
-        showLoginError(t("auth.err.need_email"));
-        return;
-      }
-
-      const normalizedPhone = normalizePhoneE164(phone);
-      if (!normalizedPhone) {
-        showLoginError(t("auth.err.phone_format"));
-        return;
-      }
-      const phoneInput = loginForm?.querySelector("input[name='phone']");
-      if (phoneInput) {
-        phoneInput.value = normalizedPhone;
-      }
-
-      const { error } = await supabase.auth.signInWithOtp({
-        phone: normalizedPhone,
-        options: { data: meta }
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) {
-        showLoginError(mapSupabasePhoneError(error.message) || t("auth.err.sms_send"));
+        showLoginError(mapSupabaseAuthError(error, "signin"));
         return;
       }
-      phoneOtpPending = normalizedPhone;
-      setSmsSent(true);
-      requestAnimationFrame(() => {
-        document.getElementById("auth-phone-verify")?.scrollIntoView({
-          block: "nearest",
-          behavior: "smooth"
-        });
-      });
-      showLoginSuccess(t("auth.success.sms_prompt"));
+      showLoginSuccess(t("auth.success.signed_in"));
     } catch (err) {
       console.error(err);
       showLoginError(friendlyNetworkError(err));
@@ -997,7 +941,7 @@ loginForm?.addEventListener("submit", async (e) => {
       name: name || "Member",
       role: role || "buyer",
       email,
-      phone
+      phone: ""
     });
     cachedUser = user;
     writeStoredUser(user);
@@ -1011,38 +955,6 @@ loginForm?.addEventListener("submit", async (e) => {
     setLoginContinueLoading(false);
     if (submitBtn) {
       submitBtn.disabled = false;
-    }
-  }
-});
-
-document.getElementById("auth-phone-verify-btn")?.addEventListener("click", async () => {
-  if (!supabase || !phoneOtpPending || !smsSent) {
-    showLoginError(supabase ? t("auth.err.phone_flow") : t("auth.err.supabase_sms"));
-    return;
-  }
-  const token = String(document.getElementById("auth-phone-otp-input")?.value || "").trim();
-  if (!token) {
-    showLoginError(t("auth.err.enter_code"));
-    return;
-  }
-  const btn = document.getElementById("auth-phone-verify-btn");
-  if (btn) {
-    btn.disabled = true;
-  }
-  try {
-    const { error } = await supabase.auth.verifyOtp({
-      phone: phoneOtpPending,
-      token,
-      type: "sms"
-    });
-    if (error) {
-      showLoginError(error.message || t("auth.err.invalid_code"));
-      return;
-    }
-    showLoginSuccess(t("auth.success.signed_in"));
-  } finally {
-    if (btn) {
-      btn.disabled = false;
     }
   }
 });
@@ -5740,22 +5652,6 @@ initLocationCombobox(headerLocRootInit);
 initLocationCombobox(drawerLocRootInit);
 syncGlobalHeaderDrawerSearch();
 
-function bindAuthPhoneFocusHint() {
-  const form = document.getElementById("login-form");
-  const phone = form?.querySelector("input[name='phone']");
-  const hint = document.getElementById("auth-phone-focus-hint");
-  if (!phone || !hint || phone.dataset.focusHintBound === "1") {
-    return;
-  }
-  phone.dataset.focusHintBound = "1";
-  phone.addEventListener("focus", () => {
-    hint.hidden = false;
-  });
-  phone.addEventListener("blur", () => {
-    hint.hidden = true;
-  });
-}
-
 window.addEventListener("nuvelo:locale", () => {
   if (loginModal && !loginModal.hidden) {
     openModal(authModalMode);
@@ -5772,7 +5668,6 @@ void (async () => {
   updateAuthUi();
   syncAuthSignInAvailability();
   syncAuthModalStaticCopy();
-  bindAuthPhoneFocusHint();
   ensureNavUserDropdown();
   void initAuth();
   await render().catch((e) => console.error(e));

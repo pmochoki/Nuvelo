@@ -7,20 +7,21 @@ Private account for you (and agents helping you) to feel the **logged-in** exper
 | Field | Suggestion |
 |-------|------------|
 | **Email** | A Gmail alias only you use, e.g. `you+nuvelo-qa@gmail.com` |
+| **Password** | At least 8 characters (store in your password manager) |
 | **Display name** | `Nuvelo QA` |
 | **Role** | Seller (so posting ads matches real sellers) |
-| **Phone (optional)** | Your Hungarian mobile `+36…` if you want to test SMS login |
 
-## Create the account (no special backend step)
+## Create the account
 
 1. Open **https://nuvelo.one** → **Registration**.
-2. Enter display name + role + **email only**.
-3. Tap **Continue** → Supabase sends a **magic link** to your inbox.
-4. Open the link on the same device → you are signed in.
+2. Enter display name, role, **email**, and **password**.
+3. Tap **Create account** — you are signed in (unless Supabase requires email confirmation).
 
-**Note:** Nuvelo web sign-in uses **email magic links**, not a password field. If you created a user in Supabase with a password, use **Sign in** → enter that email → **Continue** → open the magic link (or use Supabase Dashboard → Authentication → Users → send magic link).
+## Sign in again
 
-Phone SMS is **disabled on the site** until Twilio is configured.
+1. **Sign in** → **Continue with Google** / **Facebook**, or enter **email + password** → **Sign in**.
+
+Phone SMS is **not shown** on the site until Twilio is configured in Supabase.
 
 ## After sign-in, try
 
@@ -33,12 +34,8 @@ Phone SMS is **disabled on the site** until Twilio is configured.
 
 Approve your test ads at **https://nuvelo.one/kingnuvelo** (password: set `VITE_ADMIN_PASSWORD` in Vercel → redeploy).
 
-## SMS in Hungary
+## Supabase checklist
 
-Phone OTP is sent by **Supabase Auth** (Twilio or another SMS provider in Supabase Dashboard → Authentication → Phone). Hungary (`+36`) must be enabled. If SMS fails, use **email magic link** for QA.
-
-## Email vs phone verification
-
-- **Email:** magic link (click once — no 6-digit code in the app).  
-- **Phone:** 6-digit SMS code in the modal.  
-- **Do not fill both** on the same attempt — the app allows one method at a time.
+- **Authentication → Providers → Email:** enable email + password.  
+- For the simplest QA flow, turn off **Confirm email** (or confirm via inbox before signing in).  
+- **Google / Facebook:** configured under Authentication → Providers if you test OAuth.
