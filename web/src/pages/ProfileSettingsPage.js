@@ -38,10 +38,6 @@ function renderContactDetailsForm(user) {
   const lastName = String(user.lastName || "").trim();
   const fullName = String(user.fullName || "").trim() || [firstName, lastName].filter(Boolean).join(" ").trim();
   const email = String(user.email || "").trim();
-  const phone = String(user.phone || "").trim();
-  const phoneRest = phone
-    .replace(/^\+\s*36\s*/i, "")
-    .replace(/[^\d]/g, "");
   const city = user.city || "";
   const birthday = String(user.birthday || "");
   const sex = String(user.sex || "");
@@ -178,26 +174,6 @@ function renderContactDetailsForm(user) {
                 aria-describedby="settings-email-error"
               />
               <p class="form-field__error" id="settings-email-error" role="alert" hidden></p>
-            </div>
-            <div class="form-field">
-              <label class="form-label" for="settings-phone" data-i18n="settings.phone_number">Phone number</label>
-              <div class="phone-prefix-field">
-                <span class="phone-prefix-field__pre" aria-hidden="true">+36</span>
-                <input
-                  type="tel"
-                  id="settings-phone"
-                  name="phoneNational"
-                  class="form-input phone-prefix-field__input"
-                  value="${esc(phoneRest)}"
-                  inputmode="numeric"
-                  autocomplete="tel-national"
-                  placeholder="20 123 4567"
-                  data-settings-track
-                  aria-describedby="settings-phone-error"
-                />
-              </div>
-              <p class="form-field__error" id="settings-phone-error" role="alert" hidden></p>
-              <p class="settings-phone-verify__paused muted small" data-i18n="settings.phone_verify_paused">SMS verification is paused for now — you can still save your number here.</p>
             </div>
             <div class="form-field">
               <label class="form-label" for="settings-location" data-i18n="settings.location_city">Location / city</label>

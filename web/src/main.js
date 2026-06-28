@@ -406,8 +406,6 @@ function applySupabaseSession(session) {
       "Member",
     role: meta.role || "buyer",
     email: u.email || "",
-    phone: u.phone || "",
-    phoneVerified: Boolean(u.phone_confirmed_at),
     avatarUrl:
       meta.avatar_url ||
       meta.picture ||
@@ -1523,7 +1521,6 @@ const buildProfileSettingsUser = (baseUser) => {
     birthday: stored.birthday || "",
     sex: stored.sex || "",
     phone: stored.phone || baseUser.phone || "",
-    phoneVerified: Boolean(baseUser.phoneVerified),
     email: stored.email || baseUser.email || "",
     bio: stored.bio || "",
     role: stored.role || baseUser.role || "Buyer"
@@ -1617,9 +1614,6 @@ function updateProfileChromeFromUser(u) {
   document.querySelectorAll(".profile-hub-toolbar__name").forEach((el) => {
     el.textContent = u.name || "Member";
   });
-  document.querySelectorAll(".profile-phone--accent").forEach((el) => {
-    el.textContent = u.phone || "Add phone in Settings";
-  });
 }
 
 async function persistAvatarFromFile(file) {
@@ -1696,17 +1690,6 @@ const validateEmailFormat = (email) => {
   return "";
 };
 
-const validateHuMobileNational = (digits) => {
-  const d = String(digits || "").replace(/\D/g, "");
-  if (!d) {
-    return "";
-  }
-  if (d.length < 8 || d.length > 9) {
-    return "Use 8–9 digits after +36 (Hungarian mobile).";
-  }
-  return "";
-};
-
 /** Wire settings form: avatar, validation, save (always enabled), cancel/revert. */
 function bindProfileSettingsPage() {
   const updateCount = (input) => {
@@ -1745,7 +1728,6 @@ function bindProfileSettingsPage() {
   const cancelBtn = document.getElementById("settings-cancel-btn");
   const form = document.getElementById("profile-settings-form");
   const emailErr = document.getElementById("settings-email-error");
-  const phoneErr = document.getElementById("settings-phone-error");
   const defaultSaveLabel = "Save changes";
 
   const getFormState = () => {
@@ -1754,7 +1736,6 @@ function bindProfileSettingsPage() {
         firstName: "",
         lastName: "",
         email: "",
-        phoneNational: "",
         location: "",
         birthday: "",
         sex: "",
@@ -1767,7 +1748,6 @@ function bindProfileSettingsPage() {
       firstName: String(fd.get("firstName") || "").trim(),
       lastName: String(fd.get("lastName") || "").trim(),
       email: String(fd.get("email") || "").trim(),
-      phoneNational: String(fd.get("phoneNational") || "").replace(/\D/g, ""),
       location: String(fd.get("location") || ""),
       birthday: String(fd.get("birthday") || ""),
       sex: String(fd.get("sex") || ""),
@@ -1802,7 +1782,6 @@ function bindProfileSettingsPage() {
     set("firstName", state.firstName);
     set("lastName", state.lastName);
     set("email", state.email);
-    set("phoneNational", state.phoneNational);
     set("location", state.location);
     set("birthday", state.birthday);
     set("sex", state.sex);
@@ -1832,17 +1811,9 @@ function bindProfileSettingsPage() {
       emailErr.textContent = "";
       emailErr.hidden = true;
     }
-    if (phoneErr) {
-      phoneErr.textContent = "";
-      phoneErr.hidden = true;
-    }
     const em = document.getElementById("settings-email");
     if (em instanceof HTMLInputElement) {
       em.setAttribute("aria-invalid", "false");
-    }
-    const ph = document.getElementById("settings-phone");
-    if (ph instanceof HTMLInputElement) {
-      ph.setAttribute("aria-invalid", "false");
     }
   };
 
@@ -1857,135 +1828,10 @@ function bindProfileSettingsPage() {
     }
   };
 
-  const showPhoneError = (msg) => {
-    if (phoneErr) {
-      phoneErr.textContent = msg;
-      phoneErr.hidden = !msg;
-    }
-    const ph = document.getElementById("settings-phone");
-    if (ph instanceof HTMLInputElement) {
-      ph.setAttribute("aria-invalid", msg ? "true" : "false");
-    }
-  };
-
   document.getElementById("settings-email")?.addEventListener("blur", () => {
     const st = getFormState();
     const err = validateEmailFormat(st.email);
     showEmailError(err);
-  });
-
-  document.getElementById("settings-phone")?.addEventListener("blur", () => {
-    const st = getFormState();
-    const err = validateHuMobileNational(st.phoneNational);
-    showPhoneError(err);
-  });
-
-  const phoneVerifyMsg = document.getElementById("settings-phone-verify-msg");
-  const phoneOtpWrap = document.getElementById("settings-phone-otp-wrap");
-  const phoneVerifyActions = document.getElementById("settings-phone-verify-actions");
-  const phoneVerifyStatus = document.getElementById("settings-phone-verify-status");
-  const phoneVerifyRoot = document.getElementById("settings-phone-verify");
-
-  const formatPhoneE164 = (national) => {
-    const d = String(national || "").replace(/\D/g, "");
-    return d ? `+36${d}` : "";
-  };
-
-  const showPhoneVerifyMsg = (msg, isError = false) => {
-    if (!phoneVerifyMsg) {
-      return;
-    }
-    phoneVerifyMsg.textContent = msg;
-    phoneVerifyMsg.hidden = !msg;
-    phoneVerifyMsg.classList.toggle("form-field__error", Boolean(isError && msg));
-    phoneVerifyMsg.classList.toggle("settings-phone-verify__ok", Boolean(!isError && msg));
-  };
-
-  const markPhoneVerifiedUi = () => {
-    phoneVerifyRoot?.setAttribute("data-phone-verified", "1");
-    phoneVerifyActions?.setAttribute("hidden", "");
-    phoneOtpWrap?.setAttribute("hidden", "");
-    phoneVerifyStatus?.removeAttribute("hidden");
-  };
-
-  document.getElementById("settings-phone-send-code")?.addEventListener("click", async () => {
-    if (!isSupabaseConfigured || !supabase) {
-      showPhoneVerifyMsg(t("settings.phone_verify_failed"), true);
-      return;
-    }
-    clearFieldErrors();
-    showPhoneVerifyMsg("");
-    const st = getFormState();
-    const phoneValidation = validateHuMobileNational(st.phoneNational);
-    if (phoneValidation) {
-      showPhoneError(phoneValidation);
-      return;
-    }
-    const phone = formatPhoneE164(st.phoneNational);
-    const sendBtn = document.getElementById("settings-phone-send-code");
-    if (sendBtn instanceof HTMLButtonElement) {
-      sendBtn.disabled = true;
-    }
-    const { error } = await supabase.auth.updateUser({ phone });
-    if (sendBtn instanceof HTMLButtonElement) {
-      sendBtn.disabled = false;
-    }
-    if (error) {
-      const msg = String(error.message || "");
-      showPhoneVerifyMsg(
-        /twilio|sms|phone|provider/i.test(msg) ? t("settings.phone_verify_failed") : msg || t("settings.phone_verify_failed"),
-        true
-      );
-      return;
-    }
-    phoneOtpWrap?.removeAttribute("hidden");
-    document.getElementById("settings-phone-otp")?.focus();
-    showPhoneVerifyMsg(t("settings.phone_verify_sent"));
-  });
-
-  document.getElementById("settings-phone-verify-btn")?.addEventListener("click", async () => {
-    if (!isSupabaseConfigured || !supabase) {
-      showPhoneVerifyMsg(t("settings.phone_verify_failed"), true);
-      return;
-    }
-    const st = getFormState();
-    const phone = formatPhoneE164(st.phoneNational);
-    const otpEl = document.getElementById("settings-phone-otp");
-    const token = otpEl instanceof HTMLInputElement ? String(otpEl.value || "").trim() : "";
-    if (!phone || !token) {
-      showPhoneVerifyMsg(t("settings.phone_verify_failed"), true);
-      return;
-    }
-    const verifyBtn = document.getElementById("settings-phone-verify-btn");
-    if (verifyBtn instanceof HTMLButtonElement) {
-      verifyBtn.disabled = true;
-    }
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone,
-      token,
-      type: "phone_change"
-    });
-    if (verifyBtn instanceof HTMLButtonElement) {
-      verifyBtn.disabled = false;
-    }
-    if (error) {
-      showPhoneVerifyMsg(error.message || t("settings.phone_verify_failed"), true);
-      return;
-    }
-    if (data?.session) {
-      applySupabaseSession(data.session);
-    }
-    const phoneFull = phone;
-    writeNuveloProfile({ ...readMergedProfileStore(), phone: phoneFull, updatedAt: new Date().toISOString() });
-    const u = getUser();
-    if (u) {
-      cachedUser = { ...u, phone: phoneFull, phoneVerified: true };
-      writeStoredUser(cachedUser);
-    }
-    markPhoneVerifiedUi();
-    showPhoneVerifyMsg(t("settings.phone_verified"));
-    updateAuthUi();
-    updateProfileChromeFromUser(getUser());
   });
 
   ["settings-first-name", "settings-last-name"].forEach((id) => {
@@ -2007,10 +1853,8 @@ function bindProfileSettingsPage() {
     clearFieldErrors();
     const st = getFormState();
     const emailValidation = validateEmailFormat(st.email);
-    const phoneValidation = validateHuMobileNational(st.phoneNational);
     showEmailError(emailValidation);
-    showPhoneError(phoneValidation);
-    if (emailValidation || phoneValidation) {
+    if (emailValidation) {
       return;
     }
 
@@ -2023,13 +1867,11 @@ function bindProfileSettingsPage() {
 
     await new Promise((r) => setTimeout(r, 500));
 
-    const phoneFull = st.phoneNational ? `+36${st.phoneNational}` : "";
     const snapshot = {
       firstName: st.firstName,
       lastName: st.lastName,
       fullName: composedFullName,
       email: st.email,
-      phone: phoneFull,
       city: st.location,
       location: st.location,
       birthday: st.birthday,
@@ -2045,7 +1887,6 @@ function bindProfileSettingsPage() {
       cachedUser = {
         ...u,
         name: composedFullName || u.name,
-        phone: phoneFull,
         email: st.email || u.email,
         role: st.role
       };

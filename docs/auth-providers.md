@@ -13,11 +13,9 @@ Auth callback (all OAuth): `https://ahiujuljjbozmfwoqtli.supabase.co/auth/v1/cal
 
 ---
 
-## 1. Phone verification (Twilio) — **PAUSED**
+## 1. Phone verification — **removed for now**
 
-SMS verification is **on hold** until Nuvelo has budget for Twilio (paid number + monthly fees). Users can still **save a phone number** in Profile → Settings; SMS send/verify UI is hidden.
-
-When you’re ready later: enable **Phone** in Supabase with Twilio SID/token/messaging service, then re-enable the verify block in the app.
+No phone fields or SMS in the app until Twilio budget is ready. Sign-in is **Google, Apple, Facebook, or email + password** only.
 
 ---
 
@@ -60,19 +58,26 @@ Your **bundle ID** (`one.nuvelo.app`) is for the iOS app. **Web** sign-in needs 
 
 ### Step B — Generate the JWT (client secret)
 
-From the repo root (Node 18+):
+**You don’t download a JWT from Apple.** You **create** it with the script in this repo.
+
+1. Open **Terminal** in Cursor: menu **Terminal → New Terminal**
+2. Paste this command (uses the `.p8` in your Downloads folder):
 
 ```bash
-node scripts/generate-apple-client-secret.mjs \
+cd ~/Desktop/Nuvelo-fresh && node scripts/generate-apple-client-secret.mjs \
   --team-id H9JAV8HGW9 \
-  --key-id FX25BH5D5X \
+  --key-id HUZH5M955B \
   --client-id one.nuvelo.web \
-  --p8 ~/Downloads/AuthKey_FX25BH5D5X.p8
+  --p8 ~/Downloads/AuthKey_HUZH5M955B.p8
 ```
 
-Replace `--client-id` with the **Services ID** you created (not `Nuvelo` and not only the bundle ID).
+If your key is **`FX25BH5D5X`** instead, change `--key-id` and `--p8` to match `AuthKey_FX25BH5D5X.p8`.
 
-Copy the printed JWT.
+3. The output is a **long line starting with `eyJ`** — that **is** the JWT. Copy the whole line.
+4. A copy was also saved to **`~/Desktop/nuvelo-apple-jwt.txt`** for easy paste into Supabase.
+
+**Wrong:** pasting the `.p8` file contents (`MIGTAgEA…`) or the Key ID alone.  
+**Right:** the one-line `eyJ…` string from the script.
 
 ### Step C — Supabase
 

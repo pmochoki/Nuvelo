@@ -220,7 +220,6 @@ export function renderProfileMobileTabs(activeSection) {
  */
 export function renderProfileSidebar(user, section) {
   const name = user.name || t("profile.member");
-  const phone = user.phone || t("profile.add_phone");
   const avatar = user.avatarUrl || "/default-avatar.svg";
   const navItem = (href, key, label, emoji) => {
     const active = section === key ? " active" : "";
@@ -246,7 +245,6 @@ export function renderProfileSidebar(user, section) {
         </button>
         <input type="file" id="profile-sidebar-avatar-input" accept="image/*" hidden />
         <h2 class="profile-name profile-name--jiji">${esc(name)}</h2>
-        <p class="profile-phone profile-phone--accent">${esc(phone)}</p>
       </div>
       <nav class="profile-sidenav profile-sidenav--jiji">
         ${navItem("/post", "promo", t("profile.boost"), "😍")}
