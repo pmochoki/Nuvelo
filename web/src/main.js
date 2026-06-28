@@ -9,7 +9,12 @@ import {
   loginUser,
   setDonationClaimed
 } from "./lib/listingsApi.js";
-import { supabase, isSupabaseConfigured, getAuthRedirectUrl } from "./lib/supabaseClient.js";
+import {
+  supabase,
+  isSupabaseConfigured,
+  getAuthRedirectUrl,
+  getPasswordRecoveryRedirectUrl
+} from "./lib/supabaseClient.js";
 import {
   DONATIONS_CATEGORY_ID,
   DONATION_SUBCATEGORIES,
@@ -380,11 +385,178 @@ async function mergeProfileAvatarFromDb() {
   writeStoredUser(cachedUser);
 }
 
+const RECOVERY_PENDING_KEY = "nuvelo_pending_password_recovery";
+
+function isResetPasswordPath() {
+  return normalizePathname() === "/reset-password";
+}
+
+function setRecoveryPending(value) {
+  authRecoveryPending = Boolean(value);
+  try {
+    if (value) {
+      sessionStorage.setItem(RECOVERY_PENDING_KEY, "1");
+    } else {
+      sessionStorage.removeItem(RECOVERY_PENDING_KEY);
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+function isRecoveryPending() {
+  if (authRecoveryPending) {
+    return true;
+  }
+  try {
+    return sessionStorage.getItem(RECOVERY_PENDING_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function getAuthParamsFromUrl() {
+  return {
+    hash: new URLSearchParams((window.location.hash || "").replace(/^#/, "")),
+    query: new URLSearchParams(window.location.search || "")
+  };
+}
+
+function urlLooksLikePasswordRecovery() {
+  const { hash, query } = getAuthParamsFromUrl();
+  if (hash.get("type") === "recovery" || query.get("type") === "recovery") {
+    return true;
+  }
+  if (
+    isResetPasswordPath() &&
+    (query.has("code") || query.has("token_hash") || hash.has("access_token"))
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function stripAuthTokensFromUrl() {
+  const path = isResetPasswordPath() ? "/" : window.location.pathname || "/";
+  window.history.replaceState(null, "", path);
+}
+
+function prepRecoveryEmailField(session) {
+  const emailInput = document.querySelector('#login-form input[name="email"]');
+  const email = session?.user?.email || "";
+  if (!emailInput) {
+    return;
+  }
+  if (email) {
+    emailInput.value = email;
+  }
+  emailInput.readOnly = true;
+}
+
+function openRecoveryModal(session) {
+  prepRecoveryEmailField(session);
+  openModal("recovery");
+}
+
+async function establishSessionFromRecoveryUrl() {
+  if (!supabase) {
+    return { session: null, error: null };
+  }
+  const { hash, query } = getAuthParamsFromUrl();
+  const tokenHash = query.get("token_hash");
+  if (tokenHash && query.get("type") === "recovery") {
+    const { data, error } = await supabase.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: "recovery"
+    });
+    return { session: data.session ?? null, error };
+  }
+  const code = query.get("code");
+  if (code && isResetPasswordPath()) {
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    return { session: data.session ?? null, error };
+  }
+  const {
+    data: { session },
+    error
+  } = await supabase.auth.getSession();
+  return { session: session ?? null, error };
+}
+
 async function initAuth() {
   if (!isSupabaseConfigured || !supabase) {
     syncAuthFromStoredUser();
     return;
   }
+
+  if (isResetPasswordPath() || urlLooksLikePasswordRecovery()) {
+    setRecoveryPending(true);
+  }
+
+  supabase.auth.onAuthStateChange((event, session) => {
+    applySupabaseSession(session ?? null);
+    void mergeProfileAvatarFromDb().then(() => {
+      updateAuthUi();
+    });
+
+    if (event === "PASSWORD_RECOVERY") {
+      setRecoveryPending(true);
+      openRecoveryModal(session);
+      return;
+    }
+
+    if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+      if (isRecoveryPending()) {
+        openRecoveryModal(session);
+        return;
+      }
+      if (event === "SIGNED_IN") {
+        resetAuthModalMessages();
+        void refreshMessageNavBadge();
+        const u = getUser();
+        if (u) {
+          onAuthSuccess(u);
+        } else {
+          closeModal();
+          void render().catch((e) => console.error(e));
+        }
+      }
+      return;
+    }
+
+    if (event === "SIGNED_OUT") {
+      cachedUser = null;
+      writeStoredUser(null);
+      setRecoveryPending(false);
+      try {
+        localStorage.removeItem("nuvelo_unread_messages");
+      } catch {
+        /* ignore */
+      }
+      void render().catch((e) => console.error(e));
+    }
+  });
+
+  if (urlLooksLikePasswordRecovery()) {
+    const { session, error } = await establishSessionFromRecoveryUrl();
+    if (error) {
+      console.error("[auth recovery]", error);
+    }
+    if (session) {
+      applySupabaseSession(session);
+      updateAuthUi();
+      openRecoveryModal(session);
+      stripAuthTokensFromUrl();
+    } else {
+      openModal("recovery");
+    }
+    void mergeProfileAvatarFromDb().then(() => {
+      updateAuthUi();
+    });
+    void refreshMessageNavBadge();
+    return;
+  }
+
   const {
     data: { session },
     error
@@ -394,53 +566,15 @@ async function initAuth() {
   }
   applySupabaseSession(session ?? null);
   updateAuthUi();
-  const hashParams = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
-  const queryParams = new URLSearchParams(window.location.search || "");
-  if (hashParams.get("type") === "recovery" || queryParams.get("type") === "recovery") {
-    authRecoveryPending = true;
-    openModal("recovery");
+
+  if (session && isRecoveryPending()) {
+    openRecoveryModal(session);
   }
+
   void mergeProfileAvatarFromDb().then(() => {
     updateAuthUi();
   });
   void refreshMessageNavBadge();
-
-  supabase.auth.onAuthStateChange((event, session) => {
-    applySupabaseSession(session ?? null);
-    void mergeProfileAvatarFromDb().then(() => {
-      updateAuthUi();
-    });
-    if (event === "PASSWORD_RECOVERY") {
-      authRecoveryPending = true;
-      openModal("recovery");
-      return;
-    }
-    if (event === "SIGNED_IN") {
-      resetAuthModalMessages();
-      void refreshMessageNavBadge();
-      if (authRecoveryPending) {
-        openModal("recovery");
-        return;
-      }
-      const u = getUser();
-      if (u) {
-        onAuthSuccess(u);
-      } else {
-        closeModal();
-        void render().catch((e) => console.error(e));
-      }
-    }
-    if (event === "SIGNED_OUT") {
-      cachedUser = null;
-      writeStoredUser(null);
-      try {
-        localStorage.removeItem("nuvelo_unread_messages");
-      } catch {
-        /* ignore */
-      }
-      void render().catch((e) => console.error(e));
-    }
-  });
 }
 
 const syncAuthFromStoredUser = () => {
@@ -601,6 +735,7 @@ let authRecoveryPending = false;
 const syncAuthModalLayout = (mode) => {
   const signupBlock = document.getElementById("auth-signup-block");
   const passwordBlock = document.getElementById("auth-password-block");
+  const emailBlock = document.getElementById("auth-email-block");
   const recoveryBlock = document.getElementById("auth-recovery-block");
   const forgotRow = document.getElementById("auth-forgot-row");
   const socialBlock = document.getElementById("login-social-block");
@@ -612,6 +747,7 @@ const syncAuthModalLayout = (mode) => {
   const confirmPasswordInput = formEl?.querySelector("#auth-confirm-password-input");
   const nameInput = formEl?.querySelector("input[name='name']");
   const roleSelect = formEl?.querySelector("select[name='role']");
+  const emailInput = formEl?.querySelector('input[name="email"]');
   const submitLabel = formEl?.querySelector(".auth-submit-label");
 
   const isSignIn = mode === "signin";
@@ -624,6 +760,9 @@ const syncAuthModalLayout = (mode) => {
   }
   if (passwordBlock) {
     passwordBlock.hidden = isForgot || isRecovery;
+  }
+  if (emailBlock) {
+    emailBlock.hidden = isForgot;
   }
   if (recoveryBlock) {
     recoveryBlock.hidden = !isRecovery;
@@ -651,6 +790,10 @@ const syncAuthModalLayout = (mode) => {
     passwordInput.required = isSignIn || isRegister;
     passwordInput.autocomplete = isRegister ? "new-password" : "current-password";
   }
+  if (emailInput) {
+    emailInput.readOnly = isRecovery;
+    emailInput.required = isSignIn || isRegister || isForgot;
+  }
   if (newPasswordInput) {
     newPasswordInput.required = isRecovery;
   }
@@ -663,7 +806,7 @@ const syncAuthModalLayout = (mode) => {
     } else if (isForgot) {
       submitLabel.textContent = t("auth.send_reset");
     } else if (isRecovery) {
-      submitLabel.textContent = t("auth.set_password");
+      submitLabel.textContent = t("auth.save_and_signin");
     } else {
       submitLabel.textContent = t("auth.signin");
     }
@@ -681,11 +824,12 @@ const syncAuthSignInAvailability = () => {
   if (miss) {
     miss.hidden = available;
   }
+  const hideExtras = authModalMode === "forgot" || authModalMode === "recovery";
   if (social) {
-    social.hidden = !available;
+    social.hidden = !available || hideExtras;
   }
   if (switchLine) {
-    switchLine.hidden = !available;
+    switchLine.hidden = !available || hideExtras;
   }
   if (legal) {
     legal.hidden = !available;
@@ -879,7 +1023,11 @@ document.getElementById("auth-forgot-btn")?.addEventListener("click", () => {
 });
 
 document.getElementById("auth-back-signin")?.addEventListener("click", () => {
-  authRecoveryPending = false;
+  setRecoveryPending(false);
+  const emailInput = document.querySelector('#login-form input[name="email"]');
+  if (emailInput) {
+    emailInput.readOnly = false;
+  }
   openModal("signin");
 });
 
@@ -993,7 +1141,7 @@ loginForm?.addEventListener("submit", async (e) => {
     try {
       if (authModalMode === "forgot") {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: getAuthRedirectUrl()
+          redirectTo: getPasswordRecoveryRedirectUrl()
         });
         if (error) {
           showLoginError(mapSupabaseAuthError(error, "forgot"));
@@ -1004,18 +1152,31 @@ loginForm?.addEventListener("submit", async (e) => {
       }
 
       if (authModalMode === "recovery") {
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
+        if (!session) {
+          showLoginError(t("auth.err.recovery_expired"));
+          return;
+        }
         const { error } = await supabase.auth.updateUser({ password: newPassword });
         if (error) {
           showLoginError(mapSupabaseAuthError(error, "recovery"));
           return;
         }
-        authRecoveryPending = false;
+        setRecoveryPending(false);
+        stripAuthTokensFromUrl();
+        const emailInput = document.querySelector('#login-form input[name="email"]');
+        if (emailInput) {
+          emailInput.readOnly = false;
+        }
         showLoginSuccess(t("auth.success.password_updated"));
         const u = getUser();
         if (u) {
           onAuthSuccess(u);
         } else {
           closeModal();
+          void render().catch((e) => console.error(e));
         }
         return;
       }
@@ -3033,9 +3194,13 @@ const parseRoute = () => {
       "about",
       "contact",
       "how-to-buy",
-      "verified-sellers"
+      "verified-sellers",
+      "reset-password"
     ].includes(parts[0])
   ) {
+    if (parts[0] === "reset-password") {
+      return { view: "landing" };
+    }
     return { view: "static", page: parts[0] };
   }
   if (parts[0] === "profile") {
@@ -5815,7 +5980,7 @@ void (async () => {
   syncAuthSignInAvailability();
   syncAuthModalStaticCopy();
   ensureNavUserDropdown();
-  void initAuth();
+  await initAuth();
   await render().catch((e) => console.error(e));
 })();
 

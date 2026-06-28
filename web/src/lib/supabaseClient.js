@@ -15,13 +15,16 @@ export const isSupabaseConfigured = Boolean(
 export const getAuthRedirectUrl = () => {
   const explicit = import.meta.env.VITE_AUTH_REDIRECT_URL || import.meta.env.VITE_SITE_URL;
   if (explicit) {
-    return explicit;
+    return String(explicit).replace(/\/$/, "");
   }
   if (import.meta.env.DEV && typeof window !== "undefined") {
     return window.location.origin;
   }
   return "https://nuvelo.one";
 };
+
+/** Password-reset emails should land here so the app can open the new-password form. */
+export const getPasswordRecoveryRedirectUrl = () => `${getAuthRedirectUrl()}/reset-password`;
 
 export const supabase = isSupabaseConfigured
   ? createClient(url, anonKey, {

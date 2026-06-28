@@ -20,8 +20,9 @@ Private account for you (and agents helping you) to feel the **logged-in** exper
 ## Sign in again
 
 1. **Sign in** → **Continue with Google** / **Facebook**, or enter **email + password** → **Sign in**.
-2. Forgot password? Tap **Forgot password?** → enter email → **Send reset link** → open the email link → set a new password.
+2. Forgot password? Tap **Forgot password?** → enter email → **Send reset link** → open the email link → you land on **Choose a new password** with your email, new password, and confirm → **Save password & sign in**.
 
+Add `https://nuvelo.one/reset-password` to Supabase redirect URLs if not already covered by `https://nuvelo.one/**`.
 Phone SMS is **not shown** on the site until Twilio is configured in Supabase.
 
 ## After sign-in, try
