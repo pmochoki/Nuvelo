@@ -79,9 +79,25 @@ If your key is **`FX25BH5D5X`** instead, change `--key-id` and `--p8` to match `
 **Wrong:** pasting the `.p8` file contents (`MIGTAgEA…`) or the Key ID alone.  
 **Right:** the one-line `eyJ…` string from the script.
 
-### Step C — Supabase (dashboard or one command)
+### Step C — Supabase
 
-**Option A — automatic (recommended if dashboard paste keeps failing)**
+**Web (`nuvelo.one`)** uses Apple’s JS popup + `signInWithIdToken` — **no OAuth JWT secret required** for browser sign-in. You only need:
+
+**Authentication → Providers → Apple**
+
+| Field | Value |
+|-------|--------|
+| **Enable** | ON |
+| **Client IDs** | `one.nuvelo.web` (Services ID). Optionally add `one.nuvelo.app` for the native app. |
+| **Secret Key** | Optional for web (leave empty or set via script for native/OAuth fallback). |
+
+In **Apple Developer → Services ID → Sign in with Apple → Configure**, add **Return URL**:
+
+`https://nuvelo.one`
+
+(alongside the Supabase callback URL for any OAuth/mobile flows).
+
+**Option A — automatic JWT (native app / OAuth fallback only)**
 
 1. Create a personal access token: [supabase.com/dashboard/account/tokens](https://supabase.com/dashboard/account/tokens)
 2. Run once in Terminal:
@@ -91,25 +107,11 @@ cd ~/Desktop/Nuvelo-fresh
 SUPABASE_ACCESS_TOKEN=sbp_paste_your_token_here node scripts/configure-supabase-apple.mjs
 ```
 
-This generates a fresh JWT and writes it to Supabase via the Management API (`external_apple_client_id` + `external_apple_secret`).
+This generates a fresh JWT and writes it to Supabase via the Management API (`external_apple_client_id` + `external_apple_secret`). **Not required for web** after the `signInWithIdToken` change.
 
-**Option B — manual dashboard (easy to get wrong)**
+**Option B — manual dashboard JWT paste (avoid)**
 
-⚠️ **Do not paste the JWT manually** unless you verify the full line is saved. Supabase’s Secret Key field can **truncate** the JWT (~120 chars), which causes `invalid_client`. If the saved value ends early (no full signature after the second `.`), Apple sign-in will fail.
-
-If you paste manually anyway:
-
-**Authentication → Providers → Apple**
-
-| Field | What to paste |
-|-------|----------------|
-| **Enable** | ON |
-| **Client IDs** | `one.nuvelo.web` (Services ID). Optionally add `one.nuvelo.app` comma-separated for the native app later. |
-| **Secret Key** | The **entire** JWT line (290+ chars, three dot-separated parts). Must end with something like `...JZasY0F` |
-
-After paste, confirm the field still shows the **full** token before Save. Prefer **Option A** (script) instead.
-
-**Reminder:** Apple JWT secrets expire (~6 months). Regenerate with the same script and update Supabase before expiry.
+⚠️ Supabase’s Secret Key field can **truncate** the JWT (~120 chars), which causes `invalid_client` on OAuth redirect flows. Prefer leaving Secret Key empty for web-only, or use **Option A** if you need OAuth.
 
 ### Test
 

@@ -15,6 +15,7 @@ import {
   getAuthRedirectUrl,
   getPasswordRecoveryRedirectUrl
 } from "./lib/supabaseClient.js";
+import { signInWithApplePopup } from "./lib/appleSignIn.js";
 import {
   DONATIONS_CATEGORY_ID,
   DONATION_SUBCATEGORIES,
@@ -1068,18 +1069,38 @@ document.getElementById("auth-apple-stub")?.addEventListener("click", async () =
     showOAuthUnavailable("Apple sign-in");
     return;
   }
+  const appleBtn = document.getElementById("auth-apple-stub");
   showLoginError("");
   showLoginSuccess("");
-  const redirectTo = getAuthRedirectUrl();
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: "apple",
-    options: { redirectTo }
-  });
-  if (error) {
-    const msg = String(error.message || "");
-    showLoginError(
-      /not enabled|provider|apple/i.test(msg) ? t("auth.err.apple_setup") : msg || t("auth.err.generic")
-    );
+  if (appleBtn) {
+    appleBtn.disabled = true;
+  }
+  try {
+    const { idToken, nonce } = await signInWithApplePopup();
+    const { error } = await supabase.auth.signInWithIdToken({
+      provider: "apple",
+      token: idToken,
+      nonce
+    });
+    if (error) {
+      const msg = String(error.message || "");
+      showLoginError(
+        /not enabled|provider|apple/i.test(msg) ? t("auth.err.apple_setup") : msg || t("auth.err.generic")
+      );
+      return;
+    }
+    closeModal();
+  } catch (err) {
+    if (err?.code === "cancelled") {
+      showLoginError(t("auth.err.oauth_cancelled"));
+      return;
+    }
+    const msg = String(err?.message || err?.error || err || "");
+    showLoginError(msg || t("auth.err.generic"));
+  } finally {
+    if (appleBtn) {
+      appleBtn.disabled = false;
+    }
   }
 });
 
