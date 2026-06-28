@@ -1490,11 +1490,32 @@ body.loc-modal-open {
   display: none;
 }
 
+/* Inner pages: header surface matches theme (landing keeps hero/transparent rules below). */
+[data-color-scheme="dark"] body:not(.is-landing) .site-header.jiji-header {
+  background: var(--purple-surface);
+}
+
+[data-color-scheme="dark"] body:not(.is-landing) .jiji-header__text-link {
+  color: var(--text-secondary);
+}
+
+[data-color-scheme="dark"] body:not(.is-landing) .jiji-header__text-link:hover {
+  color: var(--orange);
+}
+
 [data-color-scheme="light"] body:not(.is-landing) .jiji-header__brand .brand__logo--dark {
   display: none;
 }
 
 [data-color-scheme="light"] body:not(.is-landing) .jiji-header__brand .brand__logo--light {
+  display: block;
+}
+
+[data-color-scheme="dark"] body:not(.is-landing) .jiji-header__brand .brand__logo--light {
+  display: none;
+}
+
+[data-color-scheme="dark"] body:not(.is-landing) .jiji-header__brand .brand__logo--dark {
   display: block;
 }
 
