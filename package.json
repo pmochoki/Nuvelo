@@ -5,7 +5,8 @@
     "node": ">=18"
   },
   "scripts": {
-    "record:meta-review": "node scripts/record-meta-app-review-video.mjs"
+    "record:meta-review": "node scripts/record-meta-app-review-video.mjs",
+    "upload:meta-review": "node scripts/upload-meta-review-video.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.1",

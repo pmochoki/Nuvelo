@@ -30,6 +30,7 @@ ios/Flutter/
 # Logs
 *.log
 .vercel
+.playwright-meta-profile/
 
 # Ephemeral API data (local dev listings store)
 /data/*.json
