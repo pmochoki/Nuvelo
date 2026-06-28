@@ -18,6 +18,12 @@
   --text-secondary: #a9c2d9;
   --text-muted: #7c93ac;
   --danger: #f87171;
+  --alert-success-bg: rgba(34, 197, 94, 0.18);
+  --alert-success-border: rgba(34, 197, 94, 0.45);
+  --alert-success-fg: #86efac;
+  --alert-error-bg: rgba(239, 68, 68, 0.15);
+  --alert-error-border: rgba(239, 68, 68, 0.4);
+  --alert-error-fg: #fecaca;
   --radius: 12px;
   --font: "DM Sans", system-ui, sans-serif;
   --color-page-bg: #0a1628;
@@ -91,6 +97,12 @@
   --text-secondary: #3d4f63;
   --text-muted: #64748b;
   --danger: #dc2626;
+  --alert-success-bg: #dcfce7;
+  --alert-success-border: #4ade80;
+  --alert-success-fg: #14532d;
+  --alert-error-bg: #fee2e2;
+  --alert-error-border: #f87171;
+  --alert-error-fg: #991b1b;
   --color-page-bg: #f4f7fa;
   --surface-elevated: #ffffff;
   --surface-tab-bar: #ffffff;
