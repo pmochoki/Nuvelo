@@ -5951,6 +5951,13 @@ window.addEventListener(
   },
   { passive: true }
 );
+
+if (window.visualViewport) {
+  window.visualViewport.addEventListener("resize", () => {
+    requestAnimationFrame(syncMobileTabBarScroll);
+  });
+}
+
 document.getElementById("filter-sheet-close")?.addEventListener("click", closeFilterSheet);
 document.getElementById("filter-sheet-backdrop")?.addEventListener("click", closeFilterSheet);
 
