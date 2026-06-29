@@ -281,6 +281,43 @@ Contact info in Accounts Center (`nuveloworld@gmail.com`) is **not** the same as
 2. Redirect URI: `https://ahiujuljjbozmfwoqtli.supabase.co/auth/v1/callback`
 3. **Supabase → Providers → Google** → Client ID + Secret → Enable
 
+### Hide the random `*.supabase.co` URL on Google sign-in
+
+Google shows the **OAuth callback host**. With the default project URL, users see  
+`ahiujuljjbozmfwoqtli.supabase.co`. To change that:
+
+| Option | Cost | Google shows | Notes |
+|--------|------|--------------|--------|
+| **Vanity subdomain** | **Pro plan** (~$25/mo), no add-on | `nuvelo.supabase.co` | Cheaper than custom domain; CLI only |
+| **Custom domain** | Pro + **$10/mo** add-on + DNS | `api.nuvelo.one` | Best branding; see `scripts/setup-supabase-custom-domain.sh` |
+| **Free plan only** | $0 | Still `ahiujuljjbozmfwoqtli.supabase.co` | Improve **OAuth consent screen** (app name + logo); domain line unchanged |
+
+**Vanity subdomain (recommended if Pro but not custom-domain add-on)**
+
+1. Upgrade org to **Pro** (Dashboard → Billing).
+2. On your machine: `supabase login`
+3. Run from repo root:
+   ```bash
+   chmod +x scripts/setup-supabase-vanity-subdomain.sh
+   ./scripts/setup-supabase-vanity-subdomain.sh check
+   ```
+4. In **Google Cloud** (and Meta / Apple), add redirect URI **before** activate:
+   - `https://nuvelo.supabase.co/auth/v1/callback`
+   - Keep the old `https://ahiujuljjbozmfwoqtli.supabase.co/auth/v1/callback` until clients are migrated.
+5. `./scripts/setup-supabase-vanity-subdomain.sh activate`
+6. **Vercel** → `VITE_SUPABASE_URL=https://nuvelo.supabase.co` (same anon key) → redeploy.
+7. **Mobile** → `assets/env` `SUPABASE_URL=https://nuvelo.supabase.co`
+
+**Free plan — polish only (no domain change)**
+
+[Google Cloud Console](https://console.cloud.google.com) → **OAuth consent screen**:
+
+- App name: **Nuvelo**
+- App logo + support email
+- Authorized domains: `nuvelo.one`
+
+Users still see the Supabase project host on the “Continue to …” line until you enable vanity or custom domain.
+
 ---
 
 ## 5. Branded email (“Nuvelo” not “Supabase”)
