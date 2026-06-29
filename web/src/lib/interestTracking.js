@@ -1,7 +1,10 @@
+import { isSupabaseConfigured, supabase } from "./supabaseClient.js";
+
 /** @typedef {Record<string, number>} InterestWeights */
 
 const INTEREST_STORE_KEY = "nuvelo_interest_weights";
 const MAX_CATEGORY_WEIGHT = 100;
+const SYNC_DEBOUNCE_MS = 2000;
 
 /** Maps UI slugs to listing API category ids (mirrors main.js CATEGORY_SLUGS). */
 const SLUG_TO_API = {
@@ -9,6 +12,7 @@ const SLUG_TO_API = {
   donations: "donations",
   rentals: "rentals",
   jobs: "jobs",
+  "seeking-work": "seeking-work",
   services: "services",
   goods: "clothes",
   vehicles: "vehicles",
@@ -21,6 +25,9 @@ const SLUG_TO_API = {
 
 /** Avoid double-counting browse interest on re-renders of the same URL. */
 let lastBrowseInterestKey = "";
+let syncUserId = null;
+let syncTimer = null;
+let hydrateInFlight = null;
 
 /**
  * @param {string|null|undefined} raw
@@ -35,6 +42,44 @@ export function normalizeCategoryId(raw) {
 }
 
 /**
+ * @param {unknown} obj
+ * @returns {InterestWeights}
+ */
+function sanitizeWeights(obj) {
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) {
+    return {};
+  }
+  /** @type {InterestWeights} */
+  const out = {};
+  for (const [key, val] of Object.entries(obj)) {
+    const id = normalizeCategoryId(key);
+    const n = Number(val);
+    if (id && Number.isFinite(n) && n > 0) {
+      out[id] = Math.min(MAX_CATEGORY_WEIGHT, Math.round(n));
+    }
+  }
+  return out;
+}
+
+/**
+ * @param {InterestWeights} weights
+ */
+function writeInterestWeights(weights) {
+  try {
+    localStorage.setItem(INTEREST_STORE_KEY, JSON.stringify(sanitizeWeights(weights)));
+  } catch {
+    /* ignore quota */
+  }
+}
+
+function notifyInterestUpdated() {
+  if (typeof window === "undefined") {
+    return;
+  }
+  window.dispatchEvent(new CustomEvent("nuvelo:interest-updated"));
+}
+
+/**
  * @returns {InterestWeights}
  */
 export function readInterestWeights() {
@@ -43,33 +88,118 @@ export function readInterestWeights() {
     if (!raw) {
       return {};
     }
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      return {};
-    }
-    /** @type {InterestWeights} */
-    const out = {};
-    for (const [key, val] of Object.entries(parsed)) {
-      const id = normalizeCategoryId(key);
-      const n = Number(val);
-      if (id && Number.isFinite(n) && n > 0) {
-        out[id] = Math.min(MAX_CATEGORY_WEIGHT, Math.round(n));
-      }
-    }
-    return out;
+    return sanitizeWeights(JSON.parse(raw));
   } catch {
     return {};
   }
 }
 
 /**
+ * @param {InterestWeights} a
+ * @param {InterestWeights} b
+ * @returns {InterestWeights}
+ */
+function mergeInterestWeights(a, b) {
+  const out = { ...sanitizeWeights(a) };
+  for (const [key, val] of Object.entries(sanitizeWeights(b))) {
+    out[key] = Math.min(MAX_CATEGORY_WEIGHT, Math.max(out[key] || 0, val));
+  }
+  return out;
+}
+
+/**
+ * @param {string} userId
+ * @returns {Promise<InterestWeights>}
+ */
+async function fetchRemoteInterestWeights(userId) {
+  if (!isSupabaseConfigured || !supabase || !userId) {
+    return {};
+  }
+  const { data, error } = await supabase
+    .from("user_category_interests")
+    .select("weights")
+    .eq("user_id", userId)
+    .maybeSingle();
+  if (error) {
+    console.warn("[Nuvelo] interest fetch failed", error.message);
+    return {};
+  }
+  return sanitizeWeights(data?.weights);
+}
+
+/**
+ * @param {string} userId
  * @param {InterestWeights} weights
  */
-function writeInterestWeights(weights) {
+async function pushRemoteInterestWeights(userId, weights) {
+  if (!isSupabaseConfigured || !supabase || !userId) {
+    return;
+  }
+  const payload = sanitizeWeights(weights);
+  const { error } = await supabase.from("user_category_interests").upsert(
+    {
+      user_id: userId,
+      weights: payload,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "user_id" }
+  );
+  if (error) {
+    console.warn("[Nuvelo] interest sync failed", error.message);
+  }
+}
+
+function scheduleInterestSync() {
+  if (!syncUserId) {
+    return;
+  }
+  if (syncTimer) {
+    clearTimeout(syncTimer);
+  }
+  syncTimer = setTimeout(() => {
+    syncTimer = null;
+    void pushRemoteInterestWeights(syncUserId, readInterestWeights());
+  }, SYNC_DEBOUNCE_MS);
+}
+
+/**
+ * Bind sync target for the signed-in user (or null when signed out).
+ * @param {string|null|undefined} userId
+ */
+export function setInterestSyncUserId(userId) {
+  syncUserId = userId ? String(userId) : null;
+  if (!syncUserId && syncTimer) {
+    clearTimeout(syncTimer);
+    syncTimer = null;
+  }
+}
+
+/**
+ * Merge local + remote weights after sign-in; keeps local anonymous history.
+ * @param {string} userId
+ */
+export async function hydrateInterestWeightsForUser(userId) {
+  const uid = String(userId || "").trim();
+  if (!uid) {
+    return;
+  }
+  if (hydrateInFlight) {
+    await hydrateInFlight;
+    return;
+  }
+  hydrateInFlight = (async () => {
+    setInterestSyncUserId(uid);
+    const local = readInterestWeights();
+    const remote = await fetchRemoteInterestWeights(uid);
+    const merged = mergeInterestWeights(local, remote);
+    writeInterestWeights(merged);
+    await pushRemoteInterestWeights(uid, merged);
+    notifyInterestUpdated();
+  })();
   try {
-    localStorage.setItem(INTEREST_STORE_KEY, JSON.stringify(weights));
-  } catch {
-    /* ignore quota */
+    await hydrateInFlight;
+  } finally {
+    hydrateInFlight = null;
   }
 }
 
@@ -87,6 +217,7 @@ export function recordCategoryInterest(categoryId, delta = 1) {
   const next = Math.min(MAX_CATEGORY_WEIGHT, (weights[id] || 0) + Math.round(add));
   weights[id] = next;
   writeInterestWeights(weights);
+  scheduleInterestSync();
 }
 
 /**
@@ -133,7 +264,7 @@ function trendingScore(listing, weights, hasPersonalInterest) {
 }
 
 /**
- * Homepage trending: global popularity plus per-user category weights from localStorage.
+ * Homepage trending: global popularity plus per-user category weights (local + synced).
  * @param {Array<object>} listings
  * @returns {Array<object>}
  */

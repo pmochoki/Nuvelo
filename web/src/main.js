@@ -37,8 +37,10 @@ import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
 import { formatNumber, tfn } from "./i18n/format.js";
 import {
+  hydrateInterestWeightsForUser,
   maybeRecordBrowseCategoryInterest,
   recordCategoryInterest,
+  setInterestSyncUserId,
   sortListingsForTrending
 } from "./lib/interestTracking.js";
 
@@ -222,6 +224,7 @@ const EVENTS_STORE_KEY = "nuvelo_events_custom";
 const EVENTS_RSVP_KEY = "nuvelo_events_rsvp";
 const EVENTS_ANON_KEY = "nuvelo_events_anon";
 const EVENTS_CATEGORY = "events";
+const SEEKING_WORK_CATEGORY = "seeking-work";
 
 let cachedUser = null;
 
@@ -253,6 +256,7 @@ const CATEGORY_SLUGS = {
   donations: "donations",
   rentals: "rentals",
   jobs: "jobs",
+  "seeking-work": "seeking-work",
   services: "services",
   goods: "clothes",
   vehicles: "vehicles",
@@ -270,6 +274,7 @@ const HOME_GRID_SLUG_ORDER = [
   "donations",
   "rentals",
   "jobs",
+  "seeking-work",
   "services",
   "goods",
   "vehicles",
@@ -435,6 +440,14 @@ function applySupabaseSession(session) {
   writeStoredUser(cachedUser);
 }
 
+function syncInterestForSession(session) {
+  if (session?.user?.id) {
+    void hydrateInterestWeightsForUser(session.user.id);
+    return;
+  }
+  setInterestSyncUserId(null);
+}
+
 /** Prefer profiles.avatar_url; clears stale local data-URL when a remote URL exists. */
 async function mergeProfileAvatarFromDb() {
   if (!isSupabaseConfigured || !supabase) {
@@ -574,6 +587,7 @@ async function initAuth() {
 
   supabase.auth.onAuthStateChange((event, session) => {
     applySupabaseSession(session ?? null);
+    syncInterestForSession(session ?? null);
     void mergeProfileAvatarFromDb().then(() => {
       updateAuthUi();
     });
@@ -607,6 +621,7 @@ async function initAuth() {
     if (event === "SIGNED_OUT") {
       cachedUser = null;
       writeStoredUser(null);
+      setInterestSyncUserId(null);
       setRecoveryPending(false);
       try {
         localStorage.removeItem("nuvelo_unread_messages");
@@ -645,6 +660,7 @@ async function initAuth() {
     console.error(error);
   }
   applySupabaseSession(session ?? null);
+  syncInterestForSession(session ?? null);
   updateAuthUi();
 
   if (session && isRecoveryPending()) {
@@ -4011,6 +4027,22 @@ function paintLandingListingGrid(listings, listingsLoadFailed) {
   });
 }
 
+function repaintHomeTrendingFromCache() {
+  if (normalizePathname() !== "/") {
+    return;
+  }
+  const cached = readPersistedListings(HOME_LISTINGS_CACHE_KEY);
+  if (cached?.length) {
+    paintLandingListingGrid(cached, false);
+  }
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("nuvelo:interest-updated", () => {
+    repaintHomeTrendingFromCache();
+  });
+}
+
 async function hydrateLandingListings(hadCached) {
   let listings = [];
   let listingsLoadFailed = false;
@@ -5451,6 +5483,35 @@ const categoryFieldHtml = (categoryId) => {
       <div class="category-fields stack">
         <label>${esc(t("post.cf_role"))} <input name="cf_role" required placeholder="Barista" /></label>
         <label>${esc(t("post.cf_contract"))} <input name="cf_contractType" required placeholder="part-time" /></label>
+        <label>${esc(t("post.cf_salary"))} <input name="cf_salaryRange" placeholder="400,000 HUF / month" /></label>
+      </div>`;
+  }
+  if (categoryId === SEEKING_WORK_CATEGORY) {
+    return `
+      <div class="category-fields stack">
+        <p class="muted small" style="margin:0 0 0.5rem">${esc(t("post.seeking_work_hint"))}</p>
+        <label>${esc(t("post.cf_role_sought"))} <input name="cf_roleSought" required placeholder="Customer support (English)" /></label>
+        <label>${esc(t("post.cf_experience"))} <input name="cf_experience" required placeholder="2 years, entry level" /></label>
+        <label>${esc(t("post.cf_languages"))} <input name="cf_languages" required placeholder="English, Hungarian" /></label>
+        <label>${esc(t("post.cf_work_permit"))}
+          <select name="cf_workPermit" required>
+            <option value="">${esc(t("post.cf_work_permit_choose"))}</option>
+            <option value="eu_citizen">${esc(t("post.cf_work_permit_eu"))}</option>
+            <option value="work_permit">${esc(t("post.cf_work_permit_holder"))}</option>
+            <option value="student">${esc(t("post.cf_work_permit_student"))}</option>
+            <option value="needs_sponsorship">${esc(t("post.cf_work_permit_sponsor"))}</option>
+          </select>
+        </label>
+        <label>${esc(t("post.cf_availability"))} <input name="cf_availability" required placeholder="Immediately, 2 weeks notice" /></label>
+        <label>${esc(t("post.cf_work_mode"))}
+          <select name="cf_workMode" required>
+            <option value="on_site">${esc(t("post.cf_work_mode_onsite"))}</option>
+            <option value="remote">${esc(t("post.cf_work_mode_remote"))}</option>
+            <option value="hybrid">${esc(t("post.cf_work_mode_hybrid"))}</option>
+          </select>
+        </label>
+        <label>${esc(t("post.cf_salary_expectation"))} <input name="cf_salaryExpectation" placeholder="350,000 HUF / month" /></label>
+        <label>${esc(t("post.cf_cv_link"))} <input name="cf_cvLink" type="url" placeholder="https://…" /></label>
       </div>`;
   }
   if (categoryId === "services") {
@@ -5479,6 +5540,25 @@ const buildCategoryFields = (categoryId, fd) => {
   } else if (categoryId === "jobs") {
     out.role = String(fd.get("cf_role") || "").trim();
     out.contractType = String(fd.get("cf_contractType") || "").trim();
+    const salary = String(fd.get("cf_salaryRange") || "").trim();
+    if (salary) {
+      out.salaryRange = salary;
+    }
+  } else if (categoryId === SEEKING_WORK_CATEGORY) {
+    out.roleSought = String(fd.get("cf_roleSought") || "").trim();
+    out.experience = String(fd.get("cf_experience") || "").trim();
+    out.languages = String(fd.get("cf_languages") || "").trim();
+    out.workPermit = String(fd.get("cf_workPermit") || "").trim();
+    out.availability = String(fd.get("cf_availability") || "").trim();
+    out.workMode = String(fd.get("cf_workMode") || "").trim();
+    const salaryExp = String(fd.get("cf_salaryExpectation") || "").trim();
+    if (salaryExp) {
+      out.salaryExpectation = salaryExp;
+    }
+    const cvLink = String(fd.get("cf_cvLink") || "").trim();
+    if (cvLink) {
+      out.cvLink = cvLink;
+    }
   } else if (categoryId === "services") {
     out.serviceType = String(fd.get("cf_serviceType") || "").trim();
   } else if (categoryId === DONATIONS_CATEGORY_ID) {
@@ -5801,12 +5881,13 @@ const renderPost = async () => {
   catSelect?.addEventListener("change", () => {
     const isEvent = catSelect.value === EVENTS_CATEGORY;
     const isDonationPost = catSelect.value === DONATIONS_CATEGORY_ID;
+    const isSeekingWork = catSelect.value === SEEKING_WORK_CATEGORY;
     eventFields.hidden = !isEvent;
     if (donationFields) donationFields.hidden = !isDonationPost;
     catFields.hidden = isEvent || isDonationPost;
     subSel.closest("label").hidden = isEvent || isDonationPost;
-    if (conditionFs) conditionFs.hidden = isEvent || isDonationPost;
-    if (postPriceLabel) postPriceLabel.hidden = isDonationPost;
+    if (conditionFs) conditionFs.hidden = isEvent || isDonationPost || isSeekingWork;
+    if (postPriceLabel) postPriceLabel.hidden = isDonationPost || isSeekingWork;
     if (!isEvent && !isDonationPost) {
       catFields.innerHTML = categoryFieldHtml(catSelect.value);
       applyDomTranslations(catFields);
