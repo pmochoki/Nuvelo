@@ -102,9 +102,10 @@ If your key is **`FX25BH5D5X`** instead, change `--key-id` and `--p8` to match `
 | **Client IDs** | `one.nuvelo.web` (Services ID). Optionally add `one.nuvelo.app` for the native app. |
 | **Secret Key** | Optional for web (leave empty or set via script for native/OAuth fallback). |
 
-In **Apple Developer → Services ID → Sign in with Apple → Configure**, add **Return URL**:
+In **Apple Developer → Services ID → Sign in with Apple → Configure**, add **Return URLs**:
 
-`https://nuvelo.one`
+- `https://nuvelo.one`
+- `https://nuvelo.one/api/auth/apple-callback` (**required for iPhone Safari** — Apple `form_post` return)
 
 (alongside the Supabase callback URL for any OAuth/mobile flows).
 

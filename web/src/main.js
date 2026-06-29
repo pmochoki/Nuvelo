@@ -16,7 +16,7 @@ import {
   getAuthRedirectUrl,
   getPasswordRecoveryRedirectUrl
 } from "./lib/supabaseClient.js";
-import { initAppleSignInCallback, signInWithApple } from "./lib/appleSignIn.js";
+import { initAppleSignInCallback, parseAppleRedirectFromUrl, signInWithApple } from "./lib/appleSignIn.js";
 import {
   DONATIONS_CATEGORY_ID,
   DONATION_SUBCATEGORIES,
@@ -6416,14 +6416,26 @@ void (async () => {
   syncAuthSignInAvailability();
   syncAuthModalStaticCopy();
   ensureNavUserDropdown();
-  consumeOAuthErrorFromUrl();
-  void initAppleSignInCallback(
+
+  const appleReturn = parseAppleRedirectFromUrl();
+  if (appleReturn?.error) {
+    openModal("signin");
+    const detail = appleReturn.errorDescription ? `: ${appleReturn.errorDescription}` : "";
+    showLoginError(
+      /cancel|user_cancel/i.test(appleReturn.error) ? t("auth.err.oauth_cancelled") : t("auth.err.generic") + detail
+    );
+  } else if (appleReturn?.idToken) {
+    await completeAppleRedirectSignIn(appleReturn);
+  }
+
+  await initAppleSignInCallback(
     (tokens) => completeAppleRedirectSignIn(tokens),
     (msg) => {
       openModal("signin");
       showLoginError(msg || t("auth.err.generic"));
     }
   );
+  consumeOAuthErrorFromUrl();
   await initAuth();
   await render().catch((e) => console.error(e));
 })();

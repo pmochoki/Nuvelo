@@ -4,6 +4,7 @@ const APPLE_SCRIPT =
   "https://appleid.cdn-apple.com/appleauth/static/jsapi/appleid/1/en_US/appleid.auth.js";
 const DEFAULT_CLIENT_ID = "one.nuvelo.web";
 export const APPLE_NONCE_KEY = "nuvelo_apple_nonce";
+export const APPLE_PENDING_KEY = "nuvelo_apple_pending";
 
 let scriptLoadPromise = null;
 let callbackRegistered = false;
@@ -51,8 +52,24 @@ function getAppleClientId() {
   return typeof fromEnv === "string" && fromEnv.trim() ? fromEnv.trim() : DEFAULT_CLIENT_ID;
 }
 
-function getAppleRedirectUri() {
-  return getAuthRedirectUrl() || (typeof window !== "undefined" ? window.location.origin : "");
+function getSiteOrigin() {
+  return (getAuthRedirectUrl() || (typeof window !== "undefined" ? window.location.origin : "")).replace(
+    /\/$/,
+    ""
+  );
+}
+
+/** Popup / SDK flow — Apple posts back to the site root. */
+function getApplePopupRedirectUri() {
+  return getSiteOrigin();
+}
+
+/**
+ * Mobile redirect — Apple requires form_post when scope includes name/email.
+ * POST lands on our API route, which forwards id_token to the SPA via hash.
+ */
+export function getAppleFormPostRedirectUri() {
+  return `${getSiteOrigin()}/api/auth/apple-callback`;
 }
 
 /** Mobile Safari and other touch browsers block OAuth popups — use full-page redirect instead. */
@@ -78,6 +95,76 @@ export function preferAppleRedirect() {
   return false;
 }
 
+function clearApplePendingStorage() {
+  try {
+    localStorage.removeItem(APPLE_PENDING_KEY);
+    localStorage.removeItem(APPLE_NONCE_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
+function storeApplePendingNonce(rawNonce) {
+  try {
+    localStorage.setItem(APPLE_NONCE_KEY, rawNonce);
+    localStorage.setItem(APPLE_PENDING_KEY, "1");
+  } catch {
+    /* ignore */
+  }
+}
+
+function buildAppleAuthorizeUrl(hashedNonce, redirectUri) {
+  const params = new URLSearchParams({
+    client_id: getAppleClientId(),
+    redirect_uri: redirectUri,
+    response_type: "code id_token",
+    response_mode: "form_post",
+    scope: "name email",
+    state: "nuvelo-web",
+    nonce: hashedNonce
+  });
+  return `https://appleid.apple.com/auth/authorize?${params.toString()}`;
+}
+
+/**
+ * Parse Apple mobile redirect after /api/auth/apple-callback forwards id_token in the hash.
+ * @returns {{ idToken: string, nonce: string } | { error: string, errorDescription?: string } | null}
+ */
+export function parseAppleRedirectFromUrl() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const query = new URLSearchParams(window.location.search || "");
+  const appleError = query.get("apple_error");
+  if (appleError) {
+    const errorDescription = query.get("apple_error_description") || "";
+    clearApplePendingStorage();
+    window.history.replaceState(null, "", window.location.pathname);
+    return { error: appleError, errorDescription };
+  }
+
+  const hash = new URLSearchParams((window.location.hash || "").replace(/^#/, ""));
+  const idToken = hash.get("id_token");
+  if (!idToken || hash.get("state") !== "nuvelo-web") {
+    return null;
+  }
+
+  let rawNonce = null;
+  try {
+    if (localStorage.getItem(APPLE_PENDING_KEY) !== "1") {
+      return null;
+    }
+    rawNonce = localStorage.getItem(APPLE_NONCE_KEY);
+    clearApplePendingStorage();
+  } catch {
+    return null;
+  }
+
+  window.history.replaceState(null, "", window.location.pathname);
+  return { idToken, nonce: rawNonce };
+}
+
 function isPopupBlockedError(err) {
   const code = String(err?.error || err?.message || err || "");
   return /popup|blocked/i.test(code);
@@ -88,7 +175,7 @@ function isUserCancelledError(err) {
   return /cancel|popup_closed|user_cancel/i.test(code);
 }
 
-async function initAppleAuth({ usePopup, rawNonce, hashedNonce }) {
+async function initAppleAuth({ usePopup, hashedNonce, redirectUri }) {
   await loadAppleScript();
   if (!window.AppleID?.auth) {
     throw new Error("Apple Sign In is unavailable in this browser.");
@@ -97,17 +184,15 @@ async function initAppleAuth({ usePopup, rawNonce, hashedNonce }) {
   window.AppleID.auth.init({
     clientId: getAppleClientId(),
     scope: "name email",
-    redirectURI: getAppleRedirectUri(),
+    redirectURI: redirectUri,
     state: "nuvelo-web",
     usePopup,
     nonce: hashedNonce
   });
-
-  return { rawNonce };
 }
 
 /**
- * Register redirect callback handlers (call once on app bootstrap).
+ * Register SDK redirect handlers for desktop popup fallback (call once on app bootstrap).
  * @param {(tokens: { idToken: string, nonce: string | null }) => void | Promise<void>} onTokens
  * @param {(message: string) => void} [onFailure]
  */
@@ -122,14 +207,6 @@ export async function initAppleSignInCallback(onTokens, onFailure) {
     return;
   }
 
-  window.AppleID.auth.init({
-    clientId: getAppleClientId(),
-    scope: "name email",
-    redirectURI: getAppleRedirectUri(),
-    state: "nuvelo-web",
-    usePopup: false
-  });
-
   document.addEventListener("AppleIDSignInOnSuccess", (event) => {
     const idToken = event?.detail?.authorization?.id_token;
     if (!idToken) {
@@ -137,11 +214,11 @@ export async function initAppleSignInCallback(onTokens, onFailure) {
     }
     let rawNonce = null;
     try {
-      rawNonce = sessionStorage.getItem(APPLE_NONCE_KEY);
+      rawNonce = localStorage.getItem(APPLE_NONCE_KEY);
       if (!rawNonce) {
         return;
       }
-      sessionStorage.removeItem(APPLE_NONCE_KEY);
+      clearApplePendingStorage();
     } catch {
       return;
     }
@@ -151,27 +228,37 @@ export async function initAppleSignInCallback(onTokens, onFailure) {
   });
 
   document.addEventListener("AppleIDSignInOnFailure", (event) => {
-    try {
-      sessionStorage.removeItem(APPLE_NONCE_KEY);
-    } catch {
-      /* ignore */
-    }
+    clearApplePendingStorage();
     const msg = String(event?.detail?.error || "Apple sign-in failed.");
     if (onFailure && !/cancel|popup_closed|user_cancel/i.test(msg)) {
       onFailure(msg);
     }
+  });
+
+  window.AppleID.auth.init({
+    clientId: getAppleClientId(),
+    scope: "name email",
+    redirectURI: getApplePopupRedirectUri(),
+    state: "nuvelo-web",
+    usePopup: false
   });
 }
 
 async function signInWithApplePopupFlow() {
   const rawNonce = randomNonce();
   const hashedNonce = await sha256Hex(rawNonce);
-  await initAppleAuth({ usePopup: true, rawNonce, hashedNonce });
+  storeApplePendingNonce(rawNonce);
+  await initAppleAuth({
+    usePopup: true,
+    hashedNonce,
+    redirectUri: getApplePopupRedirectUri()
+  });
 
   let response;
   try {
     response = await window.AppleID.auth.signIn();
   } catch (err) {
+    clearApplePendingStorage();
     if (isUserCancelledError(err)) {
       const cancelled = new Error("cancelled");
       cancelled.code = "cancelled";
@@ -180,6 +267,7 @@ async function signInWithApplePopupFlow() {
     throw err;
   }
 
+  clearApplePendingStorage();
   const idToken = response?.authorization?.id_token;
   if (!idToken) {
     throw new Error("Apple did not return an identity token.");
@@ -191,21 +279,14 @@ async function signInWithApplePopupFlow() {
 async function signInWithAppleRedirectFlow() {
   const rawNonce = randomNonce();
   const hashedNonce = await sha256Hex(rawNonce);
-  await initAppleAuth({ usePopup: false, rawNonce, hashedNonce });
-
-  try {
-    sessionStorage.setItem(APPLE_NONCE_KEY, rawNonce);
-  } catch {
-    /* ignore */
-  }
-
-  window.AppleID.auth.signIn();
+  storeApplePendingNonce(rawNonce);
+  window.location.assign(buildAppleAuthorizeUrl(hashedNonce, getAppleFormPostRedirectUri()));
   return { redirected: true };
 }
 
 /**
- * Apple Sign In JS → identity token for Supabase signInWithIdToken.
- * Uses redirect on mobile; popup on desktop. Falls back to redirect if popup is blocked.
+ * Apple Sign In → identity token for Supabase signInWithIdToken.
+ * Mobile: authorize URL + form_post API callback. Desktop: JS popup.
  */
 export async function signInWithApple() {
   if (preferAppleRedirect()) {
