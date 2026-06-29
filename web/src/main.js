@@ -26,7 +26,7 @@ import {
   donationConditionLabel,
   donationCollectionMeta
 } from "./data/donationConstants.js";
-import { getDisplayInitials } from "./lib/profileInitials.js";
+import { getBrowseCategorySuggestionPlan, browseHrefWithCategory } from "./lib/browseCategorySuggestions.js";
 import {
   buildContactFieldsFromForm,
   extractListingContact,
@@ -3740,6 +3740,32 @@ const syncHeaderChrome = (route) => {
   syncMobileTabBarRoute();
 };
 
+const buildCategorySuggestionCardEl = (plan, filters) => {
+  const chips = plan.items
+    .map(({ categoryId, count }) => {
+      const row = ADS_CATEGORIES.find((c) => apiCategoryIdForSlug(c.slug) === categoryId);
+      const icon = row?.icon || "📁";
+      const label = categoryDisplayName(categoryId);
+      const href = browseHrefWithCategory(filters, categoryId);
+      return `<a class="browse-cat-suggest__chip" href="${esc(href)}">
+        <span class="browse-cat-suggest__icon" aria-hidden="true">${icon}</span>
+        <span class="browse-cat-suggest__text">${esc(label)}</span>
+        <span class="browse-cat-suggest__count">${esc(tf("browse.suggest_count", { n: formatNumber(count) }))}</span>
+      </a>`;
+    })
+    .join("");
+  const el = document.createElement("aside");
+  el.className = "browse-cat-suggest";
+  el.setAttribute("role", "note");
+  el.setAttribute("aria-label", t("browse.suggest_title"));
+  el.innerHTML = `
+    <p class="browse-cat-suggest__title">${esc(t("browse.suggest_title"))}</p>
+    <p class="browse-cat-suggest__lead muted small">${esc(t("browse.suggest_lead"))}</p>
+    <div class="browse-cat-suggest__chips">${chips}</div>
+  `;
+  return el;
+};
+
 const buildListingCardEl = (listing, opts = {}) => {
   const {
     viewMode = "grid",
@@ -4408,9 +4434,22 @@ const renderList = async () => {
     return;
   }
 
+  const suggestionPlan =
+    !listingsLoadFailed && curPage === 1 ? getBrowseCategorySuggestionPlan(filters, sorted) : null;
+  const suggestAt =
+    suggestionPlan ? Math.min(suggestionPlan.insertAtIndex, pageSlice.length) : -1;
+  let suggestInserted = false;
+
   pageSlice.forEach((listing, i) => {
+    if (suggestionPlan && i === suggestAt) {
+      grid.appendChild(buildCategorySuggestionCardEl(suggestionPlan, filters));
+      suggestInserted = true;
+    }
     grid.appendChild(buildListingCardEl(listing, { viewMode, markPopular: i < 4, idx: i }));
   });
+  if (suggestionPlan && !suggestInserted) {
+    grid.appendChild(buildCategorySuggestionCardEl(suggestionPlan, filters));
+  }
 };
 
 function wireBrowseFilterForm(form) {
