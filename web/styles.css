@@ -40,11 +40,23 @@
   --phone-field-pre-fg: var(--text-secondary);
   --phone-field-border: var(--profile-border);
   --profile-msg-selected: rgba(251, 146, 60, 0.2);
-  --pill-toggle-active-bg: rgba(34, 197, 94, 0.18);
-  --pill-toggle-active-fg: #86efac;
-  --pill-toggle-active-border: #22c55e;
-  --chat-bubble-me-bg: rgba(34, 197, 94, 0.22);
-  --chat-bubble-me-border: rgba(34, 197, 94, 0.45);
+  --pill-toggle-active-bg: rgba(234, 88, 12, 0.18);
+  --pill-toggle-active-fg: #fdba74;
+  --pill-toggle-active-border: var(--orange);
+  --chat-bubble-me-bg: rgba(234, 88, 12, 0.18);
+  --chat-bubble-me-border: rgba(234, 88, 12, 0.4);
+  /* Messaging accents — navy header, orange primary, teal secondary */
+  --msg-header-bg: var(--purple-deep);
+  --msg-accent: var(--orange);
+  --msg-accent-strong: var(--orange-dark);
+  --msg-secondary: var(--purple);
+  --msg-chat-bg: var(--profile-hub-bg);
+  --msg-safety-warn-bg: rgba(234, 88, 12, 0.14);
+  --msg-safety-warn-border: rgba(234, 88, 12, 0.38);
+  --msg-safety-warn-fg: #fdba74;
+  --msg-safety-tip-bg: rgba(20, 184, 166, 0.12);
+  --msg-safety-tip-border: rgba(20, 184, 166, 0.35);
+  --msg-safety-tip-fg: var(--purple-light);
   /* Profile shell — follows app theme (dark default) */
   --profile-surface: var(--purple-card);
   --profile-surface-2: #15263d;
@@ -65,7 +77,7 @@
   --profile-sidenav-active-icon: #86efac;
   --profile-mobile-pill-bg: var(--purple-surface);
   --profile-msg-hover: rgba(255, 255, 255, 0.05);
-  --profile-msg-unread: rgba(34, 197, 94, 0.14);
+  --profile-msg-unread: rgba(234, 88, 12, 0.12);
   --profile-notif-unread: rgba(255, 255, 255, 0.06);
   --profile-advert-title: var(--text);
   --profile-advert-meta: var(--text-secondary);
@@ -74,7 +86,7 @@
   --profile-camera-bg: var(--purple-card);
   --profile-hub-bg: var(--purple-surface);
   --profile-hub-card-border: var(--profile-border-subtle);
-  --profile-hub-back-hover: rgba(34, 197, 94, 0.15);
+  --profile-hub-back-hover: rgba(234, 88, 12, 0.12);
   /* legacy aliases */
   --navy: var(--purple-deep);
   --navy-card: var(--purple-card);
@@ -116,11 +128,22 @@
   --phone-field-pre-fg: #4b5563;
   --phone-field-border: #e2e8f0;
   --profile-msg-selected: #fff7ed;
-  --pill-toggle-active-bg: #ecfdf5;
-  --pill-toggle-active-fg: #166534;
-  --pill-toggle-active-border: #2d8c4e;
-  --chat-bubble-me-bg: #ecfdf5;
-  --chat-bubble-me-border: #bbf7d0;
+  --pill-toggle-active-bg: #fff7ed;
+  --pill-toggle-active-fg: var(--orange-dark);
+  --pill-toggle-active-border: var(--orange);
+  --chat-bubble-me-bg: #fff7ed;
+  --chat-bubble-me-border: #fed7aa;
+  --msg-header-bg: var(--purple-deep);
+  --msg-accent: var(--orange);
+  --msg-accent-strong: var(--orange-dark);
+  --msg-secondary: var(--purple);
+  --msg-chat-bg: var(--profile-hub-bg);
+  --msg-safety-warn-bg: #fff7ed;
+  --msg-safety-warn-border: #fed7aa;
+  --msg-safety-warn-fg: #9a3412;
+  --msg-safety-tip-bg: #f0fdfa;
+  --msg-safety-tip-border: #99f6e4;
+  --msg-safety-tip-fg: #0f766e;
   --profile-surface: #ffffff;
   --profile-surface-2: #fafafa;
   --profile-border: #e2e8f0;
@@ -140,7 +163,7 @@
   --profile-sidenav-active-icon: #2d8c4e;
   --profile-mobile-pill-bg: #ffffff;
   --profile-msg-hover: #f8fafc;
-  --profile-msg-unread: #f0fdf4;
+  --profile-msg-unread: #fff7ed;
   --profile-notif-unread: #f8fafc;
   --profile-advert-title: #111111;
   --profile-advert-meta: #4b5563;
@@ -149,7 +172,7 @@
   --profile-camera-bg: #ffffff;
   --profile-hub-bg: #e8eef3;
   --profile-hub-card-border: #f1f5f9;
-  --profile-hub-back-hover: #f0fdf4;
+  --profile-hub-back-hover: #fff7ed;
   --navy: var(--purple-deep);
   --navy-card: var(--purple-card);
   --navy-border: var(--purple-border);
@@ -6485,14 +6508,14 @@ button.jiji-promo-card {
   width: 52px;
   height: 52px;
   border-radius: 12px;
-  background: #bbf7d0;
-  color: #15803d;
+  background: rgba(234, 88, 12, 0.22);
+  color: var(--msg-accent);
   display: grid;
   place-items: center;
   text-decoration: none;
   font-size: 1.35rem;
   font-weight: 800;
-  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.25);
+  box-shadow: 0 4px 14px rgba(234, 88, 12, 0.25);
   z-index: 35;
 }
 
@@ -6575,14 +6598,14 @@ button.jiji-promo-card {
   border-bottom-color: rgba(251, 191, 36, 0.4);
 }
 
-/* Jiji-style green header + pill search (messages inbox) */
+/* Nuvelo messaging header + pill search */
 .messages-jiji__shell {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 0.75rem;
-  background: #16a34a;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--msg-header-bg);
+  border-bottom: 1px solid var(--purple-border);
   border-radius: 15px 15px 0 0;
 }
 
@@ -6705,8 +6728,8 @@ button.jiji-promo-card {
 }
 
 .messages-jiji__tab.is-active {
-  color: #16a34a;
-  border-bottom-color: #16a34a;
+  color: var(--msg-accent);
+  border-bottom-color: var(--msg-accent);
   background: transparent;
 }
 
@@ -6831,7 +6854,7 @@ button.jiji-promo-card {
 
 .msg-row__avatar-overlay--ph {
   display: block;
-  background: #22c55e;
+  background: var(--msg-accent);
 }
 
 .msg-row__closed-tag {
@@ -6842,13 +6865,13 @@ button.jiji-promo-card {
   font-size: 0.62rem;
   font-weight: 800;
   letter-spacing: 0.04em;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--text-muted);
+  background: var(--purple-surface);
   vertical-align: middle;
 }
 
 [data-color-scheme="dark"] .msg-row__closed-tag {
-  color: #d1d5db;
+  color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.08);
 }
 
@@ -6883,7 +6906,7 @@ button.jiji-promo-card {
   height: 20px;
   padding: 0 5px;
   border-radius: 999px;
-  background: #22c55e;
+  background: var(--msg-accent);
   color: #fff;
   font-size: 0.65rem;
   font-weight: 800;
@@ -7001,8 +7024,8 @@ button.jiji-promo-card {
 
 @media (max-width: 639px) {
   .messages-jiji--thread-open .chat-head {
-    background: #16a34a;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    background: var(--msg-header-bg);
+    border-bottom: 1px solid var(--purple-border);
     padding: 0.6rem 0.75rem;
   }
 
@@ -7016,12 +7039,12 @@ button.jiji-promo-card {
 
   .messages-jiji--thread-open .chat-head__back {
     border: none;
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.1);
     color: #fff;
   }
 
   .messages-jiji--thread-open .chat-head__back:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.18);
     color: #fff;
   }
 }
@@ -7032,7 +7055,7 @@ button.jiji-promo-card {
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
-  background: #22c55e;
+  background: var(--msg-secondary);
 }
 
 .chat-head__avatar img {
@@ -7045,7 +7068,7 @@ button.jiji-promo-card {
   display: block;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #22c55e, #16a34a);
+  background: linear-gradient(135deg, var(--msg-accent), var(--msg-secondary));
 }
 
 .chat-head__status {
@@ -7106,7 +7129,7 @@ button.jiji-promo-card {
   margin: 0.15rem 0 0;
   font-size: 0.88rem;
   font-weight: 800;
-  color: #16a34a;
+  color: var(--msg-accent);
 }
 
 .chat-listing-bar__closed {
@@ -7116,8 +7139,8 @@ button.jiji-promo-card {
   border-radius: 4px;
   font-size: 0.62rem;
   font-weight: 800;
-  color: #6b7280;
-  background: #f3f4f6;
+  color: var(--text-muted);
+  background: var(--purple-surface);
   vertical-align: middle;
 }
 
@@ -7127,10 +7150,10 @@ button.jiji-promo-card {
   align-items: center;
   gap: 0.35rem;
   padding: 0.4rem 0.65rem;
-  border: 1.5px solid #16a34a;
+  border: 1.5px solid var(--msg-accent);
   border-radius: 8px;
   background: transparent;
-  color: #16a34a;
+  color: var(--msg-accent);
   font: inherit;
   font-size: 0.78rem;
   font-weight: 700;
@@ -7153,11 +7176,7 @@ button.jiji-promo-card {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  background: #e8f4fc;
-}
-
-[data-color-scheme="dark"] .chat-scroll {
-  background: rgba(14, 116, 144, 0.12);
+  background: var(--msg-chat-bg);
 }
 
 .chat-safety-banners {
@@ -7180,27 +7199,27 @@ button.jiji-promo-card {
 }
 
 .chat-safety-banner--warn {
-  background: #fef3c7;
-  color: #92400e;
-  border: 1px solid #fde68a;
+  background: var(--msg-safety-warn-bg);
+  color: var(--msg-safety-warn-fg);
+  border: 1px solid var(--msg-safety-warn-border);
 }
 
 .chat-safety-banner--tip {
-  background: #fff7ed;
-  color: #9a3412;
-  border: 1px solid #fed7aa;
+  background: var(--msg-safety-tip-bg);
+  color: var(--msg-safety-tip-fg);
+  border: 1px solid var(--msg-safety-tip-border);
 }
 
 [data-color-scheme="dark"] .chat-safety-banner--warn {
-  background: rgba(180, 83, 9, 0.35);
-  color: #fde68a;
-  border-color: rgba(251, 191, 36, 0.35);
+  background: var(--msg-safety-warn-bg);
+  color: var(--msg-safety-warn-fg);
+  border-color: var(--msg-safety-warn-border);
 }
 
 [data-color-scheme="dark"] .chat-safety-banner--tip {
-  background: rgba(154, 52, 18, 0.28);
-  color: #fdba74;
-  border-color: rgba(251, 146, 60, 0.35);
+  background: var(--msg-safety-tip-bg);
+  color: var(--msg-safety-tip-fg);
+  border-color: var(--msg-safety-tip-border);
 }
 
 .chat-date-sep {
@@ -7212,11 +7231,11 @@ button.jiji-promo-card {
 .chat-date-sep span {
   font-size: 0.72rem;
   font-weight: 600;
-  color: #0ea5e9;
+  color: var(--msg-secondary);
 }
 
 .chat-bubble__phone {
-  color: #16a34a;
+  color: var(--msg-accent);
   font-weight: 700;
   text-decoration: underline;
 }
@@ -7246,10 +7265,10 @@ button.jiji-promo-card {
 .chat-quick-reply {
   flex-shrink: 0;
   padding: 0.35rem 0.75rem;
-  border: 1.5px solid #16a34a;
+  border: 1.5px solid var(--msg-accent);
   border-radius: 999px;
   background: transparent;
-  color: #15803d;
+  color: var(--msg-accent-strong);
   font: inherit;
   font-size: 0.76rem;
   font-weight: 700;
@@ -7609,7 +7628,7 @@ button.jiji-promo-card {
   place-items: center;
   font-size: 1.75rem;
   line-height: 1;
-  color: #16a34a;
+  color: var(--msg-accent);
   text-decoration: none;
   border-radius: 8px;
   flex-shrink: 0;
@@ -7623,7 +7642,7 @@ button.jiji-promo-card {
   margin: 0;
   font-size: 1.1rem;
   font-weight: 700;
-  color: #16a34a;
+  color: var(--msg-accent);
   flex: 1;
   min-width: 0;
 }
