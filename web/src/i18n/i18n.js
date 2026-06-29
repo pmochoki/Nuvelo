@@ -4,17 +4,17 @@ import { translations } from "./translations.js";
 
 export { LOCALE_STORAGE_KEY };
 
-const SUPPORTED = new Set(["en", "hu"]);
-
-/** @returns {"en" | "hu"} — alias for tooling / templates (`getLocale`). */
+/** @returns {"en" | "hu" | "de"} — alias for tooling / templates (`getLocale`). */
 export function getLang() {
   return getLocale();
 }
 
+const SUPPORTED = new Set(["en", "hu", "de"]);
+
 export function getLocale() {
   try {
     const s = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (s === "hu" || s === "en") {
+    if (s === "hu" || s === "en" || s === "de") {
       return s;
     }
   } catch {
@@ -24,7 +24,7 @@ export function getLocale() {
 }
 
 /**
- * @param {"en" | "hu"} locale
+ * @param {"en" | "hu" | "de"} locale
  */
 export function setLocale(locale) {
   const loc = SUPPORTED.has(locale) ? locale : "en";
@@ -69,7 +69,9 @@ function bindLangToggleButtons() {
     btn.dataset.langToggleBound = "1";
     btn.addEventListener("click", () => {
       const v = btn.getAttribute("data-lang-toggle");
-      setLocale(v === "hu" ? "hu" : "en");
+      if (v === "hu" || v === "de" || v === "en") {
+        setLocale(v);
+      }
     });
   });
 }
@@ -167,12 +169,18 @@ export function initI18n() {
     }
     sel.dataset.localeBound = "1";
     sel.addEventListener("change", () => {
-      const v = sel.value === "hu" ? "hu" : "en";
-      setLocale(v);
+      const v = sel.value;
+      if (v === "hu" || v === "de" || v === "en") {
+        setLocale(v);
+      }
     });
   });
   if (typeof window !== "undefined") {
     window.getLang = () => getLang();
-    window.setLang = (/** @type {string} */ lang) => setLocale(lang === "hu" ? "hu" : "en");
+    window.setLang = (/** @type {string} */ lang) => {
+      if (lang === "hu" || lang === "de" || lang === "en") {
+        setLocale(lang);
+      }
+    };
   }
 }

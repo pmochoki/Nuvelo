@@ -1,6 +1,8 @@
 /**
- * UI strings — English + Hungarian (generated + core keys).
+ * UI strings — English + Hungarian + German.
  */
+import { de } from "./de.js";
+
 export const translations = {
   en: {
   "nav.home": "Home",
@@ -281,6 +283,8 @@ export const translations = {
   "chat.placeholder": "Type a message…",
   "chat.send": "Send",
   "chat.message_aria": "Message",
+  "chat.translated": "Translated",
+  "messages.auto_translate_hint": "Incoming messages are translated to match your language.",
   "feedback.title": "Feedback",
   "feedback.received": "Received ({n})",
   "feedback.sent": "Sent ({n})",
@@ -775,6 +779,8 @@ export const translations = {
   "chat.placeholder": "Írj üzenetet…",
   "chat.send": "Küldés",
   "chat.message_aria": "Üzenet",
+  "chat.translated": "Lefordítva",
+  "messages.auto_translate_hint": "A bejövő üzenetek automatikusan lefordításra kerülnek a választott nyelvre.",
   "feedback.title": "Visszajelzések",
   "feedback.received": "Kapott ({n})",
   "feedback.sent": "Küldött ({n})",
@@ -989,5 +995,6 @@ export const translations = {
   "loc.modal.whole_country": "Az egész ország",
   "loc.modal.ads_suffix": "hirdetés",
   "loc.modal.popular": "NÉPSZERŰ"
-}
+},
+  de
 };

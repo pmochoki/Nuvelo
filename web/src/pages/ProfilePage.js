@@ -103,6 +103,27 @@ export function buildMessageThreadRowHtml(t) {
     </button>`;
 }
 
+/**
+ * @param {{ sender_id: string, body: string, displayBody?: string, created_at?: string }} m
+ * @param {string} currentUserId
+ */
+export function buildChatBubbleHtml(m, currentUserId) {
+  const mine = m.sender_id === currentUserId;
+  const cls = mine ? "chat-bubble chat-bubble--me" : "chat-bubble chat-bubble--them";
+  const tm = formatMsgTime(m.created_at);
+  const displayText = m.displayBody ?? m.body;
+  const translated =
+    !mine && m.displayBody && m.displayBody.trim() !== String(m.body || "").trim();
+  const translatedTag = translated
+    ? `<span class="chat-bubble__translated muted small">${esc(t("chat.translated"))}</span>`
+    : "";
+  return `<div class="${cls}">
+        <p class="chat-bubble__text">${esc(displayText)}</p>
+        ${translatedTag}
+        <time class="chat-bubble__time">${esc(tm)}</time>
+      </div>`;
+}
+
 function priceMarkupForListing(listing) {
   if (listing.categoryId === DONATIONS_CATEGORY_ID) {
     return esc(t("listing.free"));
@@ -376,6 +397,7 @@ function renderMessagesLayout() {
           <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="unread">${esc(tfn("messages.unread_count", 0))}</button>
           <button type="button" class="messages-jiji__tab" role="tab" aria-selected="false" data-msg-tab="spam">${esc(tfn("messages.spam_count", 0))}</button>
         </div>
+        <p class="messages-jiji__translate-hint muted small" data-msg-translate-hint hidden>${esc(t("messages.auto_translate_hint"))}</p>
         <div class="messages-jiji__empty-inbox" data-msg-empty-inbox hidden>
           <div class="messages-jiji__empty-inbox-illus" aria-hidden="true">💬</div>
           <p class="messages-jiji__empty-inbox-text">${esc(t("messages.empty_inbox"))}</p>
@@ -407,15 +429,7 @@ function renderMessagesLayout() {
  */
 export function buildChatPanelHtml(thread, messages, currentUserId) {
   const bubbles = (messages || [])
-    .map((m) => {
-      const mine = m.sender_id === currentUserId;
-      const cls = mine ? "chat-bubble chat-bubble--me" : "chat-bubble chat-bubble--them";
-      const tm = formatMsgTime(m.created_at);
-      return `<div class="${cls}">
-        <p class="chat-bubble__text">${esc(m.body)}</p>
-        <time class="chat-bubble__time">${esc(tm)}</time>
-      </div>`;
-    })
+    .map((m) => buildChatBubbleHtml(m, currentUserId))
     .join("");
   const thumb = thread.thumb
     ? `<img src="${esc(thread.thumb)}" alt="" width="40" height="40" />`

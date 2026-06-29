@@ -2003,9 +2003,10 @@ function bindProfileSidebarAvatar() {
 
 function initMessagesPageUi() {
   void (async () => {
-    const [{ buildChatPanelHtml, buildMessageThreadRowHtml }, messaging] = await Promise.all([
+    const [{ buildChatPanelHtml, buildMessageThreadRowHtml, buildChatBubbleHtml }, messaging, messageTranslate] = await Promise.all([
       import("./pages/ProfilePage.js"),
-      import("./lib/messaging.js")
+      import("./lib/messaging.js"),
+      import("./lib/messageTranslate.js")
     ]);
     const {
       fetchMessages,
@@ -2013,6 +2014,11 @@ function initMessagesPageUi() {
       sendMessage,
       subscribeToThreadMessages
     } = messaging;
+    const {
+      inboxTranslationTarget,
+      translateInboxPreview,
+      withTranslatedIncomingMessages
+    } = messageTranslate;
   const root = document.querySelector("[data-messages-root]");
   if (!root) {
     return;
@@ -2034,24 +2040,30 @@ function initMessagesPageUi() {
   let unsubscribe = null;
   let activeThreadId = null;
 
-  const appendBubbleFromPayload = (m) => {
+  const listsWrap = root.querySelector("[data-msg-lists-wrap]");
+  const emptyInbox = root.querySelector("[data-msg-empty-inbox]");
+  const translateHint = root.querySelector("[data-msg-translate-hint]");
+  const MESSAGES_USER_FACING_ERROR = () => t("messages.banner_error");
+
+  const syncTranslateHint = () => {
+    if (translateHint instanceof HTMLElement) {
+      translateHint.hidden = !inboxTranslationTarget();
+    }
+  };
+  syncTranslateHint();
+
+  const appendBubbleFromPayload = async (m) => {
     const scroll = chat?.querySelector("[data-msg-scroll]");
     const u = getUser();
     if (!scroll || !u || m?.body == null) {
       return;
     }
-    const mine = m.sender_id === u.id;
-    const cls = mine ? "chat-bubble chat-bubble--me" : "chat-bubble chat-bubble--them";
-    const time = m.created_at
-      ? new Date(m.created_at).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })
-      : "";
-    scroll.insertAdjacentHTML(
-      "beforeend",
-      `<div class="${cls}">
-        <p class="chat-bubble__text">${esc(m.body)}</p>
-        <time class="chat-bubble__time">${esc(time)}</time>
-      </div>`
-    );
+    let payload = m;
+    if (m.sender_id !== u.id) {
+      const [withDisplay] = await withTranslatedIncomingMessages([m], u.id);
+      payload = withDisplay;
+    }
+    scroll.insertAdjacentHTML("beforeend", buildChatBubbleHtml(payload, u.id));
     scroll.scrollTop = scroll.scrollHeight;
   };
 
@@ -2141,7 +2153,7 @@ function initMessagesPageUi() {
         if (input instanceof HTMLInputElement) {
           input.value = "";
         }
-        appendBubbleFromPayload({ sender_id: u.id, body: text, created_at: new Date().toISOString() });
+        void appendBubbleFromPayload({ sender_id: u.id, body: text, created_at: new Date().toISOString() });
         await reloadThreads();
         await refreshMessageNavBadge();
       } catch (err) {
@@ -2178,13 +2190,14 @@ function initMessagesPageUi() {
     }
     try {
       const msgs = await fetchMessages(id);
+      const displayMsgs = await withTranslatedIncomingMessages(msgs, u.id);
       chat.innerHTML = buildChatPanelHtml(
         {
           otherDisplayName: row.otherDisplayName,
           listingTitle: row.listing_title_snapshot || "Listing",
           thumb: row.listing_thumb_url || row.otherAvatarUrl || ""
         },
-        msgs,
+        displayMsgs,
         u.id
       );
     } catch (e) {
@@ -2210,7 +2223,7 @@ function initMessagesPageUi() {
           void refreshMessageNavBadge();
           return;
         }
-        appendBubbleFromPayload(m);
+        void appendBubbleFromPayload(m);
         void reloadThreads();
         void refreshMessageNavBadge();
       });
@@ -2224,16 +2237,18 @@ function initMessagesPageUi() {
     });
   };
 
-  const listsWrap = root.querySelector("[data-msg-lists-wrap]");
-  const emptyInbox = root.querySelector("[data-msg-empty-inbox]");
-  const MESSAGES_USER_FACING_ERROR = () => t("messages.banner_error");
-
   /**
    * @param {object[]} threads
    * @param {"success" | "failure"} loadState
    */
-  const fillThreadLists = (threads, loadState = "success") => {
-    const uiRows = threads.map((row) => ({
+  const fillThreadLists = async (threads, loadState = "success") => {
+    const enriched = await Promise.all(
+      threads.map(async (row) => ({
+        ...row,
+        preview: row.preview ? await translateInboxPreview(row.preview) : row.preview
+      }))
+    );
+    const uiRows = enriched.map((row) => ({
       id: row.id,
       name: row.otherDisplayName,
       listingTitle: row.listing_title_snapshot || "Listing",
@@ -2278,7 +2293,7 @@ function initMessagesPageUi() {
   async function reloadThreads() {
     if (!isSupabaseConfigured) {
       threadById = new Map();
-      fillThreadLists([], "failure");
+      await fillThreadLists([], "failure");
       if (banner) {
         banner.hidden = false;
         banner.textContent = MESSAGES_USER_FACING_ERROR();
@@ -2291,7 +2306,7 @@ function initMessagesPageUi() {
     try {
       const threads = await fetchThreadsForCurrentUser();
       threadById = new Map(threads.map((t) => [t.id, t]));
-      fillThreadLists(threads, "success");
+      await fillThreadLists(threads, "success");
       if (banner) {
         banner.hidden = true;
         banner.textContent = "";
@@ -2307,13 +2322,24 @@ function initMessagesPageUi() {
     } catch (e) {
       console.error(e);
       threadById = new Map();
-      fillThreadLists([], "failure");
+      await fillThreadLists([], "failure");
       if (banner) {
         banner.hidden = false;
         banner.textContent = MESSAGES_USER_FACING_ERROR();
       }
     }
   }
+
+  window.addEventListener("nuvelo:locale", () => {
+    syncTranslateHint();
+    applyDomTranslations(root);
+    void reloadThreads().then(() => {
+      const openId = activeThreadId;
+      if (openId && threadById.has(openId)) {
+        void openThread(openId);
+      }
+    });
+  });
 
   root.addEventListener("click", (e) => {
     if (e.target.closest("[data-msg-back]")) {

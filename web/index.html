@@ -67,13 +67,16 @@
             localStorage.removeItem("nuvelo_lang");
           }
           var stored = localStorage.getItem(lk);
+          var nav = (navigator.language || "").toLowerCase();
           var loc =
-            stored === "hu" || stored === "en"
+            stored === "hu" || stored === "en" || stored === "de"
               ? stored
-              : (navigator.language || "").toLowerCase().startsWith("hu")
+              : nav.startsWith("hu")
                 ? "hu"
-                : "en";
-          if (stored !== "hu" && stored !== "en") {
+                : nav.startsWith("de")
+                  ? "de"
+                  : "en";
+          if (stored !== "hu" && stored !== "en" && stored !== "de") {
             localStorage.setItem(lk, loc);
           }
           document.documentElement.lang = loc;
@@ -85,7 +88,7 @@
           window.setLang ||
           function (lang) {
             try {
-              var loc = lang === "hu" ? "hu" : "en";
+              var loc = lang === "hu" || lang === "de" ? lang : "en";
               localStorage.setItem(lk, loc);
               document.documentElement.lang = loc;
               window.dispatchEvent(new CustomEvent("nuvelo:locale", { detail: { locale: loc } }));
@@ -96,7 +99,7 @@
           function () {
             try {
               var loc = localStorage.getItem(lk);
-              return loc === "hu" ? "hu" : "en";
+              return loc === "hu" || loc === "de" ? loc : "en";
             } catch (e) {
               return "en";
             }
@@ -362,6 +365,17 @@
               >
                 HU
               </button>
+              <span class="lang-switcher__sep" aria-hidden="true">|</span>
+              <button
+                type="button"
+                id="lang-de"
+                class="lang-btn"
+                data-lang-toggle="de"
+                aria-label="Deutsch"
+                onclick="typeof setLang==='function'&&setLang('de')"
+              >
+                DE
+              </button>
             </div>
           </div>
           <button type="button" class="jiji-header__text-link" id="auth-btn" data-i18n="nav.signin">Sign in</button>
@@ -464,6 +478,17 @@
               >
                 HU
               </button>
+              <span class="lang-switcher__sep" aria-hidden="true">|</span>
+              <button
+                type="button"
+                id="drawer-lang-de"
+                class="lang-btn"
+                data-lang-toggle="de"
+                aria-label="Deutsch"
+                onclick="typeof setLang==='function'&&setLang('de')"
+              >
+                DE
+              </button>
             </div>
             <p class="nav-drawer__theme-hint" data-i18n="drawer.theme_hint">Theme</p>
             <label class="visually-hidden" for="drawer-theme-select" data-i18n="theme.label">Color theme</label>
@@ -526,6 +551,17 @@
           onclick="typeof setLang==='function'&&setLang('hu')"
         >
           HU
+        </button>
+        <span class="lang-switcher__sep" aria-hidden="true">|</span>
+        <button
+          type="button"
+          id="mobile-dock-lang-de"
+          class="lang-btn"
+          data-lang-toggle="de"
+          aria-label="Deutsch"
+          onclick="typeof setLang==='function'&&setLang('de')"
+        >
+          DE
         </button>
       </div>
       <nav

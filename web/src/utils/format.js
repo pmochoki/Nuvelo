@@ -1,12 +1,12 @@
 import { LOCALE_STORAGE_KEY } from "../i18n/constants.js";
 
 /**
- * @returns {"en" | "hu"}
+ * @returns {"en" | "hu" | "de"}
  */
 export function getLang() {
   try {
     const s = localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (s === "hu" || s === "en") {
+    if (s === "hu" || s === "en" || s === "de") {
       return s;
     }
   } catch {
@@ -33,6 +33,9 @@ export function formatNumber(value) {
   if (lang === "hu") {
     return new Intl.NumberFormat("hu-HU", { maximumFractionDigits: 0 }).format(num);
   }
+  if (lang === "de") {
+    return new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(num);
+  }
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(num);
 }
 
@@ -57,6 +60,13 @@ export function formatPrice(value, currency = "HUF") {
   }
   if (lang === "hu") {
     return new Intl.NumberFormat("hu-HU", {
+      style: "currency",
+      currency: "HUF",
+      maximumFractionDigits: 0
+    }).format(num);
+  }
+  if (lang === "de") {
+    return new Intl.NumberFormat("de-DE", {
       style: "currency",
       currency: "HUF",
       maximumFractionDigits: 0

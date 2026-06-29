@@ -6566,6 +6566,15 @@ button.jiji-promo-card {
   background: transparent;
 }
 
+.messages-jiji__translate-hint {
+  margin: 0;
+  padding: 0.45rem 1rem 0.65rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  border-bottom: 1px solid var(--profile-border);
+  background: var(--profile-surface);
+}
+
 .messages-jiji__list {
   flex: 1;
   overflow-y: auto;
@@ -6882,6 +6891,14 @@ button.jiji-promo-card {
 
 .chat-bubble__text {
   margin: 0 0 0.2rem;
+}
+
+.chat-bubble__translated {
+  display: block;
+  margin: 0 0 0.15rem;
+  font-size: 0.65rem;
+  font-style: italic;
+  opacity: 0.85;
 }
 
 .chat-bubble__time {
