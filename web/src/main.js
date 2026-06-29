@@ -34,7 +34,7 @@ import {
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
-import { tfn } from "./i18n/format.js";
+import { formatNumber, tfn } from "./i18n/format.js";
 
 function FALLBACK_HUNGARIAN_LOCATIONS() {
   return [
