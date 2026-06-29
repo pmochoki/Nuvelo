@@ -224,6 +224,12 @@ abstract class AppLocalizations {
   /// **'Jobs'**
   String get categoryJobs;
 
+  /// No description provided for @categorySeekingWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Seeking work'**
+  String get categorySeekingWork;
+
   /// No description provided for @categoryServices.
   ///
   /// In en, this message translates to:

@@ -67,6 +67,16 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
   final _jobSalary = TextEditingController();
   String _jobExperience = 'any';
 
+  // Seeking work (CV)
+  final _cvRoleSought = TextEditingController();
+  final _cvExperience = TextEditingController();
+  final _cvLanguages = TextEditingController();
+  String _cvWorkPermit = 'eu_citizen';
+  final _cvAvailability = TextEditingController();
+  String _cvWorkMode = 'hybrid';
+  final _cvSalaryExpectation = TextEditingController();
+  final _cvLink = TextEditingController();
+
   // Events
   DateTime _eventDate = DateTime.now();
   TimeOfDay _eventTime = const TimeOfDay(hour: 18, minute: 0);
@@ -104,6 +114,12 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
     _vehicleColor.dispose();
     _jobCompany.dispose();
     _jobSalary.dispose();
+    _cvRoleSought.dispose();
+    _cvExperience.dispose();
+    _cvLanguages.dispose();
+    _cvAvailability.dispose();
+    _cvSalaryExpectation.dispose();
+    _cvLink.dispose();
     _eventDuration.dispose();
     _eventVenue.dispose();
     _eventPrice.dispose();
@@ -159,6 +175,19 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
           'companyName': _jobCompany.text.trim(),
           'salaryDescription': _jobSalary.text.trim(),
           'experienceRequired': _jobExperience,
+        });
+        break;
+      case 'seeking-work':
+        map.addAll({
+          'roleSought': _cvRoleSought.text.trim(),
+          'experience': _cvExperience.text.trim(),
+          'languages': _cvLanguages.text.trim(),
+          'workPermit': _cvWorkPermit,
+          'availability': _cvAvailability.text.trim(),
+          'workMode': _cvWorkMode,
+          if (_cvSalaryExpectation.text.trim().isNotEmpty)
+            'salaryExpectation': _cvSalaryExpectation.text.trim(),
+          if (_cvLink.text.trim().isNotEmpty) 'cvLink': _cvLink.text.trim(),
         });
         break;
       case 'events':
@@ -542,6 +571,72 @@ class _PostCategoryFieldsSectionState extends State<PostCategoryFieldsSection> {
               setState(() => _jobExperience = v ?? _jobExperience);
               _emit();
             },
+          ),
+        ]);
+        break;
+      case 'seeking-work':
+        children.addAll([
+          Text('Seeking work', style: Theme.of(context).textTheme.titleSmall),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _cvRoleSought,
+            decoration: const InputDecoration(labelText: 'Role sought'),
+            onChanged: (_) => _emit(),
+          ),
+          TextField(
+            controller: _cvExperience,
+            decoration: const InputDecoration(labelText: 'Experience'),
+            onChanged: (_) => _emit(),
+          ),
+          TextField(
+            controller: _cvLanguages,
+            decoration: const InputDecoration(labelText: 'Languages'),
+            onChanged: (_) => _emit(),
+          ),
+          DropdownButtonFormField<String>(
+            initialValue: _cvWorkPermit,
+            decoration: const InputDecoration(labelText: 'Work permit / status'),
+            items: const [
+              DropdownMenuItem(value: 'eu_citizen', child: Text('EU / EEA citizen')),
+              DropdownMenuItem(
+                  value: 'work_permit', child: Text('Valid work permit in Hungary')),
+              DropdownMenuItem(value: 'student', child: Text('Student')),
+              DropdownMenuItem(
+                  value: 'needs_sponsorship', child: Text('Needs sponsorship')),
+            ],
+            onChanged: (v) {
+              setState(() => _cvWorkPermit = v ?? _cvWorkPermit);
+              _emit();
+            },
+          ),
+          TextField(
+            controller: _cvAvailability,
+            decoration: const InputDecoration(labelText: 'Availability'),
+            onChanged: (_) => _emit(),
+          ),
+          DropdownButtonFormField<String>(
+            initialValue: _cvWorkMode,
+            decoration: const InputDecoration(labelText: 'Work mode'),
+            items: const [
+              DropdownMenuItem(value: 'on_site', child: Text('On-site')),
+              DropdownMenuItem(value: 'remote', child: Text('Remote')),
+              DropdownMenuItem(value: 'hybrid', child: Text('Hybrid')),
+            ],
+            onChanged: (v) {
+              setState(() => _cvWorkMode = v ?? _cvWorkMode);
+              _emit();
+            },
+          ),
+          TextField(
+            controller: _cvSalaryExpectation,
+            decoration: const InputDecoration(labelText: 'Salary expectation (optional)'),
+            onChanged: (_) => _emit(),
+          ),
+          TextField(
+            controller: _cvLink,
+            decoration: const InputDecoration(labelText: 'CV / portfolio link (optional)'),
+            keyboardType: TextInputType.url,
+            onChanged: (_) => _emit(),
           ),
         ]);
         break;

@@ -28,6 +28,16 @@ All listings use a shared core schema with category-specific fields.
 - salaryRange
 - experience
 
+### Seeking work (CV profiles)
+- roleSought
+- experience
+- languages
+- workPermit (eu_citizen / work_permit / student / needs_sponsorship)
+- availability
+- workMode (on_site / remote / hybrid)
+- salaryExpectation (optional)
+- cvLink (optional)
+
 ### Clothes
 - size
 - brand

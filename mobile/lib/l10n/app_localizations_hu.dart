@@ -75,6 +75,9 @@ class AppLocalizationsHu extends AppLocalizations {
   String get categoryJobs => 'Állások';
 
   @override
+  String get categorySeekingWork => 'Állást keresek';
+
+  @override
   String get categoryServices => 'Szolgáltatások';
 
   @override

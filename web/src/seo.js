@@ -125,6 +125,10 @@ const CATEGORY_META = {
   fashion: { title: "Fashion & Clothes in Hungary | Nuvelo", desc: "Clothing and fashion in Hungary. Buy and sell on Nuvelo." },
   goods: { title: "Goods & Items in Hungary | Nuvelo", desc: "General goods and second-hand items in Hungary on Nuvelo." },
   jobs: { title: "Jobs in Hungary | Nuvelo", desc: "Job listings in Hungary for internationals and locals. Find work on Nuvelo." },
+  "seeking-work": {
+    title: "Seeking Work & CVs in Hungary | Nuvelo",
+    desc: "Post your CV and find work in Hungary. Job seekers and expats — connect with employers on Nuvelo."
+  },
   rentals: { title: "Rentals & Housing in Hungary | Nuvelo", desc: "Apartments, rooms and rentals in Hungary. Browse Nuvelo classifieds." },
   services: { title: "Services in Hungary | Nuvelo", desc: "Local services — repairs, lessons, professional help in Hungary on Nuvelo." },
   donations: { title: "Free Donations in Hungary | Nuvelo", desc: "Give and receive free items in Hungary. Donation listings on Nuvelo." },

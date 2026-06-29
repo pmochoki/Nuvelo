@@ -3,6 +3,7 @@ export const CATEGORIES = [
   { slug: "donations", label: "🤲 Donations", icon: "🤲", count: null },
   { slug: "rentals", label: "Rentals", icon: "🏠", count: null },
   { slug: "jobs", label: "Jobs", icon: "💼", count: null },
+  { slug: "seeking-work", label: "Seeking work", icon: "📄", count: null },
   { slug: "services", label: "Services", icon: "🔧", count: null },
   { slug: "goods", label: "Goods & Items", icon: "📦", count: null },
   { slug: "vehicles", label: "Vehicles", icon: "🚗", count: null },

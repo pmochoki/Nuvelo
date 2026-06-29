@@ -1,6 +1,7 @@
 const categories = [
   { id: "rentals", name: "Rentals" },
   { id: "jobs", name: "Jobs" },
+  { id: "seeking-work", name: "Seeking work" },
   { id: "clothes", name: "Clothes" },
   { id: "services", name: "Services" },
   { id: "electronics", name: "Electronics" },

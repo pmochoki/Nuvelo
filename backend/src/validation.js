@@ -36,6 +36,11 @@ const validateCategoryFields = (categoryId, fields = {}) => {
       errors.push("Jobs require role and contract type.");
     }
   }
+  if (categoryId === "seeking-work") {
+    if (!fields.roleSought || !fields.experience || !fields.languages) {
+      errors.push("Seeking work profiles require role sought, experience, and languages.");
+    }
+  }
   if (categoryId === "services") {
     if (!fields.serviceType) {
       errors.push("Services require service type.");

@@ -30,6 +30,24 @@ const DEMO_TEMPLATES = [
     fields: { role: "Customer Support", contractType: "full-time" }
   },
   {
+    key: "seeking-work",
+    categoryId: "seeking-work",
+    title: "Marketing coordinator seeking hybrid role",
+    description:
+      "English and Hungarian speaker with 3 years of startup experience. Open to Budapest-based hybrid roles in marketing or community.",
+    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+    price: null,
+    condition: "other",
+    fields: {
+      roleSought: "Marketing coordinator",
+      experience: "3 years",
+      languages: "English, Hungarian",
+      workPermit: "eu_citizen",
+      availability: "2 weeks notice",
+      workMode: "hybrid"
+    }
+  },
+  {
     key: "services",
     categoryId: "services",
     title: "Home cleaning service (weekly slots)",

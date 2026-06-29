@@ -17,6 +17,8 @@ extension NuveloCategoryTitle on NuveloCategory {
         return L.categoryRentals;
       case 'categoryJobs':
         return L.categoryJobs;
+      case 'categorySeekingWork':
+        return L.categorySeekingWork;
       case 'categoryServices':
         return L.categoryServices;
       case 'categoryGoods':
