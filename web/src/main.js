@@ -16,7 +16,13 @@ import {
   getAuthRedirectUrl,
   getPasswordRecoveryRedirectUrl
 } from "./lib/supabaseClient.js";
-import { initAppleSignInCallback, parseAppleRedirectFromUrl, signInWithApple } from "./lib/appleSignIn.js";
+import {
+  initAppleSignInCallback,
+  parseAppleRedirectFromUrl,
+  preferAppleRedirect,
+  signInWithApple,
+  signInWithAppleFormPostRedirect
+} from "./lib/appleSignIn.js";
 import {
   DONATIONS_CATEGORY_ID,
   DONATION_SUBCATEGORIES,
@@ -1130,6 +1136,30 @@ document.getElementById("auth-apple-stub")?.addEventListener("click", async () =
     appleBtn.disabled = true;
   }
   try {
+    const redirectTo = getAuthRedirectUrl();
+
+    if (preferAppleRedirect()) {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "apple",
+        options: { redirectTo }
+      });
+      if (!error) {
+        return;
+      }
+      const oauthMsg = String(error.message || "");
+      const oauthMisconfigured = /invalid_client|client_secret|exchange external code/i.test(oauthMsg);
+      if (!oauthMisconfigured) {
+        showLoginError(
+          /not enabled|provider|apple/i.test(oauthMsg) ? t("auth.err.apple_setup") : oauthMsg || t("auth.err.generic")
+        );
+        return;
+      }
+      const result = await signInWithAppleFormPostRedirect();
+      if (result.redirected) {
+        return;
+      }
+    }
+
     const result = await signInWithApple();
     if (result.redirected) {
       return;
@@ -6417,17 +6447,6 @@ void (async () => {
   syncAuthModalStaticCopy();
   ensureNavUserDropdown();
 
-  const appleReturn = parseAppleRedirectFromUrl();
-  if (appleReturn?.error) {
-    openModal("signin");
-    const detail = appleReturn.errorDescription ? `: ${appleReturn.errorDescription}` : "";
-    showLoginError(
-      /cancel|user_cancel/i.test(appleReturn.error) ? t("auth.err.oauth_cancelled") : t("auth.err.generic") + detail
-    );
-  } else if (appleReturn?.idToken) {
-    await completeAppleRedirectSignIn(appleReturn);
-  }
-
   await initAppleSignInCallback(
     (tokens) => completeAppleRedirectSignIn(tokens),
     (msg) => {
@@ -6435,8 +6454,27 @@ void (async () => {
       showLoginError(msg || t("auth.err.generic"));
     }
   );
-  consumeOAuthErrorFromUrl();
+
+  const appleReturn = parseAppleRedirectFromUrl();
+  if (appleReturn?.error) {
+    openModal("signin");
+    const detail = appleReturn.errorDescription ? `: ${appleReturn.errorDescription}` : "";
+    showLoginError(
+      /cancel|user_cancel/i.test(appleReturn.error)
+        ? t("auth.err.oauth_cancelled")
+        : appleReturn.error === "apple_return_missing"
+          ? appleReturn.errorDescription || t("auth.err.generic")
+          : t("auth.err.generic") + detail
+    );
+  }
+
   await initAuth();
+
+  if (appleReturn?.idToken) {
+    await completeAppleRedirectSignIn(appleReturn);
+  }
+
+  consumeOAuthErrorFromUrl();
   await render().catch((e) => console.error(e));
 })();
 

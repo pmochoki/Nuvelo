@@ -129,6 +129,8 @@ This generates a fresh JWT and writes it to Supabase via the Management API (`ex
 
 nuvelo.one → Sign in → **Continue with Apple**.
 
+**Mobile (iPhone Safari, Chrome phone view):** uses the same **Supabase OAuth redirect** as Google. If that fails (`invalid_client`), the app falls back to Apple **form_post** via `/api/auth/apple-callback` (must be deployed and listed as a Return URL in Apple Developer).
+
 ---
 
 ## 3. Continue with Facebook (Meta)
