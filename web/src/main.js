@@ -35,6 +35,11 @@ import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from ".
 import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
 import { formatNumber, tfn } from "./i18n/format.js";
+import {
+  maybeRecordBrowseCategoryInterest,
+  recordCategoryInterest,
+  sortListingsForTrending
+} from "./lib/interestTracking.js";
 
 function FALLBACK_HUNGARIAN_LOCATIONS() {
   return [
@@ -3934,7 +3939,7 @@ function paintLandingListingGrid(listings, listingsLoadFailed) {
     grid.innerHTML = browseEmptyGridHtml();
     return;
   }
-  const trending = sortListings([...listings], "popular").slice(0, 24);
+  const trending = sortListingsForTrending(listings).slice(0, 24);
   trending.forEach((listing, i) => {
     grid.appendChild(buildListingCardEl(listing, { viewMode, markPopular: true, idx: i }));
   });
@@ -4029,6 +4034,9 @@ const renderList = async () => {
   }
   if (!listingsLoadFailed) {
     listings = listings.filter((l) => l.categoryId !== EVENTS_CATEGORY);
+  }
+  if (!listingsLoadFailed && filters.categoryId) {
+    maybeRecordBrowseCategoryInterest(filters.categoryId);
   }
 
   let afterBand = listingsLoadFailed ? [] : filterByPriceBand(listings, filters.priceBand);
@@ -4433,6 +4441,7 @@ const renderDetail = async (id) => {
     appEl.innerHTML = `<p><span data-i18n="listing.not_found">${esc(t("listing.not_found"))}</span> <a href="/browse" data-i18n="listing.not_found_link">Back to browse</a></p>`;
     return;
   }
+  recordCategoryInterest(listing.categoryId, 3);
 
   const fields = listing.categoryFields || {};
   const isDonation = listing.categoryId === DONATIONS_CATEGORY_ID;
