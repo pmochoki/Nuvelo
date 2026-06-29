@@ -22,7 +22,11 @@ class AppLocalizationsHu extends AppLocalizations {
 
   @override
   String get facebookLoginPending =>
-      'A Facebook bejelentkezés a Meta jóváhagyására vár. Hamarosan!';
+      'Csak a Facebook vár Meta jóváhagyásra. Használd a Google-t vagy az e-mailt.';
+
+  @override
+  String get facebookLoginHint =>
+      'Csak Facebook — Meta jóváhagyásra vár. A Google és e-mail működik.';
 
   @override
   String get orDivider => 'vagy';

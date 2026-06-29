@@ -125,8 +125,14 @@ abstract class AppLocalizations {
   /// No description provided for @facebookLoginPending.
   ///
   /// In en, this message translates to:
-  /// **'Facebook sign-in is awaiting verification from Meta. Coming soon!'**
+  /// **'Only Facebook is awaiting Meta approval. Please use Google or email to sign in.'**
   String get facebookLoginPending;
+
+  /// No description provided for @facebookLoginHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Facebook only — awaiting Meta approval. Google and email work normally.'**
+  String get facebookLoginHint;
 
   /// No description provided for @orDivider.
   ///

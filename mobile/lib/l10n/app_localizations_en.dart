@@ -22,7 +22,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get facebookLoginPending =>
-      'Facebook sign-in is awaiting verification from Meta. Coming soon!';
+      'Only Facebook is awaiting Meta approval. Please use Google or email to sign in.';
+
+  @override
+  String get facebookLoginHint =>
+      'Facebook only — awaiting Meta approval. Google and email work normally.';
 
   @override
   String get orDivider => 'or';

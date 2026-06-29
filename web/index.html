@@ -762,7 +762,7 @@
         <button type="button" class="modal__close-x" data-close-modal data-i18n-aria-label="header.close" aria-label="Close">×</button>
         <h2 id="login-title">Sign in</h2>
         <p class="muted small" id="login-subtitle" data-i18n="auth.subtitle_signin_flow">
-          Use Google, Facebook, or your email and password.
+          Google, Apple, and email sign-in are available. Facebook is coming soon.
         </p>
         <p id="login-error" class="login-error" role="alert" hidden></p>
         <p id="login-success" class="login-success" role="status" hidden></p>
@@ -777,12 +777,14 @@
           <button type="button" class="auth-social__btn auth-social__btn--apple" id="auth-apple-stub" data-i18n="auth.apple">
             Continue with Apple
           </button>
-          <button type="button" class="auth-social__btn auth-social__btn--facebook" id="auth-fb-stub" data-i18n="auth.facebook">
-            Continue with Facebook
-          </button>
-          <p class="auth-social__hint muted small" data-i18n="auth.facebook_hint">
-            Use your personal Facebook profile — not a business or page account.
-          </p>
+          <div class="auth-social__facebook-wrap">
+            <button type="button" class="auth-social__btn auth-social__btn--facebook" id="auth-fb-stub" data-i18n="auth.facebook" aria-describedby="auth-facebook-hint">
+              Continue with Facebook
+            </button>
+            <p class="auth-social__hint auth-social__hint--facebook muted small" id="auth-facebook-hint" data-i18n="auth.facebook_hint">
+              Facebook only — awaiting Meta approval. Google, Apple, and email sign-in work normally.
+            </p>
+          </div>
           <p class="auth-or"><span data-i18n="auth.or">or</span></p>
         </div>
 

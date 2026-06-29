@@ -124,6 +124,16 @@ class _SignInScreenState extends State<SignInScreen> {
                       },
                 child: Text(L.continueWithFacebook),
               ),
+              if (!kFacebookLoginEnabled) ...[
+                const SizedBox(height: 6),
+                Text(
+                  L.facebookLoginHint,
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: NuveloColors.textMuted,
+                      ),
+                ),
+              ],
               const SizedBox(height: 24),
               Row(
                 children: [

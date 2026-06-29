@@ -4294,6 +4294,17 @@ button.jiji-promo-card {
   text-align: center;
 }
 
+.auth-social__facebook-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.auth-social__hint--facebook {
+  margin: 0 0 0.15rem;
+  font-size: 0.78rem;
+}
+
 .auth-social__btn {
   width: 100%;
   padding: 0.65rem 1rem;
