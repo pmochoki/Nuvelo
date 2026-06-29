@@ -1136,24 +1136,7 @@ document.getElementById("auth-apple-stub")?.addEventListener("click", async () =
     appleBtn.disabled = true;
   }
   try {
-    const redirectTo = getAuthRedirectUrl();
-
     if (preferAppleRedirect()) {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "apple",
-        options: { redirectTo }
-      });
-      if (!error) {
-        return;
-      }
-      const oauthMsg = String(error.message || "");
-      const oauthMisconfigured = /invalid_client|client_secret|exchange external code/i.test(oauthMsg);
-      if (!oauthMisconfigured) {
-        showLoginError(
-          /not enabled|provider|apple/i.test(oauthMsg) ? t("auth.err.apple_setup") : oauthMsg || t("auth.err.generic")
-        );
-        return;
-      }
       const result = await signInWithAppleFormPostRedirect();
       if (result.redirected) {
         return;
