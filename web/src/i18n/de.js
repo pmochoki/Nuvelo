@@ -242,6 +242,7 @@ export const de = {
   "home.hero.q_placeholder": "Ich suche nach",
   "home.hero.search_aria": "Suche",
   "home.cat_title": "Kategorien",
+  "home.cat_count": "{n} Anzeigen",
   "home.pill.post": "Anzeige aufgeben",
   "home.pill.trending": "Trends",
   "home.pill.events": "Wettbewerbe",

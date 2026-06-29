@@ -5,6 +5,7 @@ import "../styles.css";
 import {
   fetchListings as apiFetchListings,
   fetchListing as apiFetchListing,
+  fetchCategoryCounts,
   createListing,
   loginUser,
   setDonationClaimed
@@ -307,7 +308,7 @@ const buildHomeCategoryGridHtml = () => {
     <span class="jiji-cat-tile__icon-wrap" aria-hidden="true">🔥</span>
     <span class="jiji-cat-tile__label">${esc(t("home.pill.trending"))}</span>
   </a>`);
-  parts.push(`<a class="jiji-cat-tile" href="/events">
+  parts.push(`<a class="jiji-cat-tile" href="/events" data-cat-slug="${esc(EVENTS_CATEGORY)}">
     <span class="jiji-cat-tile__icon-wrap" aria-hidden="true">🎉</span>
     <span class="jiji-cat-tile__label">${esc(t("home.pill.events"))}</span>
   </a>`);
@@ -318,7 +319,7 @@ const buildHomeCategoryGridHtml = () => {
     }
     const icon = homeGridIcon(row);
     const label = homeGridLabel(row);
-    parts.push(`<a class="jiji-cat-tile" href="/category/${esc(row.slug)}">
+    parts.push(`<a class="jiji-cat-tile" href="/category/${esc(row.slug)}" data-cat-slug="${esc(row.slug)}">
       <span class="jiji-cat-tile__icon-wrap" aria-hidden="true">${icon}</span>
       <span class="jiji-cat-tile__label">${esc(label)}</span>
     </a>`);
@@ -3195,6 +3196,70 @@ const formatListingCountLabel = (n) => {
   return `${formatNumber(x)} ${t("browse.listings_inline")}`;
 };
 
+const categoryCountForSlug = (slug, byCategoryId) => {
+  if (!byCategoryId || typeof byCategoryId !== "object") {
+    return 0;
+  }
+  if (slug === EVENTS_CATEGORY) {
+    let n = Number(byCategoryId[EVENTS_CATEGORY]) || 0;
+    if (demoEventsEnabled()) {
+      n += DEMO_EVENTS.length;
+    }
+    return n;
+  }
+  const apiId = apiCategoryIdForSlug(slug);
+  return Number(byCategoryId[apiId]) || 0;
+};
+
+const applyHomeCategoryCounts = (byCategoryId) => {
+  document.querySelectorAll(".jiji-cat-tile[data-cat-slug]").forEach((tile) => {
+    const slug = tile.getAttribute("data-cat-slug");
+    if (!slug) {
+      return;
+    }
+    const n = categoryCountForSlug(slug, byCategoryId);
+    let el = tile.querySelector(".jiji-cat-tile__count");
+    if (!el) {
+      el = document.createElement("span");
+      el.className = "jiji-cat-tile__count";
+      tile.appendChild(el);
+    }
+    el.textContent = tf("home.cat_count", { n: formatNumber(n) });
+  });
+};
+
+const applyBrowseCategoryCounts = (byCategoryId) => {
+  document.querySelectorAll(".cat-chip[data-cat]").forEach((chip) => {
+    const apiId = chip.getAttribute("data-cat");
+    if (!apiId) {
+      return;
+    }
+    const n = Number(byCategoryId[apiId]) || 0;
+    const label = chip.querySelector(".cat-chip__label");
+    if (!label) {
+      return;
+    }
+    const base = (label.dataset.catBaseLabel || label.textContent).replace(/\s*\([\d,.]+\)\s*$/, "").trim();
+    if (!label.dataset.catBaseLabel) {
+      label.dataset.catBaseLabel = base;
+    }
+    label.textContent = n > 0 ? `${base} (${formatNumber(n)})` : base;
+  });
+};
+
+async function hydrateCategoryCounts(scope = "home") {
+  const counts = await fetchCategoryCounts();
+  if (!counts?.byCategoryId) {
+    return;
+  }
+  if (scope === "home" || scope === "all") {
+    applyHomeCategoryCounts(counts.byCategoryId);
+  }
+  if (scope === "browse" || scope === "all") {
+    applyBrowseCategoryCounts(counts.byCategoryId);
+  }
+}
+
 const apiCategoryIdForSlug = (slug) => CATEGORY_SLUGS[slug] || slug;
 
 const slugForApiCategoryId = (apiId) => {
@@ -3920,6 +3985,7 @@ const renderLanding = () => {
   }
 
   void hydrateLandingListings(Boolean(cached));
+  void hydrateCategoryCounts("home");
 };
 
 function paintLandingListingGrid(listings, listingsLoadFailed) {
@@ -4297,6 +4363,8 @@ const renderList = async () => {
     setListViewMode("list");
     render();
   });
+
+  void hydrateCategoryCounts("browse");
 
   if (!pageSlice.length) {
     if (listingsLoadFailed) {

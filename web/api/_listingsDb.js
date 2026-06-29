@@ -230,10 +230,32 @@ async function updateListing(id, patch, requestUserId) {
   return { ok: true, listing: mapRow(data) };
 }
 
+/**
+ * Approved listing counts grouped by category_id (lightweight select for early inventory).
+ */
+async function countApprovedByCategory() {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from(TABLE).select("category_id").eq("status", "approved");
+  if (error) {
+    throw error;
+  }
+  const byCategoryId = {};
+  for (const row of data || []) {
+    const id = String(row.category_id || "");
+    if (!id) {
+      continue;
+    }
+    byCategoryId[id] = (byCategoryId[id] || 0) + 1;
+  }
+  const total = Object.values(byCategoryId).reduce((sum, n) => sum + n, 0);
+  return { byCategoryId, total };
+}
+
 module.exports = {
   listListings,
   getById,
   insertListing,
   updateListing,
+  countApprovedByCategory,
   mapRow
 };

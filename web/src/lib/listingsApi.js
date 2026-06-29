@@ -1,4 +1,4 @@
-import { getDemoListingById, mergeListingsWithDemos } from "../data/demoListings.js";
+import { getDemoListingById, mergeListingsWithDemos, DEMO_LISTINGS } from "../data/demoListings.js";
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
 import { enrichListingContact } from "./listingContact.js";
 
@@ -392,4 +392,59 @@ export async function loginUser({ name, role, email, phone }) {
     phone: data.phone || phone || "",
     avatarUrl: data.avatar_url || data.avatarUrl || ""
   };
+}
+
+const CATEGORY_COUNTS_TTL_MS = 5 * 60 * 1000;
+let categoryCountsCache = { at: 0, data: null };
+
+function mergeClientSideCategoryCounts(byCategoryId) {
+  const out = { ...byCategoryId };
+  for (const listing of readLocalListings()) {
+    const st = String(listing.status || "").toLowerCase();
+    if (st !== "approved" && st !== "active") {
+      continue;
+    }
+    const id = String(listing.categoryId || "");
+    if (!id) {
+      continue;
+    }
+    out[id] = (out[id] || 0) + 1;
+  }
+  if (demosEnabled()) {
+    for (const listing of DEMO_LISTINGS) {
+      const id = String(listing.categoryId || "");
+      if (!id) {
+        continue;
+      }
+      out[id] = (out[id] || 0) + 1;
+    }
+  }
+  return out;
+}
+
+/**
+ * Approved listing counts per category_id. Cached 5 minutes; fails silently to last good data.
+ * @returns {Promise<{ byCategoryId: Record<string, number>, total: number }>}
+ */
+export async function fetchCategoryCounts() {
+  const now = Date.now();
+  if (categoryCountsCache.data && now - categoryCountsCache.at < CATEGORY_COUNTS_TTL_MS) {
+    return categoryCountsCache.data;
+  }
+  try {
+    const data = await apiFetch("/listings/category-counts");
+    const byCategoryId =
+      data?.byCategoryId && typeof data.byCategoryId === "object" ? { ...data.byCategoryId } : {};
+    const merged = mergeClientSideCategoryCounts(byCategoryId);
+    const total = Object.values(merged).reduce((sum, n) => sum + Number(n || 0), 0);
+    const normalized = { byCategoryId: merged, total };
+    categoryCountsCache = { at: now, data: normalized };
+    return normalized;
+  } catch (e) {
+    console.warn("[Nuvelo] fetchCategoryCounts failed", e?.message || e);
+    if (categoryCountsCache.data) {
+      return categoryCountsCache.data;
+    }
+    return { byCategoryId: {}, total: 0 };
+  }
 }
