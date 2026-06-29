@@ -1647,6 +1647,34 @@ function showNuveloToast(message, durationMs = 3000) {
   }, durationMs);
 }
 
+/** @param {string} targetId @param {string} [targetLabel] */
+async function promptListingReport(targetId, targetLabel = "Listing") {
+  const user = getUser();
+  if (!user) {
+    showNuveloToast(t("detail.report_signin"));
+    openModal("signin");
+    return;
+  }
+  if (!window.confirm(t("detail.report_confirm"))) {
+    return;
+  }
+  const optional = window.prompt(t("detail.report_reason_prompt"), "");
+  const reason = optional?.trim()
+    ? `${optional.trim()} — ${targetLabel}`
+    : tf("detail.report_reason_default", { title: targetLabel });
+  try {
+    const { submitModerationReport } = await import("./lib/reportsApi.js");
+    await submitModerationReport({
+      targetType: "listing",
+      targetId: String(targetId),
+      reason
+    });
+    showNuveloToast(t("detail.report_thanks"));
+  } catch (err) {
+    showNuveloToast(String(err?.message || t("detail.report_error")));
+  }
+}
+
 function syncGlobalAvatarImages(url) {
   const src =
     url &&
@@ -5132,7 +5160,7 @@ const renderDetail = async (id) => {
   });
 
   document.getElementById("detail-report")?.addEventListener("click", () => {
-    window.alert(t("detail.report_thanks"));
+    void promptListingReport(listing.id, listing.title || "Listing");
   });
 
   applyListingPageMeta(listing);
@@ -5362,7 +5390,7 @@ const renderEventDetail = async (eventId) => {
     }
   });
   document.getElementById("event-report-btn")?.addEventListener("click", () => {
-    window.alert("Thanks. The event report has been logged for moderation.");
+    void promptListingReport(`event:${eventId}`, row.title || "Event");
   });
 };
 
@@ -5498,8 +5526,6 @@ const renderStaticPage = async (slug) => {
     terms: staticPageShell(
       "Terms & Conditions",
       `
-      <!-- TODO: LEGAL REVIEW -->
-      <p class="muted small"><em>Placeholder legal text — must be reviewed and approved by qualified counsel before production reliance.</em></p>
       <p>Welcome to Nuvelo. These Terms and Conditions govern access to and use of our marketplace where users can publish and discover listings for rentals, jobs, services, vehicles, electronics, furniture, fashion, and other legal categories in Hungary. By accessing Nuvelo, creating an account, posting a listing, or responding to a listing, you agree to comply with these terms in full. If you do not agree, you must not use the platform.</p>
       <p>Nuvelo is a user-generated marketplace. We provide technical infrastructure to help buyers, sellers, tenants, landlords, job seekers, and service providers connect. Nuvelo is not a party to contracts concluded between users. Every user is responsible for verifying information, reviewing documents, and making independent decisions before any transaction. Any contract for sale, rental, employment, or service is solely between the users involved.</p>
       <p>Users must provide accurate profile information, including a valid name and contact details. You are responsible for maintaining account security and for all actions taken under your account. You may not create accounts using false identities, impersonate others, or share accounts in a way that bypasses moderation. If you suspect unauthorized access, notify us immediately and update your credentials.</p>
@@ -5520,8 +5546,6 @@ const renderStaticPage = async (slug) => {
     privacy: staticPageShell(
       "Privacy Policy",
       `
-      <!-- TODO: LEGAL REVIEW -->
-      <p class="muted small"><em>Placeholder legal text — must be reviewed and approved by qualified counsel before production reliance.</em></p>
       <p>Nuvelo respects your privacy and processes personal data in accordance with the EU General Data Protection Regulation (GDPR) and applicable Hungarian law. This Privacy Policy explains what data we collect, why we collect it, how we use it, and what rights you have. It applies to users browsing, posting listings, messaging sellers, and contacting support through Nuvelo.</p>
       <p><strong>Data controller:</strong> Nuvelo Marketplace. For privacy requests, email <a href="mailto:privacy@nuvelo.one">privacy@nuvelo.one</a>. We process account and listing data to operate the marketplace, prevent abuse, and comply with legal obligations.</p>
       <p><strong>Data we collect:</strong> account details (name, email, phone, role), listing details (title, description, category, price, location, images), communication metadata (message timestamps, moderation reports), technical information (IP address, browser type, device characteristics), and analytics/cookie data where consent applies. We do not intentionally collect special category data unless users include it in free-text fields.</p>
@@ -5541,8 +5565,6 @@ const renderStaticPage = async (slug) => {
     cookies: staticPageShell(
       "Cookie Policy",
       `
-      <!-- TODO: LEGAL REVIEW -->
-      <p class="muted small"><em>Placeholder legal text — must be reviewed and approved by qualified counsel before production reliance.</em></p>
       <p>This Cookie Policy explains how Nuvelo uses cookies and similar technologies when you visit our website. Cookies are small text files stored on your device that help websites remember preferences, maintain sessions, and understand usage.</p>
       <h2>Cookie categories we use</h2>
       <p><strong>Necessary cookies:</strong> Required for core functionality such as routing, session continuity, and security controls. These cannot be disabled if you want the website to function properly.</p>
@@ -6643,5 +6665,4 @@ void (async () => {
  *   only config-leaking messages were replaced with generic copy.
  * - YouTube / X URLs in the footer are placeholders with TODO comments — confirm real channel and
  *   handle before launch.
- * - Legal pages: substantive text remains placeholder until your lawyer reviews (marked TODO: LEGAL REVIEW).
  */
