@@ -107,11 +107,14 @@ class Listing {
       district: district?.toString(),
       condition: json['condition']?.toString(),
       photos: parseImages(json['images']),
-      sellerName: json['sellerName']?.toString() ?? 'Seller',
-      sellerPhone: json['sellerPhone']?.toString(),
-      sellerEmail: json['sellerEmail']?.toString(),
+      sellerName: json['sellerName']?.toString() ??
+          pf['contactName']?.toString() ??
+          'Seller',
+      sellerPhone: json['sellerPhone']?.toString() ?? pf['contactPhone']?.toString(),
+      sellerEmail: json['sellerEmail']?.toString() ?? pf['contactEmail']?.toString(),
       sellerWhatsapp: json['sellerWhatsapp'] == true,
-      contactPreference: json['contactPreference']?.toString(),
+      contactPreference: json['contactPreference']?.toString() ??
+          pf['contactPreference']?.toString(),
       status: json['status']?.toString() ?? 'approved',
       userId: json['userId']?.toString(),
       postedByAdmin: json['postedByAdmin'] == true,

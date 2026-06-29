@@ -4196,6 +4196,21 @@ button.jiji-promo-card {
   margin: 0 0 0.5rem;
 }
 
+.detail-contact-reveal {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 0 0;
+  border-top: 1px solid var(--purple-border);
+}
+
+.detail-contact-line {
+  margin: 0.35rem 0 0;
+}
+
+.detail-contact-link {
+  font-weight: 600;
+  word-break: break-all;
+}
+
 .post-jiji {
   max-width: 600px;
   margin: 0 auto;

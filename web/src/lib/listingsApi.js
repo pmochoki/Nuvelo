@@ -1,5 +1,6 @@
 import { getDemoListingById, mergeListingsWithDemos } from "../data/demoListings.js";
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
+import { enrichListingContact } from "./listingContact.js";
 
 const DONATIONS_CLAIMED_KEY = "nuvelo_donations_claimed";
 const LOCAL_LISTINGS_KEY = "nuvelo_local_listings_v1";
@@ -168,7 +169,7 @@ export function normalizeListingRow(row) {
     enterprise: Boolean(row.enterprise),
     status: row.status
   };
-  return applyDonationClaimed(base);
+  return applyDonationClaimed(enrichListingContact(base));
 }
 
 /**

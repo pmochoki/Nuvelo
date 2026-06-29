@@ -150,21 +150,29 @@ class _ListingDetailScreenState extends State<ListingDetailScreen> {
                   ),
                   const SizedBox(width: 10),
                   IconButton.filledTonal(
-                    onPressed: () =>
-                        _launch(Uri(scheme: 'tel', path: l.sellerPhone ?? '')),
+                    onPressed: (l.sellerPhone ?? '').trim().isEmpty
+                        ? null
+                        : () => _launch(Uri(
+                              scheme: 'tel',
+                              path: l.sellerPhone ?? '',
+                            )),
                     icon: const Icon(Icons.phone),
                   ),
                   IconButton.filledTonal(
-                    onPressed: () => _launch(Uri.parse(
-                      'https://wa.me/${(l.sellerPhone ?? '').replaceAll(RegExp(r'\D'), '')}',
-                    )),
+                    onPressed: (l.sellerPhone ?? '').trim().isEmpty
+                        ? null
+                        : () => _launch(Uri.parse(
+                              'https://wa.me/${(l.sellerPhone ?? '').replaceAll(RegExp(r'\D'), '')}',
+                            )),
                     icon: const Icon(Icons.chat),
                   ),
                   IconButton.filledTonal(
-                    onPressed: () => _launch(Uri(
-                      scheme: 'mailto',
-                      path: l.sellerEmail ?? '',
-                    )),
+                    onPressed: (l.sellerEmail ?? '').trim().isEmpty
+                        ? null
+                        : () => _launch(Uri(
+                              scheme: 'mailto',
+                              path: l.sellerEmail ?? '',
+                            )),
                     icon: const Icon(Icons.email_outlined),
                   ),
                 ],

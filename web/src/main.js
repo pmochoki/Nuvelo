@@ -26,6 +26,11 @@ import {
   donationCollectionMeta
 } from "./data/donationConstants.js";
 import { getDisplayInitials } from "./lib/profileInitials.js";
+import {
+  buildContactFieldsFromForm,
+  extractListingContact,
+  phoneTelHref
+} from "./lib/listingContact.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
 import { initTheme } from "./lib/theme.js";
 import { applyDomTranslations, initI18n, t, tf } from "./i18n/i18n.js";
@@ -1773,6 +1778,7 @@ function bindProfileSettingsPage() {
         firstName: "",
         lastName: "",
         email: "",
+        phone: "",
         location: "",
         birthday: "",
         sex: "",
@@ -1785,6 +1791,7 @@ function bindProfileSettingsPage() {
       firstName: String(fd.get("firstName") || "").trim(),
       lastName: String(fd.get("lastName") || "").trim(),
       email: String(fd.get("email") || "").trim(),
+      phone: String(fd.get("phone") || "").trim(),
       location: String(fd.get("location") || ""),
       birthday: String(fd.get("birthday") || ""),
       sex: String(fd.get("sex") || ""),
@@ -1819,6 +1826,7 @@ function bindProfileSettingsPage() {
     set("firstName", state.firstName);
     set("lastName", state.lastName);
     set("email", state.email);
+    set("phone", state.phone);
     set("location", state.location);
     set("birthday", state.birthday);
     set("sex", state.sex);
@@ -1909,6 +1917,7 @@ function bindProfileSettingsPage() {
       lastName: st.lastName,
       fullName: composedFullName,
       email: st.email,
+      phone: st.phone,
       city: st.location,
       location: st.location,
       birthday: st.birthday,
@@ -1925,6 +1934,7 @@ function bindProfileSettingsPage() {
         ...u,
         name: composedFullName || u.name,
         email: st.email || u.email,
+        phone: st.phone || u.phone || "",
         role: st.role
       };
       writeStoredUser(cachedUser);
@@ -4368,6 +4378,31 @@ function closeFilterSheet() {
   }
 }
 
+function buildDetailContactRevealHtml(listing) {
+  const { contactPhone, contactEmail, contactPreference } = extractListingContact(listing);
+  const parts = [
+    `<p class="muted small">${esc(tf("detail.contact_pref", { pref: contactPreference || "message via app" }))}</p>`
+  ];
+  if (contactPhone) {
+    const href = phoneTelHref(contactPhone);
+    parts.push(
+      `<p class="detail-contact-line"><a href="${esc(href)}" class="detail-contact-link">${esc(tf("detail.contact_phone", { phone: contactPhone }))}</a></p>`
+    );
+  }
+  if (contactEmail) {
+    parts.push(
+      `<p class="detail-contact-line"><a href="mailto:${esc(contactEmail)}" class="detail-contact-link">${esc(tf("detail.contact_email", { email: contactEmail }))}</a></p>`
+    );
+  }
+  if (!contactPhone && !contactEmail) {
+    parts.push(`<p class="muted small">${esc(t("detail.contact_none"))}</p>`);
+  }
+  parts.push(
+    `<p class="muted small">${esc(t("detail.contact_inbox_hint"))}</p>`
+  );
+  return parts.join("");
+}
+
 const renderDetail = async (id) => {
   const appEl = mainShell();
   if (!appEl) {
@@ -4484,6 +4519,7 @@ const renderDetail = async (id) => {
 
   const userNow = getUser();
   const isOwner = Boolean(userNow && userNow.id === listing.userId);
+  const contactRevealHtml = buildDetailContactRevealHtml(listing);
 
   const asideBlock = isDonation
     ? `<aside class="detail-jiji-aside">
@@ -4497,6 +4533,12 @@ const renderDetail = async (id) => {
           <p style="margin:0;font-weight:700">${esc(listing.sellerName || t("detail.donor_fallback"))}</p>
           <p class="muted small">${esc(tf("detail.donor_line", { when: cf.sellerMemberSince || "—" }))}</p>
           <p class="muted small">${esc(tf("detail.contact_pref", { pref: cf.contactPreference || "message via app" }))}</p>
+          ${
+            !isOwner
+              ? `<button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-show-contact" data-i18n="detail.show_contact">Show contact</button>
+          <div class="detail-contact-reveal" id="detail-contact-reveal" hidden>${contactRevealHtml}</div>`
+              : ""
+          }
           ${
             !isOwner
               ? `<button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-donation-claim" ${
@@ -4524,9 +4566,13 @@ const renderDetail = async (id) => {
           <p class="muted small" style="margin:0">📍 ${esc(listing.location || "")}</p>
           <p class="muted small" style="margin:0.25rem 0">${esc(posted)}</p>
           <p class="muted small">${views ? esc(tfn("listing.views_count", views)) : ""}</p>
-          <button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-show-contact" data-i18n="detail.show_contact">Show contact</button>
-          <p class="small muted" id="detail-phone-reveal" hidden style="margin:0.5rem 0 0" data-i18n="detail.phone_hint">Phone: use the Nuvelo app to contact the seller securely.</p>
-          <button type="button" class="btn btn--outline" style="width:100%;margin-top:0.5rem;border-radius:8px" id="detail-callback" data-i18n="detail.request_callback">Request call back</button>
+          ${
+            !isOwner
+              ? `<button type="button" class="btn btn--primary" style="width:100%;margin-top:0.75rem;border-radius:8px" id="detail-show-contact" data-i18n="detail.show_contact">Show contact</button>
+          <div class="detail-contact-reveal" id="detail-contact-reveal" hidden>${contactRevealHtml}</div>`
+              : ""
+          }
+          <button type="button" class="btn btn--outline" style="width:100%;margin-top:0.5rem;border-radius:8px" id="detail-callback" data-i18n="detail.request_callback" hidden>Request call back</button>
           <hr style="border:0;border-top:1px solid var(--purple-border);margin:1rem 0" />
           <p style="margin:0;font-weight:700"><a href="/browse">${esc(listing.sellerName || t("detail.seller_fallback"))}</a></p>
           <p class="muted small" data-i18n="detail.verified_line">Verified seller · 1+ years on Nuvelo</p>
@@ -4637,9 +4683,13 @@ const renderDetail = async (id) => {
   });
 
   document.getElementById("detail-show-contact")?.addEventListener("click", () => {
-    const el = document.getElementById("detail-phone-reveal");
+    const el = document.getElementById("detail-contact-reveal");
+    const btn = document.getElementById("detail-show-contact");
     if (el) {
       el.hidden = false;
+    }
+    if (btn instanceof HTMLButtonElement) {
+      btn.hidden = true;
     }
   });
 
@@ -5615,8 +5665,21 @@ const renderPost = async () => {
         <input name="contactName" type="text" placeholder="Your name" value="${esc(getUser()?.name || "")}" />
       </label>
       <label>
-        Phone number
-        <input name="contactPhone" type="tel" placeholder="+36 …" value="${esc(getUser()?.phone || "")}" />
+        <span data-i18n="post.contact_email">Contact email (optional)</span>
+        <input name="contactEmail" type="email" placeholder="you@example.com" value="${esc(getUser()?.email || "")}" autocomplete="email" />
+      </label>
+      <label>
+        <span data-i18n="settings.phone_number">Phone number</span>
+        <input name="contactPhone" type="tel" placeholder="+36 …" value="${esc(getUser()?.phone || "")}" autocomplete="tel" />
+        <span class="muted small" data-i18n="post.contact_phone_hint">Optional — shown when buyers tap Show contact on your ad.</span>
+      </label>
+      <label>
+        <span data-i18n="post.contact_pref">How should buyers contact you?</span>
+        <select name="listingContact">
+          <option value="message via app" data-i18n="post.contact_pref_message">Message in inbox (recommended)</option>
+          <option value="show phone" data-i18n="post.contact_pref_phone">Phone call or SMS</option>
+          <option value="show email" data-i18n="post.contact_pref_email">Email</option>
+        </select>
       </label>
       <div id="post-cat-fields">${categoryFieldHtml(defaultCat)}</div>
       <div class="post-photo-zone post-photo-picker" id="post-photo-picker">
@@ -5741,7 +5804,10 @@ const renderPost = async () => {
       location: String(fd.get("location") || "").trim(),
       images: [],
       condition: condApi,
-      categoryFields: buildCategoryFields(categoryId, fd),
+      categoryFields: {
+        ...buildCategoryFields(categoryId, fd),
+        ...buildContactFieldsFromForm(fd, user)
+      },
       userId: user.id
     };
     const msg = document.getElementById("post-msg");

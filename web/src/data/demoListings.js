@@ -134,9 +134,12 @@ const locations = HUNGARIAN_LOCATIONS.filter((x) => x.value !== "all");
 
 const buildListing = (idx, city, template) => {
   const createdTs = Date.now() - idx * 3600_000;
+  const sellerIdx = (idx % 35) + 1;
+  const contactPrefs = ["message via app", "show phone", "show email"];
+  const contactPreference = contactPrefs[idx % contactPrefs.length];
   return {
     id: `demo-${String(idx + 1).padStart(4, "0")}`,
-    userId: `demo-user-${String((idx % 35) + 1).padStart(3, "0")}`,
+    userId: `demo-user-${String(sellerIdx).padStart(3, "0")}`,
     categoryId: template.categoryId,
     title: `${template.title} — ${city.label}`,
     description: `${template.description} Location: ${city.label}.`,
@@ -145,7 +148,13 @@ const buildListing = (idx, city, template) => {
     condition: template.condition,
     location: city.label,
     images: [template.image],
-    categoryFields: template.fields,
+    categoryFields: {
+      ...template.fields,
+      contactName: `Nuvelo Demo Seller ${idx + 1}`,
+      contactPhone: idx % 3 !== 0 ? `+3630123${String(4000 + sellerIdx).slice(-4)}` : "",
+      contactEmail: idx % 2 === 0 ? `seller${sellerIdx}@example.com` : "",
+      contactPreference
+    },
     createdAt: new Date(createdTs).toISOString(),
     updatedAt: new Date(createdTs).toISOString(),
     featured: idx % 19 === 0,

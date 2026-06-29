@@ -241,6 +241,9 @@ function buildDonation(idx, t) {
     deliveryKm: t.deliveryKm ?? null,
     claimed: Boolean(t.claimed),
     contactPreference: contactPref,
+    contactName: `Nuvelo Donor ${idx + 1}`,
+    contactPhone: idx % 2 === 0 ? `+3670123${String(5000 + idx).slice(-4)}` : "",
+    contactEmail: idx % 3 !== 0 ? `donor${idx + 1}@example.com` : "",
     quantity: t.quantity ?? 1,
     sellerMemberSince: `${2019 + (idx % 5)}`
   };

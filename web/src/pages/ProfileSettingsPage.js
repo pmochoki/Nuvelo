@@ -38,6 +38,7 @@ function renderContactDetailsForm(user) {
   const lastName = String(user.lastName || "").trim();
   const fullName = String(user.fullName || "").trim() || [firstName, lastName].filter(Boolean).join(" ").trim();
   const email = String(user.email || "").trim();
+  const phone = String(user.phone || "").trim();
   const city = user.city || "";
   const birthday = String(user.birthday || "");
   const sex = String(user.sex || "");
@@ -174,6 +175,21 @@ function renderContactDetailsForm(user) {
                 aria-describedby="settings-email-error"
               />
               <p class="form-field__error" id="settings-email-error" role="alert" hidden></p>
+            </div>
+            <div class="form-field">
+              <label class="form-label" for="settings-phone" data-i18n="settings.phone_number">Phone number</label>
+              <input
+                type="tel"
+                id="settings-phone"
+                name="phone"
+                class="form-input"
+                value="${esc(phone)}"
+                maxlength="24"
+                autocomplete="tel"
+                placeholder="+36 …"
+                data-settings-track
+              />
+              <p class="muted small" data-i18n="settings.phone_listing_hint">Used when you post ads — buyers can call or text from your listing.</p>
             </div>
             <div class="form-field">
               <label class="form-label" for="settings-location" data-i18n="settings.location_city">Location / city</label>
