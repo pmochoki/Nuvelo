@@ -1145,6 +1145,23 @@ body.loc-modal-open {
   color: var(--orange);
 }
 
+.nav-drawer__signout {
+  font: inherit;
+  cursor: pointer;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: #e53e3e;
+  font-weight: 600;
+  text-align: left;
+}
+
+.nav-drawer__signout:hover {
+  color: #fc8181;
+}
+
 .nav-drawer__guest {
   display: flex;
   flex-direction: column;
@@ -6462,6 +6479,14 @@ button.jiji-promo-card {
   .profile-hub-fab {
     bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
   }
+
+  .profile-hub__signout-wrap {
+    padding: 1rem 1rem calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.profile-hub__signout-wrap {
+  padding: 1rem 1rem 1.25rem;
 }
 
 /* Messages (Jiji split) */

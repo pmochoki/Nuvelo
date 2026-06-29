@@ -16,7 +16,7 @@ import {
   getAuthRedirectUrl,
   getPasswordRecoveryRedirectUrl
 } from "./lib/supabaseClient.js";
-import { signInWithApplePopup } from "./lib/appleSignIn.js";
+import { initAppleSignInCallback, signInWithApple } from "./lib/appleSignIn.js";
 import {
   DONATIONS_CATEGORY_ID,
   DONATION_SUBCATEGORIES,
@@ -803,6 +803,24 @@ const updateAuthUi = () => {
   syncNavUserIcons();
 };
 
+const completeAppleRedirectSignIn = async ({ idToken, nonce }) => {
+  if (!supabase || !idToken) {
+    return;
+  }
+  const { error } = await supabase.auth.signInWithIdToken({
+    provider: "apple",
+    token: idToken,
+    nonce: nonce || undefined
+  });
+  if (error) {
+    openModal("signin");
+    const msg = String(error.message || "");
+    showLoginError(
+      /not enabled|provider|apple/i.test(msg) ? t("auth.err.apple_setup") : msg || t("auth.err.generic")
+    );
+  }
+};
+
 const signOutNuvelo = async () => {
   if (!getUser()) {
     return;
@@ -1112,7 +1130,11 @@ document.getElementById("auth-apple-stub")?.addEventListener("click", async () =
     appleBtn.disabled = true;
   }
   try {
-    const { idToken, nonce } = await signInWithApplePopup();
+    const result = await signInWithApple();
+    if (result.redirected) {
+      return;
+    }
+    const { idToken, nonce } = result;
     const { error } = await supabase.auth.signInWithIdToken({
       provider: "apple",
       token: idToken,
@@ -5251,6 +5273,7 @@ const renderProfile = async (section) => {
     return;
   }
   document.getElementById("profile-sign-out")?.addEventListener("click", () => void signOutNuvelo());
+  document.getElementById("profile-hub-sign-out")?.addEventListener("click", () => void signOutNuvelo());
   initProfileRouteFeatures(section);
 };
 
@@ -6258,6 +6281,12 @@ document.body.addEventListener("click", (e) => {
     e.preventDefault();
     setNavDrawerOpen(false);
     openModal("signin");
+    return;
+  }
+  if (e.target.id === "nav-drawer-signout" || e.target.closest("#nav-drawer-signout")) {
+    e.preventDefault();
+    setNavDrawerOpen(false);
+    void signOutNuvelo();
   }
 });
 
@@ -6385,6 +6414,13 @@ void (async () => {
   syncAuthModalStaticCopy();
   ensureNavUserDropdown();
   consumeOAuthErrorFromUrl();
+  void initAppleSignInCallback(
+    (tokens) => completeAppleRedirectSignIn(tokens),
+    (msg) => {
+      openModal("signin");
+      showLoginError(msg || t("auth.err.generic"));
+    }
+  );
   await initAuth();
   await render().catch((e) => console.error(e));
 })();

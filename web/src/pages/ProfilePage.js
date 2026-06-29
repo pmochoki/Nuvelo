@@ -362,6 +362,11 @@ function renderProfileHub(user) {
     <a href="/contact" class="profile-hub-fab" aria-label="${esc(t("profile.help_contact"))}">
       <span class="profile-hub-fab__ico" aria-hidden="true">?</span>
     </a>
+    <div class="profile-hub__signout-wrap">
+      <button type="button" class="btn btn--pill btn--signin profile-sign-out-btn" id="profile-hub-sign-out">
+        ${esc(t("nav.signout"))}
+      </button>
+    </div>
   </div>`;
 }
 
