@@ -36,6 +36,7 @@ import { getBrowseCategorySuggestionPlan, browseHrefWithCategory } from "./lib/b
 import {
   buildContactFieldsFromForm,
   extractListingContact,
+  contactVisibleForPreference,
   phoneTelHref
 } from "./lib/listingContact.js";
 import { migrateLegacyHashToPath, applyRouteMeta, applyListingPageMeta } from "./seo.js";
@@ -2071,10 +2072,12 @@ function bindProfileSidebarAvatar() {
 
 function initMessagesPageUi() {
   void (async () => {
-    const [{ buildChatPanelHtml, buildMessageThreadRowHtml, buildChatBubbleHtml }, messaging, messageTranslate] = await Promise.all([
+    const [{ buildChatPanelHtml, buildMessageThreadRowHtml, buildChatBubbleHtml }, messaging, messageTranslate, chatUi, chatImageUpload] = await Promise.all([
       import("./pages/ProfilePage.js"),
       import("./lib/messaging.js"),
-      import("./lib/messageTranslate.js")
+      import("./lib/messageTranslate.js"),
+      import("./lib/chatUi.js"),
+      import("./lib/chatImageUpload.js")
     ]);
     const {
       fetchMessages,
@@ -2087,6 +2090,8 @@ function initMessagesPageUi() {
       translateInboxPreview,
       withTranslatedIncomingMessages
     } = messageTranslate;
+    const { isListingClosedForChat, formatListingPriceLabel, buildImageMessageBody } = chatUi;
+    const { uploadChatImage } = chatImageUpload;
   const root = document.querySelector("[data-messages-root]");
   if (!root) {
     return;
@@ -2105,8 +2110,12 @@ function initMessagesPageUi() {
 
   /** @type {Map<string, object>} */
   let threadById = new Map();
+  /** @type {Map<string, object>} */
+  let listingById = new Map();
   let unsubscribe = null;
   let activeThreadId = null;
+  /** @type {object | null} */
+  let activeListing = null;
 
   const listsWrap = root.querySelector("[data-msg-lists-wrap]");
   const emptyInbox = root.querySelector("[data-msg-empty-inbox]");
@@ -2186,6 +2195,7 @@ function initMessagesPageUi() {
 
   const closeThread = () => {
     activeThreadId = null;
+    activeListing = null;
     if (unsubscribe) {
       unsubscribe();
       unsubscribe = null;
@@ -2201,11 +2211,104 @@ function initMessagesPageUi() {
     root.querySelectorAll(".msg-row").forEach((row) => row.classList.remove("msg-row--selected"));
   };
 
-  const bindCompose = (threadId) => {
+  const buildThreadPanelContext = (row, listing) => {
+    const contact = listing ? extractListingContact(listing) : { contactPhone: "", contactEmail: "", contactPreference: "" };
+    const hasPhone = Boolean(contact.contactPhone) && contactVisibleForPreference(contact.contactPreference, "phone");
+    const hasEmail = Boolean(contact.contactEmail) && contactVisibleForPreference(contact.contactPreference, "email");
+    return {
+      otherDisplayName: row.otherDisplayName,
+      listingTitle: row.listing_title_snapshot || listing?.title || "Listing",
+      thumb: row.listing_thumb_url || listingImageUrl(listing) || row.otherAvatarUrl || "",
+      otherAvatarUrl: row.otherAvatarUrl || "",
+      priceLabel: formatListingPriceLabel(listing, t("listing.contact_price")),
+      listingClosed: isListingClosedForChat(listing),
+      listingHref: row.listing_id ? `/listing/${encodeURIComponent(String(row.listing_id))}` : "",
+      hasContact: hasPhone || hasEmail,
+      contactPhone: hasPhone ? contact.contactPhone : "",
+      contactEmail: hasEmail ? contact.contactEmail : ""
+    };
+  };
+
+  const revealChatContact = () => {
+    const panel = chat?.querySelector("[data-chat-contact-reveal]");
+    if (!(panel instanceof HTMLElement) || !activeListing) {
+      return;
+    }
+    const ctx = buildThreadPanelContext(threadById.get(activeThreadId || "") || {}, activeListing);
+    const bits = [];
+    if (ctx.contactPhone) {
+      const href = phoneTelHref(ctx.contactPhone);
+      bits.push(
+        `<p class="chat-listing-bar__contact-line"><a href="${esc(href)}" class="chat-bubble__phone">${esc(ctx.contactPhone)}</a></p>`
+      );
+    }
+    if (ctx.contactEmail) {
+      bits.push(
+        `<p class="chat-listing-bar__contact-line"><a href="mailto:${esc(ctx.contactEmail)}">${esc(ctx.contactEmail)}</a></p>`
+      );
+    }
+    if (!bits.length) {
+      showNuveloToast(t("detail.no_contact"));
+      return;
+    }
+    panel.innerHTML = bits.join("");
+    panel.hidden = false;
+  };
+
+  const bindCompose = (threadId, listing) => {
     const input = chat?.querySelector("[data-msg-input]");
     const sendBtn = chat?.querySelector("[data-msg-send]");
-    const doSend = async () => {
-      const text = input instanceof HTMLInputElement ? input.value.trim() : "";
+    const attachInput = chat?.querySelector("[data-chat-attach]");
+    const emojiToggle = chat?.querySelector("[data-chat-emoji-toggle]");
+    const emojiPicker = chat?.querySelector("[data-chat-emoji-picker]");
+    const statusEl = chat?.querySelector("[data-chat-status]");
+
+    if (statusEl instanceof HTMLElement && isSupabaseConfigured) {
+      statusEl.hidden = false;
+      statusEl.textContent = t("chat.connecting");
+      window.setTimeout(() => {
+        statusEl.hidden = true;
+      }, 1800);
+    }
+
+    chat?.querySelector("[data-chat-show-contact]")?.addEventListener("click", () => revealChatContact());
+
+    emojiToggle?.addEventListener("click", () => {
+      if (emojiPicker instanceof HTMLElement) {
+        emojiPicker.hidden = !emojiPicker.hidden;
+      }
+    });
+
+    emojiPicker?.querySelectorAll("[data-chat-emoji]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (!(input instanceof HTMLInputElement)) {
+          return;
+        }
+        input.value = `${input.value}${btn.getAttribute("data-chat-emoji") || ""}`;
+        input.focus();
+        if (emojiPicker instanceof HTMLElement) {
+          emojiPicker.hidden = true;
+        }
+      });
+    });
+
+    chat?.querySelectorAll("[data-chat-quick]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        if (!(input instanceof HTMLInputElement)) {
+          return;
+        }
+        input.value = btn.getAttribute("data-chat-quick") || "";
+        void doSend();
+      });
+    });
+
+    const doSend = async (overrideBody) => {
+      const text =
+        typeof overrideBody === "string"
+          ? overrideBody.trim()
+          : input instanceof HTMLInputElement
+            ? input.value.trim()
+            : "";
       if (!text || !threadId) {
         return;
       }
@@ -2218,7 +2321,7 @@ function initMessagesPageUi() {
       }
       try {
         await sendMessage(threadId, text);
-        if (input instanceof HTMLInputElement) {
+        if (input instanceof HTMLInputElement && typeof overrideBody !== "string") {
           input.value = "";
         }
         void appendBubbleFromPayload({ sender_id: u.id, body: text, created_at: new Date().toISOString() });
@@ -2232,6 +2335,42 @@ function initMessagesPageUi() {
         }
       }
     };
+
+    attachInput?.addEventListener("change", async () => {
+      const file = attachInput instanceof HTMLInputElement ? attachInput.files?.[0] : null;
+      if (!file || !threadId) {
+        return;
+      }
+      const u = getUser();
+      if (!u) {
+        return;
+      }
+      if (sendBtn instanceof HTMLButtonElement) {
+        sendBtn.disabled = true;
+      }
+      try {
+        const url = await uploadChatImage(file, threadId, u.id);
+        const caption = input instanceof HTMLInputElement ? input.value.trim() : "";
+        const body = buildImageMessageBody(url, caption);
+        await sendMessage(threadId, body);
+        if (input instanceof HTMLInputElement) {
+          input.value = "";
+        }
+        void appendBubbleFromPayload({ sender_id: u.id, body, created_at: new Date().toISOString() });
+        await reloadThreads();
+        await refreshMessageNavBadge();
+      } catch (err) {
+        showNuveloToast(String(err?.message || t("general.error")));
+      } finally {
+        if (attachInput instanceof HTMLInputElement) {
+          attachInput.value = "";
+        }
+        if (sendBtn instanceof HTMLButtonElement) {
+          sendBtn.disabled = false;
+        }
+      }
+    });
+
     sendBtn?.addEventListener("click", () => void doSend());
     input?.addEventListener("keydown", (ev) => {
       if (ev.key === "Enter") {
@@ -2256,18 +2395,22 @@ function initMessagesPageUi() {
       unsubscribe();
       unsubscribe = null;
     }
+    let listing = listingById.get(row.listing_id) || null;
+    if (row.listing_id && !listing) {
+      try {
+        listing = await fetchListing(row.listing_id);
+        if (listing) {
+          listingById.set(row.listing_id, listing);
+        }
+      } catch (e) {
+        console.warn("[Nuvelo] chat listing load", e);
+      }
+    }
+    activeListing = listing;
     try {
       const msgs = await fetchMessages(id);
       const displayMsgs = await withTranslatedIncomingMessages(msgs, u.id);
-      chat.innerHTML = buildChatPanelHtml(
-        {
-          otherDisplayName: row.otherDisplayName,
-          listingTitle: row.listing_title_snapshot || "Listing",
-          thumb: row.listing_thumb_url || row.otherAvatarUrl || ""
-        },
-        displayMsgs,
-        u.id
-      );
+      chat.innerHTML = buildChatPanelHtml(buildThreadPanelContext(row, listing), displayMsgs, u.id);
     } catch (e) {
       console.error(e);
       showNuveloToast(t("general.error"));
@@ -2283,7 +2426,7 @@ function initMessagesPageUi() {
     if (scroll) {
       scroll.scrollTop = scroll.scrollHeight;
     }
-    bindCompose(id);
+    bindCompose(id, listing);
     if (isSupabaseConfigured) {
       unsubscribe = subscribeToThreadMessages(id, (m) => {
         if (m.sender_id === getUser()?.id) {
@@ -2305,27 +2448,56 @@ function initMessagesPageUi() {
     });
   };
 
+  const loadListingMap = async (threads) => {
+    const ids = [...new Set(threads.map((row) => row.listing_id).filter(Boolean))];
+    const map = new Map();
+    await Promise.all(
+      ids.map(async (lid) => {
+        if (listingById.has(lid)) {
+          map.set(lid, listingById.get(lid));
+          return;
+        }
+        try {
+          const listing = await fetchListing(lid);
+          if (listing) {
+            map.set(lid, listing);
+            listingById.set(lid, listing);
+          }
+        } catch {
+          /* ignore per-listing failures */
+        }
+      })
+    );
+    return map;
+  };
+
   /**
    * @param {object[]} threads
    * @param {"success" | "failure"} loadState
    */
   const fillThreadLists = async (threads, loadState = "success") => {
+    const listingMap = loadState === "success" ? await loadListingMap(threads) : new Map();
     const enriched = await Promise.all(
       threads.map(async (row) => ({
         ...row,
         preview: row.preview ? await translateInboxPreview(row.preview) : row.preview
       }))
     );
-    const uiRows = enriched.map((row) => ({
-      id: row.id,
-      name: row.otherDisplayName,
-      listingTitle: row.listing_title_snapshot || "Listing",
-      thumb: row.listing_thumb_url || row.otherAvatarUrl || "",
-      preview: row.preview,
-      dateLabel: row.dateLabel,
-      unread: row.unread,
-      spam: false
-    }));
+    const uiRows = enriched.map((row) => {
+      const listing = listingMap.get(row.listing_id);
+      return {
+        id: row.id,
+        name: row.otherDisplayName,
+        listingTitle: row.listing_title_snapshot || listing?.title || "Listing",
+        thumb: row.listing_thumb_url || listingImageUrl(listing) || row.otherAvatarUrl || "",
+        otherAvatar: row.otherAvatarUrl || "",
+        preview: row.preview,
+        dateLabel: row.dateLabel,
+        unread: row.unread,
+        spam: false,
+        listingClosed: isListingClosedForChat(listing)
+      };
+    });
     const allHtml = uiRows.map(buildMessageThreadRowHtml).join("");
     if (lists.all) {
       lists.all.innerHTML = allHtml;

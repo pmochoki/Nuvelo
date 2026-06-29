@@ -1,6 +1,12 @@
 import { DONATIONS_CATEGORY_ID } from "../data/donationConstants.js";
 import { tfn } from "../i18n/format.js";
 import { t } from "../i18n/i18n.js";
+import {
+  CHAT_EMOJIS,
+  formatMessageBodyHtml,
+  interleaveChatDateSeparators,
+  QUICK_REPLY_KEYS
+} from "../lib/chatUi.js";
 import { formatNumber, formatPrice } from "../utils/format.js";
 
 const esc = (s) => {
@@ -73,28 +79,36 @@ function formatMsgTime(iso) {
  * @param {string} t.dateLabel
  * @param {number} [t.unread]
  * @param {boolean} [t.spam]
+ * @param {boolean} [t.listingClosed]
+ * @param {string} [t.otherAvatar]
  */
 export function buildMessageThreadRowHtml(t) {
   const thumb = t.thumb
     ? `<img src="${esc(t.thumb)}" alt="" width="56" height="56" loading="lazy" />`
     : `<div class="msg-row__ph" aria-hidden="true"></div>`;
+  const avatarOverlay = t.otherAvatar
+    ? `<img class="msg-row__avatar-overlay" src="${esc(t.otherAvatar)}" alt="" width="20" height="20" loading="lazy" />`
+    : `<span class="msg-row__avatar-overlay msg-row__avatar-overlay--ph" aria-hidden="true"></span>`;
   const unread = t.unread || 0;
   const badge =
     unread > 0
       ? `<span class="msg-row__unread-badge" aria-label="${esc(formatNumber(unread))} ${esc(t("msg.unread_badge"))}">${esc(unread > 9 ? "9+" : formatNumber(unread))}</span>`
       : "";
+  const closedTag = t.listingClosed
+    ? `<span class="msg-row__closed-tag">${esc(t("chat.closed"))}</span>`
+    : "";
   return `
     <button type="button" class="msg-row${unread ? " msg-row--unread" : ""}" data-thread-id="${esc(t.id)}" data-thread-spam="${t.spam ? "1" : ""}">
       <div class="msg-row__thumb-wrap">
         <div class="msg-row__thumb">${thumb}</div>
-        <span class="msg-row__thumb-dot" aria-hidden="true"></span>
+        ${avatarOverlay}
       </div>
       <div class="msg-row__body">
         <div class="msg-row__top">
           <span class="msg-row__name">${esc(t.name)}</span>
           <time class="msg-row__date" datetime="">${esc(t.dateLabel)}</time>
         </div>
-        <p class="msg-row__listing-title">${esc(t.listingTitle)}</p>
+        <p class="msg-row__listing-title">${esc(t.listingTitle)} ${closedTag}</p>
         <div class="msg-row__bottom">
           <span class="msg-row__preview">${esc(t.preview)}</span>
           ${badge}
@@ -118,10 +132,81 @@ export function buildChatBubbleHtml(m, currentUserId) {
     ? `<span class="chat-bubble__translated muted small">${esc(t("chat.translated"))}</span>`
     : "";
   return `<div class="${cls}">
-        <p class="chat-bubble__text">${esc(displayText)}</p>
+        ${formatMessageBodyHtml(displayText)}
         ${translatedTag}
         <time class="chat-bubble__time">${esc(tm)}</time>
       </div>`;
+}
+
+/**
+ * @param {object} ctx
+ * @param {string} ctx.otherDisplayName
+ * @param {string} [ctx.otherAvatarUrl]
+ */
+export function buildChatSafetyBannersHtml() {
+  return `
+    <div class="chat-safety-banners" role="note">
+      <p class="chat-safety-banner chat-safety-banner--warn">
+        <span class="chat-safety-banner__ico" aria-hidden="true">📣</span>
+        <span>${esc(t("chat.safety.no_prepay"))}</span>
+      </p>
+      <p class="chat-safety-banner chat-safety-banner--tip">
+        <span class="chat-safety-banner__ico" aria-hidden="true">📞</span>
+        <span>${esc(t("chat.safety.call_slow"))}</span>
+      </p>
+    </div>`;
+}
+
+/**
+ * @param {object} ctx
+ * @param {string} ctx.listingTitle
+ * @param {string} [ctx.thumb]
+ * @param {string} ctx.priceLabel
+ * @param {boolean} [ctx.listingClosed]
+ * @param {string} [ctx.listingHref]
+ * @param {boolean} [ctx.hasContact]
+ */
+export function buildChatListingBarHtml(ctx) {
+  const thumb = ctx.thumb
+    ? `<img src="${esc(ctx.thumb)}" alt="" width="48" height="48" loading="lazy" />`
+    : `<div class="chat-listing-bar__ph" aria-hidden="true"></div>`;
+  const closed = ctx.listingClosed
+    ? `<span class="chat-listing-bar__closed">${esc(t("chat.closed"))}</span>`
+    : "";
+  const contactBtn = ctx.hasContact
+    ? `<button type="button" class="chat-listing-bar__contact" data-chat-show-contact>
+        <span class="chat-listing-bar__contact-ico" aria-hidden="true">📞</span>
+        ${esc(t("detail.show_contact"))}
+      </button>`
+    : "";
+  const titleInner = ctx.listingHref
+    ? `<a href="${esc(ctx.listingHref)}" class="chat-listing-bar__title-link">${esc(ctx.listingTitle)}</a>`
+    : `<span class="chat-listing-bar__title-link">${esc(ctx.listingTitle)}</span>`;
+  return `
+    <div class="chat-listing-bar" data-chat-listing-bar>
+      <div class="chat-listing-bar__thumb">${thumb}</div>
+      <div class="chat-listing-bar__meta">
+        <p class="chat-listing-bar__title">${titleInner} ${closed}</p>
+        <p class="chat-listing-bar__price">${esc(ctx.priceLabel)}</p>
+        <div class="chat-listing-bar__contact-reveal" data-chat-contact-reveal hidden></div>
+      </div>
+      ${contactBtn}
+    </div>`;
+}
+
+function buildChatQuickRepliesHtml() {
+  const chips = QUICK_REPLY_KEYS.map(
+    (key) =>
+      `<button type="button" class="chat-quick-reply" data-chat-quick="${esc(t(key))}">${esc(t(key))}</button>`
+  ).join("");
+  return `<div class="chat-quick-replies" data-chat-quick-row role="group" aria-label="${esc(t("chat.quick.aria"))}">${chips}</div>`;
+}
+
+function buildChatEmojiPickerHtml() {
+  const cells = CHAT_EMOJIS.map(
+    (emo) => `<button type="button" class="chat-emoji-picker__btn" data-chat-emoji="${emo}" aria-label="${emo}">${emo}</button>`
+  ).join("");
+  return `<div class="chat-emoji-picker" data-chat-emoji-picker hidden>${cells}</div>`;
 }
 
 function priceMarkupForListing(listing) {
@@ -430,33 +515,56 @@ function renderMessagesLayout() {
 }
 
 /**
- * @param {object} thread — display fields for header
+ * @param {object} thread — display fields for header + listing bar
  * @param {string} thread.otherDisplayName
  * @param {string} thread.listingTitle
  * @param {string} [thread.thumb]
+ * @param {string} thread.priceLabel
+ * @param {boolean} [thread.listingClosed]
+ * @param {string} [thread.listingHref]
+ * @param {boolean} [thread.hasContact]
+ * @param {string} [thread.otherAvatarUrl]
  * @param {Array<{ sender_id: string, body: string, created_at: string }>} messages
  * @param {string} currentUserId
  */
 export function buildChatPanelHtml(thread, messages, currentUserId) {
-  const bubbles = (messages || [])
-    .map((m) => buildChatBubbleHtml(m, currentUserId))
-    .join("");
-  const thumb = thread.thumb
-    ? `<img src="${esc(thread.thumb)}" alt="" width="40" height="40" />`
-    : `<div class="chat-head__ph"></div>`;
+  const scrollHtml = interleaveChatDateSeparators(messages || [], (m) =>
+    buildChatBubbleHtml(m, currentUserId)
+  );
+  const avatar = thread.otherAvatarUrl
+    ? `<img src="${esc(thread.otherAvatarUrl)}" alt="" width="36" height="36" />`
+    : `<span class="chat-head__avatar-ph" aria-hidden="true"></span>`;
   return `
     <header class="chat-head">
       <button type="button" class="chat-head__back" data-msg-back aria-label="${esc(t("chat.back_messages"))}">←</button>
-      <div class="chat-head__thumb">${thumb}</div>
+      <div class="chat-head__avatar">${avatar}</div>
       <div class="chat-head__meta">
         <p class="chat-head__name">${esc(thread.otherDisplayName)}</p>
-        <p class="chat-head__listing">${esc(thread.listingTitle)}</p>
+        <p class="chat-head__status muted small" data-chat-status hidden>${esc(t("chat.connecting"))}</p>
       </div>
     </header>
-    <div class="chat-scroll" role="log" data-msg-scroll>${bubbles}</div>
+    ${buildChatListingBarHtml({
+      listingTitle: thread.listingTitle,
+      thumb: thread.thumb,
+      priceLabel: thread.priceLabel,
+      listingClosed: thread.listingClosed,
+      listingHref: thread.listingHref,
+      hasContact: thread.hasContact
+    })}
+    <div class="chat-scroll" role="log" data-msg-scroll>
+      ${buildChatSafetyBannersHtml()}
+      ${scrollHtml}
+    </div>
+    ${buildChatQuickRepliesHtml()}
+    ${buildChatEmojiPickerHtml()}
     <footer class="chat-compose">
+      <button type="button" class="chat-compose__icon-btn" data-chat-emoji-toggle aria-label="${esc(t("chat.emoji"))}" title="${esc(t("chat.emoji"))}">😊</button>
+      <label class="chat-compose__attach">
+        <input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" data-chat-attach hidden />
+        <span class="chat-compose__icon-btn" role="button" tabindex="0" aria-label="${esc(t("chat.attach_image"))}" title="${esc(t("chat.attach_image"))}">📎</span>
+      </label>
       <input type="text" class="chat-compose__input" placeholder="${esc(t("chat.placeholder"))}" aria-label="${esc(t("chat.message_aria"))}" data-msg-input autocomplete="off" />
-      <button type="button" class="btn btn--primary chat-compose__send" data-msg-send>${esc(t("chat.send"))}</button>
+      <button type="button" class="btn btn--primary chat-compose__send" data-msg-send aria-label="${esc(t("chat.send"))}">${esc(t("chat.send"))}</button>
     </footer>`;
 }
 

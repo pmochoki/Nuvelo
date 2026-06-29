@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from "./supabaseClient.js";
+import { formatInboxDateLabel } from "./chatUi.js";
 
 /** @param {unknown} s */
 export function isUuid(s) {
@@ -156,28 +157,8 @@ export async function fetchThreadsForCurrentUser() {
       otherAvatarUrl: prof?.avatar_url || "",
       unread,
       preview: row.last_message_preview || "No messages yet",
-      dateLabel: formatShortDate(row.last_message_at || row.updated_at)
+      dateLabel: formatInboxDateLabel(row.last_message_at || row.updated_at)
     };
-  });
-}
-
-/**
- * @param {string} iso
- */
-function formatShortDate(iso) {
-  if (!iso) {
-    return "—";
-  }
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) {
-    return "—";
-  }
-  return d.toLocaleString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
   });
 }
 
