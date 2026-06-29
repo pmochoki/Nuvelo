@@ -275,8 +275,9 @@ const HOME_GRID_SLUG_ORDER = [
 ];
 
 const homeGridLabel = (row) => {
-  if (row.slug === "donations") {
-    return "Donations";
+  const apiId = apiCategoryIdForSlug(row.slug);
+  if (apiId) {
+    return categoryDisplayName(apiId);
   }
   return String(row.label || "")
     .replace(/^🤲\s*/, "")
@@ -1953,7 +1954,7 @@ function bindProfileSettingsPage() {
     syncDirty();
     updateAuthUi();
     updateProfileChromeFromUser(getUser());
-    showNuveloToast("Profile updated!", 3000);
+    showNuveloToast(t("settings.updated_toast"), 3000);
   };
 
   cancelBtn?.addEventListener("click", () => {
@@ -3202,6 +3203,13 @@ const categoryDisplayName = (apiId) => {
   }
   const id = String(apiId);
   const row = CATEGORIES.find((c) => apiCategoryIdForSlug(c.slug) === id);
+  if (row?.slug) {
+    const key = `cat.${row.slug}`;
+    const tr = t(key);
+    if (tr !== key) {
+      return tr;
+    }
+  }
   return row ? row.label : id;
 };
 
@@ -3213,12 +3221,12 @@ const excerptOneLine = (text, max = 72) => {
 const conditionLabel = (c) => {
   const x = String(c || "").toLowerCase();
   if (x === "new") {
-    return "Brand New";
+    return t("browse.cond_new");
   }
   if (x === "used") {
-    return "Local Used";
+    return t("listing.condition_local_used");
   }
-  return "Used";
+  return t("browse.cond_used");
 };
 
 const getListViewMode = () => {
@@ -4044,7 +4052,7 @@ const renderList = async () => {
     ...ADS_CATEGORIES.map((c) => {
       const apiId = apiCategoryIdForSlug(c.slug);
       const active = apiId === filters.categoryId ? " cat-chip--active" : "";
-      return `<button type="button" class="cat-chip${active}" data-cat="${esc(apiId)}"><span class="cat-chip__emoji" aria-hidden="true">${c.icon}</span><span class="cat-chip__label">${esc(c.label)}</span></button>`;
+      return `<button type="button" class="cat-chip${active}" data-cat="${esc(apiId)}"><span class="cat-chip__emoji" aria-hidden="true">${c.icon}</span><span class="cat-chip__label">${esc(categoryDisplayName(apiId))}</span></button>`;
     })
   ].join("");
 
@@ -4063,7 +4071,7 @@ const renderList = async () => {
     `<option value=""${!filters.categoryId ? " selected" : ""}>${esc(t("browse.all_categories"))}</option>`,
     ...ADS_CATEGORIES.map((c) => {
       const apiId = apiCategoryIdForSlug(c.slug);
-      return `<option value="${esc(apiId)}"${apiId === filters.categoryId ? " selected" : ""}>${esc(c.label)}</option>`;
+      return `<option value="${esc(apiId)}"${apiId === filters.categoryId ? " selected" : ""}>${esc(categoryDisplayName(apiId))}</option>`;
     })
   ].join("");
 
@@ -4677,8 +4685,8 @@ const renderDetail = async (id) => {
     const on = isListingSaved(listing.id);
     btn.classList.toggle("detail-save-btn--active", on);
     btn.setAttribute("aria-pressed", on ? "true" : "false");
-    btn.setAttribute("aria-label", on ? "Remove from saved" : "Save listing");
-    btn.title = on ? "Saved" : "Save";
+    btn.setAttribute("aria-label", on ? t("listing.save_aria_on") : t("listing.save_aria_off"));
+    btn.title = on ? t("detail.save_on") : t("detail.save_off");
     btn.querySelector("path")?.setAttribute("fill", on ? "currentColor" : "none");
   });
 
@@ -4701,34 +4709,33 @@ const renderDetail = async (id) => {
     }
   });
   document.getElementById("detail-callback")?.addEventListener("click", () => {
-    window.alert("Request received. The seller may call you back in the Nuvelo app.");
+    window.alert(t("detail.callback_alert"));
   });
   document.getElementById("detail-offer")?.addEventListener("click", () => {
-    window.alert("Offers can be sent from the Nuvelo app.");
+    window.alert(t("detail.offer_alert"));
   });
 
   const startListingChat = async () => {
     const user = getUser();
     const msg = document.getElementById("detail-contact-msg");
     if (!user) {
-      msg.textContent = "Sign in first to message the seller.";
+      msg.textContent = t("detail.signin_seller");
       openModal("signin");
       return;
     }
     if (user.id === listing.userId) {
-      msg.textContent = "This is your listing.";
+      msg.textContent = t("detail.own_listing");
       return;
     }
     if (!isSupabaseConfigured) {
-      msg.textContent = "Messaging is temporarily unavailable. Please try again later.";
+      msg.textContent = t("detail.msg_unavailable");
       return;
     }
-    msg.textContent = "Opening chat…";
+    msg.textContent = t("detail.opening_chat");
     try {
       const { getOrCreateThread, isUuid } = await import("./lib/messaging.js");
       if (!isUuid(listing.userId)) {
-        msg.textContent =
-          "This listing uses a demo seller account. Chat works for listings posted by registered users.";
+        msg.textContent = t("detail.demo_seller");
         return;
       }
       const thumb = listingImageUrl(listing);
@@ -4753,16 +4760,15 @@ const renderDetail = async (id) => {
     const user = getUser();
     const msg = document.getElementById("detail-contact-msg");
     if (!user) {
-      msg.textContent = "Sign in first to claim or message the donor.";
+      msg.textContent = t("detail.signin_donor");
       openModal("signin");
       return;
     }
     if (user.id === listing.userId) {
-      msg.textContent = "This is your listing.";
+      msg.textContent = t("detail.own_listing");
       return;
     }
-    msg.textContent =
-      "Your interest has been noted. You can also use “Message donor” to chat when both accounts are registered.";
+    msg.textContent = t("detail.donor_interest");
   });
 
   document.getElementById("detail-owner-claimed")?.addEventListener("click", () => {
@@ -4771,7 +4777,7 @@ const renderDetail = async (id) => {
   });
 
   document.getElementById("detail-report")?.addEventListener("click", () => {
-    window.alert("Thanks. This listing has been flagged for moderator review.");
+    window.alert(t("detail.report_thanks"));
   });
 
   applyListingPageMeta(listing);
@@ -4935,7 +4941,8 @@ const renderEventDetail = async (eventId) => {
   if (!appEl) return;
   const row = getAllEvents().find((x) => x.id === eventId);
   if (!row) {
-    appEl.innerHTML = `<p>Event not found. <a href="/events">Back to events</a></p>`;
+    appEl.innerHTML = `<p><span data-i18n="event.not_found">${esc(t("event.not_found"))}</span> <a href="/events" data-i18n="event.back">${esc(t("event.back"))}</a></p>`;
+    applyDomTranslations(appEl);
     return;
   }
   const user = getUser();
@@ -5051,8 +5058,8 @@ const renderProfile = async (section) => {
     appEl.innerHTML = `
       <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
         <h1 style="margin:0 0 0.5rem">${esc(title)}</h1>
-        <p class="muted">Sign in to access this page.</p>
-        <p><button type="button" class="btn btn--primary" id="profile-prompt-signin">Sign in</button></p>
+        <p class="muted" data-i18n="profile.signin_required">${esc(t("profile.signin_required"))}</p>
+        <p><button type="button" class="btn btn--primary" id="profile-prompt-signin" data-i18n="profile.signin_btn">${esc(t("profile.signin_btn"))}</button></p>
       </section>
     `;
     document.getElementById("profile-prompt-signin")?.addEventListener("click", () => {
@@ -5090,7 +5097,7 @@ const renderProfile = async (section) => {
       <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
         <h1 style="margin:0 0 0.5rem">${esc(title)}</h1>
         <p class="muted">${esc(friendlyPageLoadError(e))}</p>
-        <p><a href="/browse">Browse listings</a></p>
+        <p><a href="/browse" data-i18n="profile.browse_link">${esc(t("profile.browse_link"))}</a></p>
       </section>
     `;
     return;
@@ -5110,8 +5117,8 @@ const renderProfileSettings = async (settingsSection) => {
     appEl.innerHTML = `
       <section class="stack" style="max-width:560px;margin:0 auto;padding:0 0 2rem">
         <h1 style="margin:0 0 0.5rem">Settings</h1>
-        <p class="muted">Sign in to access settings.</p>
-        <p><button type="button" class="btn btn--primary" id="profile-settings-prompt-signin">Sign in</button></p>
+        <p class="muted" data-i18n="profile.settings_signin_required">${esc(t("profile.settings_signin_required"))}</p>
+        <p><button type="button" class="btn btn--primary" id="profile-settings-prompt-signin" data-i18n="profile.signin_btn">${esc(t("profile.signin_btn"))}</button></p>
       </section>
     `;
     document.getElementById("profile-settings-prompt-signin")?.addEventListener("click", () => {
@@ -5341,41 +5348,41 @@ const categoryFieldHtml = (categoryId) => {
   if (categoryId === "vehicles") {
     return `
       <div class="category-fields stack">
-        <label>Make <input name="cf_make" required placeholder="Toyota" /></label>
-        <label>Model <input name="cf_model" required placeholder="Corolla" /></label>
-        <label>Year <input name="cf_year" required type="number" placeholder="2018" /></label>
+        <label>${esc(t("post.cf_make"))} <input name="cf_make" required placeholder="Toyota" /></label>
+        <label>${esc(t("post.cf_model"))} <input name="cf_model" required placeholder="Corolla" /></label>
+        <label>${esc(t("post.cf_year"))} <input name="cf_year" required type="number" placeholder="2018" /></label>
       </div>`;
   }
   if (categoryId === "real-estate" || categoryId === "rentals") {
     return `
       <div class="category-fields stack">
-        <label>Type <input name="cf_type" required placeholder="studio" /></label>
-        <label>Bedrooms <input name="cf_bedrooms" required type="number" /></label>
-        <label>Bathrooms <input name="cf_bathrooms" required type="number" /></label>
-        <label>Area (m²) <input name="cf_area" required type="number" /></label>
+        <label>${esc(t("post.cf_type"))} <input name="cf_type" required placeholder="studio" /></label>
+        <label>${esc(t("post.cf_bedrooms"))} <input name="cf_bedrooms" required type="number" /></label>
+        <label>${esc(t("post.cf_bathrooms"))} <input name="cf_bathrooms" required type="number" /></label>
+        <label>${esc(t("post.cf_area"))} <input name="cf_area" required type="number" /></label>
       </div>`;
   }
   if (categoryId === "electronics") {
     return `
       <div class="category-fields stack">
-        <label>Brand <input name="cf_brand" required placeholder="Apple" /></label>
-        <label>Model <input name="cf_model" required placeholder="iPhone 12" /></label>
+        <label>${esc(t("post.cf_brand"))} <input name="cf_brand" required placeholder="Apple" /></label>
+        <label>${esc(t("post.cf_model"))} <input name="cf_model" required placeholder="iPhone 12" /></label>
       </div>`;
   }
   if (categoryId === "jobs") {
     return `
       <div class="category-fields stack">
-        <label>Role <input name="cf_role" required placeholder="Barista" /></label>
-        <label>Contract type <input name="cf_contractType" required placeholder="part-time" /></label>
+        <label>${esc(t("post.cf_role"))} <input name="cf_role" required placeholder="Barista" /></label>
+        <label>${esc(t("post.cf_contract"))} <input name="cf_contractType" required placeholder="part-time" /></label>
       </div>`;
   }
   if (categoryId === "services") {
     return `
       <div class="category-fields stack">
-        <label>Service type <input name="cf_serviceType" required placeholder="Cleaning" /></label>
+        <label>${esc(t("post.cf_service"))} <input name="cf_serviceType" required placeholder="Cleaning" /></label>
       </div>`;
   }
-  return `<p class="muted small">No extra fields for this category.</p>`;
+  return `<p class="muted small" data-i18n="post.no_extra_fields">${esc(t("post.no_extra_fields"))}</p>`;
 };
 
 const buildCategoryFields = (categoryId, fd) => {
@@ -5508,16 +5515,14 @@ const renderPost = async () => {
     appEl.innerHTML = `
       <div class="post-shell">
         <header class="post-shell__head">
-          <h1 class="post-shell__title">Post an ad</h1>
-          <p class="post-shell__lead muted">Sign in to publish. Your ad is reviewed before it appears.</p>
-          <p class="post-shell__hint muted small" style="margin-top:0.75rem;max-width:36rem;line-height:1.5">
-            To post a new ad — rentals, jobs, goods, services, donations, and more — please sign in or create a free account.
-            After you sign in you can choose a category, add photos, and set your price and location.
-          </p>
+          <h1 class="post-shell__title" data-i18n="post.title">${esc(t("post.title"))}</h1>
+          <p class="post-shell__lead muted" data-i18n="post.signin_lead">${esc(t("post.signin_lead"))}</p>
+          <p class="post-shell__hint muted small" style="margin-top:0.75rem;max-width:36rem;line-height:1.5" data-i18n="post.signin_hint">${esc(t("post.signin_hint"))}</p>
         </header>
-      <button type="button" class="btn btn--primary btn--lg" id="post-signin">Sign in to continue</button>
+      <button type="button" class="btn btn--primary btn--lg" id="post-signin" data-i18n="post.signin_btn">${esc(t("post.signin_btn"))}</button>
       </div>
     `;
+    applyDomTranslations(appEl);
     document.getElementById("post-signin")?.addEventListener("click", () => openModal("signin"));
     return;
   }
@@ -5530,10 +5535,10 @@ const renderPost = async () => {
   const postCategories = CATEGORIES.map((c) =>
     c.slug === EVENTS_CATEGORY ? { ...c, apiId: EVENTS_CATEGORY } : { ...c, apiId: apiCategoryIdForSlug(c.slug) }
   );
-  const subOpts = ADS_CATEGORIES.map(
-    (c) =>
-      `<option value="${esc(apiCategoryIdForSlug(c.slug))}">${esc(c.label)} — General</option>`
-  ).join("");
+  const subOpts = ADS_CATEGORIES.map((c) => {
+    const apiId = apiCategoryIdForSlug(c.slug);
+    return `<option value="${esc(apiId)}">${esc(tf("post.subcategory_general", { cat: categoryDisplayName(apiId) }))}</option>`;
+  }).join("");
   const postLocCombobox = buildLocationComboboxHtml({
     fieldName: "location",
     storedRaw: postLocDefault,
@@ -5544,58 +5549,58 @@ const renderPost = async () => {
 
   appEl.innerHTML = `
     <div class="post-jiji post-shell">
-      <p class="post-steps"><span class="is-on">Step 1 of 3</span> · Details · Photos</p>
+      <p class="post-steps"><span class="is-on" data-i18n="post.steps">${esc(t("post.steps"))}</span></p>
       <header class="post-shell__head">
-        <h1 class="post-shell__title">Post an ad</h1>
-        <p class="post-shell__lead muted">Free listing — reviewed before it goes live.</p>
+        <h1 class="post-shell__title" data-i18n="post.title">${esc(t("post.title"))}</h1>
+        <p class="post-shell__lead muted" data-i18n="post.lead">${esc(t("post.lead"))}</p>
       </header>
     <form id="post-form" class="stack post-shell__form">
       <label>
-        Category
+        <span data-i18n="post.category">${esc(t("post.category"))}</span>
         <select name="categoryId" id="post-category" required>
           ${postCategories.map((c) => {
             const apiId = c.apiId;
-            return `<option value="${esc(apiId)}" ${apiId === defaultCat ? "selected" : ""}>${esc(c.label)}</option>`;
+            return `<option value="${esc(apiId)}" ${apiId === defaultCat ? "selected" : ""}>${esc(categoryDisplayName(apiId))}</option>`;
           }).join("")}
         </select>
       </label>
       <label>
-        Subcategory
+        <span data-i18n="post.subcategory">${esc(t("post.subcategory"))}</span>
         <select name="subcategoryId" id="post-subcategory">${subOpts}</select>
       </label>
       <div id="event-fields" hidden>
         <label>
-          Event sub-category
+          <span data-i18n="post.event_subcat">${esc(t("post.event_subcat"))}</span>
           <select name="eventSubCategory">${EVENT_SUBCATEGORIES.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("")}</select>
         </label>
-        <label>Date <input name="eventDate" type="date" /></label>
-        <label>Time <input name="eventTime" type="time" /></label>
-        <label>Duration <input name="eventDuration" type="text" placeholder="e.g. 3 hours" /></label>
-        <label>Venue / Address <input name="eventVenue" type="text" placeholder="Venue name or address" /></label>
-        <label>Cover photo URL <input name="eventCover" type="url" placeholder="https://images.unsplash.com/photo-..." /></label>
-        <label>Type
+        <label><span data-i18n="post.event_date">${esc(t("post.event_date"))}</span> <input name="eventDate" type="date" /></label>
+        <label><span data-i18n="post.event_time">${esc(t("post.event_time"))}</span> <input name="eventTime" type="time" /></label>
+        <label><span data-i18n="post.event_duration">${esc(t("post.event_duration"))}</span> <input name="eventDuration" type="text" data-i18n-placeholder="post.event_duration_ph" placeholder="${esc(t("post.event_duration_ph"))}" /></label>
+        <label><span data-i18n="post.event_venue">${esc(t("post.event_venue"))}</span> <input name="eventVenue" type="text" data-i18n-placeholder="post.event_venue_ph" placeholder="${esc(t("post.event_venue_ph"))}" /></label>
+        <label><span data-i18n="post.event_cover">${esc(t("post.event_cover"))}</span> <input name="eventCover" type="url" placeholder="https://images.unsplash.com/photo-..." /></label>
+        <label><span data-i18n="post.event_type">${esc(t("post.event_type"))}</span>
           <select name="eventPriceType">
-            <option value="free">Free</option>
-            <option value="paid">Paid</option>
+            <option value="free" data-i18n="post.event_free">${esc(t("post.event_free"))}</option>
+            <option value="paid" data-i18n="post.event_paid">${esc(t("post.event_paid"))}</option>
           </select>
         </label>
-        <label id="post-event-price-label">Event price (HUF, if paid)
+        <label id="post-event-price-label"><span data-i18n="post.event_price_label">${esc(t("post.event_price_label"))}</span>
           <input id="post-event-price-input" name="eventPrice" type="text" inputmode="numeric" autocomplete="off" />
           <span id="post-event-price-preview" class="muted small" style="display:block;margin-top:0.25rem"></span>
         </label>
-        <label>Max attendees (optional) <input name="eventCap" type="number" min="1" step="1" placeholder="Unlimited if empty" /></label>
-        <label>Contact preference
+        <label><span data-i18n="post.event_cap">${esc(t("post.event_cap"))}</span> <input name="eventCap" type="number" min="1" step="1" data-i18n-placeholder="post.event_cap_ph" placeholder="${esc(t("post.event_cap_ph"))}" /></label>
+        <label><span data-i18n="post.event_contact">${esc(t("post.event_contact"))}</span>
           <select name="eventContact">
-            <option value="message via app">Message via app</option>
-            <option value="show email">Show email</option>
-            <option value="show phone">Show phone</option>
+            <option value="message via app" data-i18n="post.contact_pref_message">${esc(t("post.contact_pref_message"))}</option>
+            <option value="show email" data-i18n="post.contact_pref_email">${esc(t("post.contact_pref_email"))}</option>
+            <option value="show phone" data-i18n="post.contact_pref_phone">${esc(t("post.contact_pref_phone"))}</option>
           </select>
         </label>
-        <label>Tags (comma separated) <input name="eventTags" type="text" placeholder="English-speaking, beginners welcome" /></label>
+        <label><span data-i18n="post.event_tags">${esc(t("post.event_tags"))}</span> <input name="eventTags" type="text" data-i18n-placeholder="post.event_tags_ph" placeholder="${esc(t("post.event_tags_ph"))}" /></label>
       </div>
       <div id="donation-fields" hidden>
         <label>
-          Donation sub-category
+          <span data-i18n="post.donation_subcat">${esc(t("post.donation_subcat"))}</span>
           <select name="donationSubCategory" required>
             ${DONATION_SUBCATEGORIES.map(
               (s) => `<option value="${esc(s.key)}">${esc(s.label)}</option>`
@@ -5603,7 +5608,7 @@ const renderPost = async () => {
           </select>
         </label>
         <fieldset class="filter-panel__fieldset" style="border:1px solid var(--purple-border);border-radius:8px;padding:0.75rem">
-          <legend class="filter-panel__label">Condition</legend>
+          <legend class="filter-panel__label" data-i18n="post.condition">${esc(t("post.condition"))}</legend>
           ${DONATION_CONDITIONS.map(
             (c, i) =>
               `<label class="filter-panel__check"><input type="radio" name="donationCondition" value="${esc(c.key)}" ${
@@ -5612,7 +5617,7 @@ const renderPost = async () => {
           ).join("")}
         </fieldset>
         <label>
-          Collection method
+          <span data-i18n="post.collection_method">${esc(t("post.collection_method"))}</span>
           <select name="donationCollectionMethod" id="donation-collection-method">
             ${DONATION_COLLECTION_METHODS.map(
               (m) => `<option value="${esc(m.key)}">${esc(m.label)}</option>`
@@ -5620,49 +5625,49 @@ const renderPost = async () => {
           </select>
         </label>
         <label id="donation-deliveryKm-wrap" hidden>
-          Delivery radius (km)
-          <input name="donationDeliveryKm" type="number" min="1" max="200" step="1" placeholder="e.g. 10" />
+          <span data-i18n="post.delivery_radius">${esc(t("post.delivery_radius"))}</span>
+          <input name="donationDeliveryKm" type="number" min="1" max="200" step="1" data-i18n-placeholder="post.delivery_ph" placeholder="${esc(t("post.delivery_ph"))}" />
         </label>
         <label>
-          Contact preference
+          <span data-i18n="post.event_contact">${esc(t("post.event_contact"))}</span>
           <select name="donationContact">
-            <option value="message via app">Message via app</option>
-            <option value="show email">Show email</option>
-            <option value="show phone">Show phone</option>
+            <option value="message via app" data-i18n="post.contact_pref_message">${esc(t("post.contact_pref_message"))}</option>
+            <option value="show email" data-i18n="post.contact_pref_email">${esc(t("post.contact_pref_email"))}</option>
+            <option value="show phone" data-i18n="post.contact_pref_phone">${esc(t("post.contact_pref_phone"))}</option>
           </select>
         </label>
         <label>
-          Quantity (if multiple of the same item)
+          <span data-i18n="post.donation_qty">${esc(t("post.donation_qty"))}</span>
           <input name="donationQuantity" type="number" min="1" step="1" value="1" />
         </label>
       </div>
       <label>
-        Title (5+ characters)
-        <input name="title" required minlength="5" placeholder="City center studio near metro" />
+        <span data-i18n="post.title_label">${esc(t("post.title_label"))}</span>
+        <input name="title" required minlength="5" data-i18n-placeholder="post.title_ph" placeholder="${esc(t("post.title_ph"))}" />
       </label>
       <label>
-        Description (20+ characters)
-        <textarea name="description" required minlength="20" rows="5" placeholder="Describe what you are offering…"></textarea>
+        <span data-i18n="post.desc_label">${esc(t("post.desc_label"))}</span>
+        <textarea name="description" required minlength="20" rows="5" data-i18n-placeholder="post.desc_ph" placeholder="${esc(t("post.desc_ph"))}"></textarea>
       </label>
       <fieldset class="filter-panel__fieldset" id="post-condition-fieldset" style="border:1px solid var(--purple-border);border-radius:8px;padding:0.75rem">
-        <legend class="filter-panel__label">Condition</legend>
-        <label class="filter-panel__check"><input type="radio" name="condition" value="new" /> Brand New</label>
-        <label class="filter-panel__check"><input type="radio" name="condition" value="used" /> Used</label>
-        <label class="filter-panel__check"><input type="radio" name="condition" value="other" checked /> Other</label>
+        <legend class="filter-panel__label" data-i18n="post.condition">${esc(t("post.condition"))}</legend>
+        <label class="filter-panel__check"><input type="radio" name="condition" value="new" /> <span data-i18n="browse.cond_new">${esc(t("browse.cond_new"))}</span></label>
+        <label class="filter-panel__check"><input type="radio" name="condition" value="used" /> <span data-i18n="browse.cond_used">${esc(t("browse.cond_used"))}</span></label>
+        <label class="filter-panel__check"><input type="radio" name="condition" value="other" checked /> <span data-i18n="post.cond_other">${esc(t("post.cond_other"))}</span></label>
       </fieldset>
       <label id="post-price-label">
-        Price (HUF, optional)
+        <span data-i18n="post.price_optional">${esc(t("post.price_optional"))}</span>
         <span class="filter-chip-row" style="margin:0.25rem 0 0"><span class="filter-chip">HUF</span></span>
-        <input id="post-price-input" name="price" type="text" inputmode="numeric" autocomplete="off" placeholder="Leave empty if negotiable" />
+        <input id="post-price-input" name="price" type="text" inputmode="numeric" autocomplete="off" data-i18n-placeholder="post.price_ph" placeholder="${esc(t("post.price_ph"))}" />
         <span id="post-price-preview" class="muted small" style="display:block;margin-top:0.25rem"></span>
       </label>
       <label>
-        Location
+        <span data-i18n="post.location">${esc(t("post.location"))}</span>
         ${postLocCombobox}
       </label>
       <label>
-        Contact name
-        <input name="contactName" type="text" placeholder="Your name" value="${esc(getUser()?.name || "")}" />
+        <span data-i18n="post.contact_name">${esc(t("post.contact_name"))}</span>
+        <input name="contactName" type="text" data-i18n-placeholder="post.contact_name_ph" placeholder="${esc(t("post.contact_name_ph"))}" value="${esc(getUser()?.name || "")}" />
       </label>
       <label>
         <span data-i18n="post.contact_email">Contact email (optional)</span>
@@ -5683,11 +5688,11 @@ const renderPost = async () => {
       </label>
       <div id="post-cat-fields">${categoryFieldHtml(defaultCat)}</div>
       <div class="post-photo-zone post-photo-picker" id="post-photo-picker">
-        <span class="filter-panel__label">Photos</span>
+        <span class="filter-panel__label" data-i18n="post.photos">${esc(t("post.photos"))}</span>
         <label class="post-photo-picker__drop" id="post-photo-drop" for="post-photo-input">
-          <strong>Tap to add photos</strong>
-          <span>From your phone gallery or laptop files</span>
-          <p class="post-photo-picker__hint">Up to 12 images · each up to 28MB (large iPhone photos OK)</p>
+          <strong data-i18n="post.photos_tap">${esc(t("post.photos_tap"))}</strong>
+          <span data-i18n="post.photos_from">${esc(t("post.photos_from"))}</span>
+          <p class="post-photo-picker__hint" data-i18n="post.photos_hint">${esc(t("post.photos_hint"))}</p>
         </label>
         <input
           id="post-photo-input"
@@ -5699,8 +5704,8 @@ const renderPost = async () => {
         <div class="post-photo-picker__grid" id="post-photo-grid" hidden></div>
       </div>
       <div class="button-row" style="justify-content:space-between">
-        <a class="btn btn--ghost" href="/browse">Cancel</a>
-        <button type="submit" class="btn btn--primary" style="border-radius:8px">Post Ad</button>
+        <a class="btn btn--ghost" href="/browse" data-i18n="settings.cancel">${esc(t("settings.cancel"))}</a>
+        <button type="submit" class="btn btn--primary" style="border-radius:8px" data-i18n="post.submit">${esc(t("post.submit"))}</button>
       </div>
       <p class="muted small" id="post-msg"></p>
     </form>
@@ -5727,6 +5732,7 @@ const renderPost = async () => {
     if (postPriceLabel) postPriceLabel.hidden = isDonationPost;
     if (!isEvent && !isDonationPost) {
       catFields.innerHTML = categoryFieldHtml(catSelect.value);
+      applyDomTranslations(catFields);
       if (subSel) {
         subSel.value = catSelect.value;
       }
@@ -5747,6 +5753,7 @@ const renderPost = async () => {
   );
 
   initPostPhotoPicker();
+  applyDomTranslations(appEl);
 
   document.getElementById("post-form")?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -5758,7 +5765,7 @@ const renderPost = async () => {
     if (!isEvent && !photoFiles.length) {
       const msg = document.getElementById("post-msg");
       if (msg) {
-        msg.textContent = "Add at least one photo.";
+        msg.textContent = t("post.need_photo");
       }
       return;
     }
@@ -5814,7 +5821,7 @@ const renderPost = async () => {
     msg.textContent = "";
     try {
       if (!isEvent && photoFiles.length) {
-        msg.textContent = "Uploading photos…";
+        msg.textContent = t("post.uploading");
         const { uploadListingImages } = await import("./lib/listingImageUpload.js");
         const draftId = crypto.randomUUID();
         payload.images = await uploadListingImages(user.id, draftId, photoFiles);
@@ -5847,12 +5854,12 @@ const renderPost = async () => {
         const custom = readJsonStore(EVENTS_STORE_KEY, []);
         custom.push(eventRow);
         writeJsonStore(EVENTS_STORE_KEY, custom);
-        msg.textContent = "Your event is live. Redirecting…";
+        msg.textContent = t("post.event_live");
         setTimeout(() => navigateTo(`/event/${eventRow.id}`), 700);
         return;
       }
       const created = await createListing(payload, user.id);
-      msg.textContent = "Your ad has been submitted and is pending review.";
+      msg.textContent = t("post.submitted");
       setTimeout(() => navigateTo("/profile"), 800);
     } catch (err) {
       console.error(err);
