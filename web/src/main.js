@@ -5273,7 +5273,6 @@ const renderProfile = async (section) => {
     return;
   }
   document.getElementById("profile-sign-out")?.addEventListener("click", () => void signOutNuvelo());
-  document.getElementById("profile-hub-sign-out")?.addEventListener("click", () => void signOutNuvelo());
   initProfileRouteFeatures(section);
 };
 
@@ -6238,6 +6237,15 @@ navBurgerEl()?.addEventListener("click", () => {
 });
 
 document.body.addEventListener("click", (e) => {
+  const signOutBtn = e.target.closest("[data-nuvelo-signout]");
+  if (signOutBtn) {
+    e.preventDefault();
+    if (signOutBtn.closest("#nav-drawer")) {
+      setNavDrawerOpen(false);
+    }
+    void signOutNuvelo();
+    return;
+  }
   const btn = e.target.closest("#category-rail [data-cat]");
   if (!btn) {
     return;
@@ -6282,11 +6290,6 @@ document.body.addEventListener("click", (e) => {
     setNavDrawerOpen(false);
     openModal("signin");
     return;
-  }
-  if (e.target.id === "nav-drawer-signout" || e.target.closest("#nav-drawer-signout")) {
-    e.preventDefault();
-    setNavDrawerOpen(false);
-    void signOutNuvelo();
   }
 });
 

@@ -1148,7 +1148,7 @@ body.loc-modal-open {
 .nav-drawer__signout {
   font: inherit;
   cursor: pointer;
-  margin-top: 0.35rem;
+  margin-bottom: 0.35rem;
   padding: 0.55rem 0;
   min-height: 44px;
   border: 0;
@@ -5959,6 +5959,35 @@ button.jiji-promo-card {
   }
 }
 
+.profile-mobile-signout-row {
+  display: none;
+}
+
+.profile-mobile-signout-row__btn {
+  font: inherit;
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  color: #e53e3e;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 0.15rem 0.75rem 0.45rem;
+  min-height: 36px;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.profile-mobile-signout-row__btn:hover {
+  color: #fc8181;
+}
+
+@media (max-width: 639px) {
+  .profile-mobile-signout-row {
+    display: flex;
+    justify-content: flex-end;
+  }
+}
+
 .profile-mobile-tabs {
   display: none;
   flex-wrap: nowrap;
@@ -6479,14 +6508,6 @@ button.jiji-promo-card {
   .profile-hub-fab {
     bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
   }
-
-  .profile-hub__signout-wrap {
-    padding: 1rem 1rem calc(5.5rem + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-.profile-hub__signout-wrap {
-  padding: 1rem 1rem 1.25rem;
 }
 
 /* Messages (Jiji split) */
@@ -7308,6 +7329,36 @@ button.jiji-promo-card {
   font-size: 1.1rem;
   font-weight: 700;
   color: #16a34a;
+  flex: 1;
+  min-width: 0;
+}
+
+.settings-jiji-appbar__signout {
+  display: none;
+  font: inherit;
+  cursor: pointer;
+  margin-left: auto;
+  padding: 0.35rem 0.5rem;
+  min-height: 36px;
+  border: 0;
+  background: transparent;
+  color: #e53e3e;
+  font-weight: 700;
+  font-size: 0.82rem;
+  flex-shrink: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.settings-jiji-appbar__signout:hover {
+  color: #fc8181;
+}
+
+@media (max-width: 639px) {
+  .settings-jiji-appbar__signout {
+    display: inline-flex;
+    align-items: center;
+  }
 }
 
 .settings-jiji-group-gap {

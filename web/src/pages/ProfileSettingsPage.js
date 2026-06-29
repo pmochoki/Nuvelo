@@ -253,6 +253,9 @@ function renderSettingsJijiAppBar() {
   <header class="settings-jiji-appbar">
     <a href="/profile" class="settings-jiji-appbar__back" data-i18n-aria-label="settings.back_profile" aria-label="Back to profile">‹</a>
     <h1 class="settings-jiji-appbar__title" data-i18n="settings.appbar_title">Settings</h1>
+    <button type="button" class="settings-jiji-appbar__signout" data-nuvelo-signout data-i18n="nav.signout">
+      Log out
+    </button>
   </header>`;
 }
 

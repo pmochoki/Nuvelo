@@ -234,6 +234,16 @@ export function renderProfileMobileTabs(activeSection) {
   </div>`;
 }
 
+/** Visible on phone — sign out on every profile tab regardless of auth provider. */
+export function renderProfileMobileSignOutRow() {
+  return `
+  <div class="profile-mobile-signout-row">
+    <button type="button" class="profile-mobile-signout-row__btn" data-nuvelo-signout>
+      ${esc(t("nav.signout"))}
+    </button>
+  </div>`;
+}
+
 /**
  * Shared left column for all profile routes (Jiji-style card + nav).
  * @param {object} user
@@ -282,7 +292,7 @@ export function renderProfileSidebar(user, section) {
         ${navItem("/profile/performance", "performance", t("profile.performance_nav"), "📊")}
       </div>
       <div class="profile-sidebar__foot">
-        <button type="button" class="btn btn--pill btn--signin profile-sign-out-btn" id="profile-sign-out">
+        <button type="button" class="btn btn--pill btn--signin profile-sign-out-btn" id="profile-sign-out" data-nuvelo-signout>
           ${esc(t("nav.signout"))}
         </button>
       </div>
@@ -362,11 +372,6 @@ function renderProfileHub(user) {
     <a href="/contact" class="profile-hub-fab" aria-label="${esc(t("profile.help_contact"))}">
       <span class="profile-hub-fab__ico" aria-hidden="true">?</span>
     </a>
-    <div class="profile-hub__signout-wrap">
-      <button type="button" class="btn btn--pill btn--signin profile-sign-out-btn" id="profile-hub-sign-out">
-        ${esc(t("nav.signout"))}
-      </button>
-    </div>
   </div>`;
 }
 
@@ -588,6 +593,7 @@ export function renderProfilePage(user, sectionFromRoute) {
 <div class="profile-shell${isHubView ? " profile-shell--hub" : ""}">
   ${showMobileHeader ? renderProfileMobileHeader(user) : ""}
   ${renderProfileMobileTabs(section)}
+  ${renderProfileMobileSignOutRow()}
   <div class="profile-layout profile-layout--jiji${isHubView ? " profile-layout--profile-hub" : ""}">
     ${renderProfileSidebar(user, sidebarSection)}
     <main class="profile-content profile-content--jiji profile-card${mainExtra}">
